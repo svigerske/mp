@@ -43,22 +43,22 @@ class Model:
     self._updateNodeData(self._objs, idx, data)
 
   def UpdateNLCon(self, type, idx, data):
-    if "nonlin"==type:
-      self._updateNodeData(self._cons_NL["Nonlinear"],
-      len(self._cons_NL["Nonlinear"]),   ## these just 1x
-      data)
-    elif "lin"==type:
-      self._updateNodeData(self._cons_NL["Linear"],
-      len(self._cons_NL["Linear"]), data)
-    elif "logical"==type:
-      self._updateNodeData(self._cons_NL["Logical"],
-      len(self._cons_NL["Logical"]), data)
-    elif "_sos1"==type:
-      self._updateNodeData(self._cons_NL["SOS1"],
-      len(self._cons_NL["SOS1"]), data)
+    if "nonlin"==type or "lin"==type or "logical"==type:
+      assert idx==len(self._cons_NL_all)        ## common list of NL constraints
+      data = self._updateNodeData(self._cons_NL_all, idx, data)
+      assert "node_index" in data               ## Already added to graph
+      if "nonlin"==type:
+        self._cons_NL["Nonlinear"].append(data)   ## these just 1x
+      elif "lin"==type:
+        self._cons_NL["Linear"].append(data)
+      else:
+        self._cons_NL["Logical"].append(data)
+    elif "_sos1"==type:                         ## NL SOS constraints via suffixes
+      assert "node_index" in data               ## Already added to graph
+      self._cons_NL["SOS1"].append(data)
     elif "_sos2"==type:
-      self._updateNodeData(self._cons_NL["SOS2"],
-      len(self._cons_NL["SOS2"]), data)
+      assert "node_index" in data
+      self._cons_NL["SOS2"].append(data)
     else:
       raise Exception("Unknown NL constraint type: "+type)
 
@@ -68,17 +68,18 @@ class Model:
   def UpdateFlatCon(self, type, idx, data):
     if type not in self._cons_Flat:
       self._cons_Flat[type] = []
-    self._updateNodeData(self._cons_Flat[type], idx, data)
-    if 0==data["depth"] \
+    data1 = self._updateNodeData(self._cons_Flat[type], idx, data)
+    if 0==data1["depth"] \
         and type.startswith('_sos') \
-        and "printed" in data:   ## we need the final status
-      self.UpdateNLCon(type, 0, data)
+        and "printed" in data1:   ## we need the final status
+      self.UpdateNLCon(type, 0, data1)
 
   def _updateNodeData(self, specnodecnt, idx, data):
     data1, upd = self._updateItemData(specnodecnt, idx, data)
-    if (not upd):
-      idx = self._graph.AddNode(data1)
-      data1["node_index"] = idx
+    if (upd):
+      idx_g = self._graph.AddNode(data1)
+      data1["node_index"] = idx_g
+    return data1
 
   def _updateItemData(self, specnodecnt, idx, data):
     if len(specnodecnt)<=idx:
@@ -91,6 +92,54 @@ class Model:
 
   def _updateMap(self, data1, data2):
     data1.update(data2)
+
+  def AddLinks(self, chunk):
+    src_nodes = chunk["src_nodes"]
+    dest_nodes = chunk["dest_nodes"]
+    for s in src_nodes:
+      for d in dest_nodes:
+        for sk, svL in s.items():                 ## Actually just 1 key-value pair
+          for dk, dvL in d.items():
+            if not dk.startswith("dest_cons("):    ## TODO extract group index
+              ifsV = int==type(svL)                  ## Scalar
+              ifdV = int==type(dvL)
+              if ifsV and ifdV:
+                self.AddLink(sk, svL, dk, dvL)
+              elif ifsV:
+                for dv in dvL:
+                  self.AddLink(sk, svL, dk, dv)
+              elif ifdV:
+                for sv in svL:
+                  self.AddLink(sk, sv, dk, dvL)
+              else:
+                assert "CopyLink"==chunk["link_type"] and len(svL)==len(dvL)
+                for i in range(len(svL)):
+                  self.AddLink(sk, svL[i], dk, dvL[i])
+
+  def AddLink(self, key1, i1, key2, i2):
+    si = self.GetLinkNode(key1, i1)
+    di = self.GetLinkNode(key2, i2)
+    self._graph.AddLink(si["node_index"], di["node_index"])
+
+  def GetLinkNode(self, type, index):
+    """
+    Distinguish model item, given as link node information
+    """
+    if "src_vars()"==type or "dest_vars()"==type:
+      return self._vars[index]
+    if "src_cons()"==type:
+      return self._cons_NL_all[index]
+    if "src_objs()"==type:
+      return self._objs_NL[index]
+    assert not type.startswith("dest_cons(")      ## No grouping currently
+    if "dest_objs()"==type:
+      return self._objs[index]
+    if type not in self._cons_Flat:
+      raise Exception("Unknown constraint type: " + type)
+    if index > len(self._cons_Flat[type]):
+      raise Exception("Wrong index " + str(index) + " for constraint type " + type)
+    return self._cons_Flat[type][index]
+
 
   # Match keyword to the original model
   def MatchOrigModel(self, keyw):

@@ -9,8 +9,8 @@ from scripts.python.matcher import MatchSubmodel
 # The corresponding settings should not be used on a server.
 uploader = st.sidebar.file_uploader(
     "Model file (JSONL)",
-    help = "Reformulation file obtained by option `writegraph`\n" + \
-           "(https://mp.ampl.com/modeling-tools.html#reformulation-graph)")
+    help = "Reformulation file obtained by option `writegraph`  \n" + \
+           "(https://mp.ampl.com/modeling-tools.html#reformulation-graph)")      # 2 spaces + EOL
 
 # You can use a column just like st.sidebar:
 srch = st.sidebar.text_input(

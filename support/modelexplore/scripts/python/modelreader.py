@@ -41,6 +41,8 @@ class ModelReader:
         self._model.UpdateFlatConGroup(chunk["CON_TYPE"], chunk)
     elif "CON_TYPE" in chunk:
       self._model.UpdateFlatCon(chunk["CON_TYPE"], chunk["index"], chunk)
+    elif "link_type" in chunk:
+      self._model.AddLinks(chunk)
 
 
 def ReadExplorerModel(uploader):
