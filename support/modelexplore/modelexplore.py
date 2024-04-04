@@ -27,7 +27,8 @@ bwd = st.sidebar.checkbox(
 
 nl_ref_tree = st.sidebar.radio(
             "**NL model presentation mode:**",
-            ["Text", "Reformulation tree :sparkles:"])
+            ["Text", "Reformulation tree :sparkles:"],
+            help = "To best view the reformulation tree, download NL model as JSON and use a JSON viewer")
 reftree = "Text"!=nl_ref_tree
 
 left_column, right_column = st.columns(2)
@@ -45,8 +46,9 @@ def MatchSelection(m, srch, fwd, bwd, reftree):
 
 # Write dictionary of entries
 @st.cache_data
-def WriteDict(d, reftree=False):
-  whole = "" if not reftree else {}         ## dict/json: add only non-empty sections
+def WriteDict(d, title, reftree=False):
+  whole = ("# "+title+"\n") if not reftree \
+    else { "Title": title }         ## dict/json: add only non-empty sections
   for k, v in d.items():
     nv = v.count('\n') if not reftree else len(v)
     if nv:
@@ -62,7 +64,7 @@ def WriteDict(d, reftree=False):
                 st.json(v)
               else:
                 st.code(v, language='ampl')
-  return whole
+  return whole if not reftree else json.dumps(whole, indent=2)
 
 
 filename_upl = ""
@@ -76,22 +78,16 @@ if uploader is not None:
   subm1, subm2 = MatchSelection(model, srch, fwd, bwd, reftree)
   bytes1_data = subm1.GetData()
   bytes2_data = subm2.GetData()
+  ttlEnd = " for '" + filename_upl + "' (search pattern: '" + srch + "')"
   with left_column:
     st.header("NL model",
         help = 'NL model lines matching the search pattern')
     st.write("Display mode:  **" + nl_ref_tree + "**")
-    modelNLTitle = "NL Model for '" + filename_upl + \
-      "' (search pattern: '" + srch + "')"
-    if reftree:
-      modelNL = WriteDict(bytes1_data, reftree)
-      modelNL["title"] = modelNLTitle
-      modelNL = json.dumps(modelNL, indent=2)
-    else:
-      modelNL = modelNLTitle + WriteDict(bytes1_data, reftree)
+    modelNL = WriteDict(bytes1_data, "NL Model"+ttlEnd, reftree)
   with right_column:
     st.header("Solver model",
         help = 'Solver model lines matching the search pattern')
-    modelFlat = WriteDict(bytes2_data)
+    modelFlat = WriteDict(bytes2_data, "Solver model"+ttlEnd)
 else:
   st.header("AMPL MP Reformulation Explorer")
   st.write("Documentation: https://mp.ampl.com/modeling-tools.html#reformulation-graph")
@@ -105,8 +101,6 @@ st.sidebar.download_button("Download NL Model",
                    help = 'Download current NL model',
                    disabled = ("" == modelNL))
 st.sidebar.download_button("Download Solver Model",
-                   "# Solver Model for '" + filename_upl + \
-                   "' (search pattern: '" + srch + "')\n" + \
                    modelFlat,
                    filename_upl + '_solver.mod',
                    help = 'Download current solver model',
