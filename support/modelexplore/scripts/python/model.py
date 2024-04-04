@@ -100,7 +100,8 @@ class Model:
       for d in dest_nodes:
         for sk, svL in s.items():                 ## Actually just 1 key-value pair
           for dk, dvL in d.items():
-            if not dk.startswith("dest_cons("):    ## TODO extract group index
+            if not dk.startswith("dest_cons(") \
+                and "src_vars()"!=sk:  ## No links from NL vars. TODO extract group index
               ifsV = int==type(svL)                  ## Scalar
               ifdV = int==type(dvL)
               if ifsV and ifdV:
