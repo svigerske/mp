@@ -23,5 +23,8 @@ class DiGraph:
   def AddLink(self, s, d):
     self._succ[s].append(d)            ## Should have no duplicates
 
+  def GetSucc(self, n):
+    return self._succ[n]
+
   def ToText(self):
     return str(self._nodes)

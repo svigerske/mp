@@ -143,23 +143,23 @@ class Model:
 
 
   # Match keyword to the original model
-  def MatchOrigModel(self, keyw):
+  def MatchOrigModel(self, keyw, reftree):
     result = {}
-    result["NL Variables"] = self._matchRecords(self._vars, keyw, "is_from_nl")
-    result["NL Defined Variables"] = self._matchRecords(self._dvars, keyw)
-    result["NL Objectives"] = self._matchRecords(self._objs_NL, keyw)
+    result["NL Variables"] = self._matchRecords(self._vars, keyw, reftree, "is_from_nl")
+    result["NL Defined Variables"] = self._matchRecords(self._dvars, keyw, reftree)
+    result["NL Objectives"] = self._matchRecords(self._objs_NL, keyw, reftree)
 #    result["NL Constraints"] \
 #      = self._matchRecords(self._cons_NL.get("All"), keyw)
     result["NL Nonlinear Constraints"] \
-      = self._matchRecords(self._cons_NL.get("Nonlinear"), keyw)
+      = self._matchRecords(self._cons_NL.get("Nonlinear"), keyw, reftree)
     result["NL Linear Constraints"] \
-      = self._matchRecords(self._cons_NL.get("Linear"), keyw)
+      = self._matchRecords(self._cons_NL.get("Linear"), keyw, reftree)
     result["NL Logical Constraints"] \
-      = self._matchRecords(self._cons_NL.get("Logical"), keyw)
+      = self._matchRecords(self._cons_NL.get("Logical"), keyw, reftree)
     result["NL SOS1 Constraints"] \
-      = self._matchRecords(self._cons_NL.get("SOS1"), keyw)
+      = self._matchRecords(self._cons_NL.get("SOS1"), keyw, reftree)
     result["NL SOS2 Constraints"] \
-      = self._matchRecords(self._cons_NL.get("SOS2"), keyw)
+      = self._matchRecords(self._cons_NL.get("SOS2"), keyw, reftree)
     return result
 
   # Match keyword to the final model
@@ -176,20 +176,35 @@ class Model:
 
   # Add records containing keyword
   # @return array of strings
-  def _matchRecords(self, cnt, keyw, keyNeed1=None):
-    result = ""
+  def _matchRecords(self, cnt, keyw, reftree=False, keyNeed1=None):
+    result = "" if not reftree else {}
     if cnt is None:
       return result
     for i in cnt:
       if "final" not in i or 1==i["final"]:
-        pr = str(i)         ## TODO printed form
-        if "printed" in i:
-          pr = i["printed"]
-        assert len(pr)
-        if ';'!=pr[-1]:
-          pr = pr + ';'
+        pr = self.StringifyNode(i)
         if (""==keyw or keyw in pr) \
             and (keyNeed1==None \
             or (keyNeed1 in i and 1==i[keyNeed1])):
-          result = result + "  \n" + pr        ## Markdown: 2x spaces + EOL
+          if reftree:
+            result[pr] = self._getSubtree(i)     ## dict
+          else:
+            result = result + "  \n" + pr        ## Markdown: 2x spaces + EOL
+    return result
+
+  def StringifyNode(self, i):
+    pr = str(i)
+    if "printed" in i:
+      pr = i["printed"]
+    assert len(pr)
+    if ';'!=pr[-1]:
+      pr = pr + ';'
+    return pr
+
+  ## Refomrulation descendants
+  def _getSubtree(self, node):
+    result = {}
+    for ic in self._graph.GetSucc(node["node_index"]):
+      c = self._graph.GetNode(ic)
+      result[self.StringifyNode(c)] = self._getSubtree(c)
     return result

@@ -15,7 +15,7 @@ class Matcher:
     self.data = None
 
 
-def MatchSubmodel(m: Model, patt: str, fwd: bool, bwd: bool):
+def MatchSubmodel(m: Model, patt: str, fwd: bool, bwd: bool, reftree: bool):
   """
   Match a submodel containg the \a pattern,
   optionally extended by forward/backward
@@ -23,6 +23,6 @@ def MatchSubmodel(m: Model, patt: str, fwd: bool, bwd: bool):
   """
   mv1 = ModelView()
   mv2 = ModelView()
-  mv1.SetData(m.MatchOrigModel(patt))
+  mv1.SetData(m.MatchOrigModel(patt, reftree))
   mv2.SetData(m.MatchFinalModel(patt))
   return mv1, mv2
