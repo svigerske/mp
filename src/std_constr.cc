@@ -95,22 +95,39 @@ void WriteVar(Writer& pr, const char* name,
 void WriteModelItem(fmt::MemoryWriter& wrt, const LinTerms& lt,
                     const std::vector<std::string>& vnam) {
   for (int i=0; i<(int)lt.size(); ++i) {
+    auto coef = lt.coef(i);
+    bool ifpos = coef>=0.0;
     if (i) {
-      wrt << (lt.coef(i)>=0.0 ? " + " : " - ");
+      wrt << (ifpos ? " + " : " - ");
+    } else {
+      if (!ifpos)
+        wrt << "-";
     }
-    wrt << std::fabs(lt.coef(i)) << '*' << vnam.at(lt.var(i));
+    auto abscoef = std::fabs(coef);
+    if (1.0 != abscoef)
+      wrt << abscoef << '*';
+    wrt << vnam.at(lt.var(i));
   }
 }
 
 void WriteModelItem(fmt::MemoryWriter& wrt, const QuadTerms& qt,
                     const std::vector<std::string>& vnam) {
   for (int i=0; i<(int)qt.size(); ++i) {
+    auto coef = qt.coef(i);
+    bool ifpos = coef>=0.0;
     if (i) {
       wrt << (qt.coef(i)>=0.0 ? " + " : " - ");
-    }
-    wrt << std::fabs(qt.coef(i))
-        << '*' << vnam.at(qt.var1(i))
-        << '*' << vnam.at(qt.var2(i));
+    } else
+      if (!ifpos)
+        wrt << "-";
+    auto abscoef = std::fabs(coef);
+    if (1.0 != abscoef)
+      wrt << abscoef << '*';
+    if (qt.var1(i)==qt.var2(i))
+      wrt << vnam.at(qt.var1(i)) << "^2";
+    else
+      wrt << vnam.at(qt.var1(i))
+          << '*' << vnam.at(qt.var2(i));
   }
 }
 
