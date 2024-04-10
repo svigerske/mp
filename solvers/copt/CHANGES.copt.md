@@ -10,7 +10,7 @@ Summary of recent updates to COPT for AMPL
   value `6` (PDLP) and with options `lp:pdlpgpumode`, 
   `lp:pdlpgpudevice` and `lp:pdlptol`
 
-- 
+
 ## 20240320
 - *SOS constraints*.
   - Fixed handling of SOS2 constraints created by AMPL
