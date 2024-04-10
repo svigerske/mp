@@ -279,6 +279,70 @@ The format is solver-dependent and determined by the file extension
        * **filename** - Filename for the exported model
 
 
+.. _report-times:
+
+Report solution time
+--------------------
+
+All solvers can measure the execution times of the solution process;
+by setting this option to 1, the solver will display and return via
+problem suffixes this information.
+The reported times are: `time_solver` (the time taken by the solver itself
+to solve the model), `time_setup` (the time spent in the solver driver for
+reading the model file, reformulating it and prepare all the memory structures)
+and  `time` (=time_solver+time_setup, the total time spent in the driver)::
+
+
+    option <solver>_options 'report_times=1';
+
+
+.. list-table::
+   :header-rows: 0
+
+   * - **Option**
+     - ``tech:reporttimes``
+   * - **Applicability**
+     - All models
+   * - **Input**
+     - None
+   * - **Output**
+     - Suffixes (on problem):
+
+       * ``time`` total time spent in the driver
+       * ``time_setup`` time spent to read and reformulate the model
+       * ``time_solver`` time spent solving the model
+   
+   * - **Values**
+       * **0** - No (default)
+       * **1** - Yes 
+
+   * - **Example**
+     - Use :ref:`this model <nQueensModel>`
+
+       Execute::
+
+         option <solver>_options "tech:reporttimes=1";
+         solve;
+
+         display Initial.time, Initial.time_setup, Initial.time_solver;
+
+       Output:
+
+       .. code-block:: bash
+
+          tech:reporttimes = 1
+          Setup time:    0.0113952s
+          Solution time: 0.0016453s
+
+          suffix time OUT;
+          suffix time_setup OUT;
+          suffix time_solver OUT;
+
+          Initial.time = 19.43
+          Initial.time_setup = 0.88
+          Initial.time_solver = 19.46
+
+
 .. _warm-start:
 
 Warm start
