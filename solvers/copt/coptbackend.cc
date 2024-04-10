@@ -356,7 +356,14 @@ static const mp::OptionValueInfo lp_values_method[] = {
   { "2", "Barrier", 2},
   { "3", "Crossover", 3},
   { "4", "Concurrent (simplex and barrier simultaneously)", 4},
-  { "5", "Choose between simplex and barrier automatically", 5}
+  { "5", "Choose between simplex and barrier automatically", 5},
+  { "6", "First-order method (PDLP)"}
+};
+
+static const mp::OptionValueInfo lp_values_gpu[] = {
+  {"-1", "Automatic (default)", -1},
+  {"0", "Force the use of CPU mode", 0},
+  {"1", "Utilize NVIDA GPU", 1}
 };
 
 
@@ -565,6 +572,21 @@ void CoptBackend::InitCustomOptions() {
     "\n.. value-table::\n", COPT_INTPARAM_LPMETHOD, 
     lp_values_method, -1);
 
+  AddSolverOption("lp:pdlpgpumode pdlpgpumode gpumode",
+    "Wether to use GPU or CPU for PDLP method. Note that CUDA "
+    "GPU mode is only supported on Windows:\n"
+    "\n.. value-table::\n", COPT_INTPARAM_GPUMODE,
+    lp_values_gpu, -1);
+
+  AddSolverOption("lp:pdlpgpudevice pdlpgpudevice gpudevide",
+    "Specify devide ID of GPU to use in case of multiple GPUs "
+    "(default -1, choose automatically)",
+    COPT_INTPARAM_GPUDEVICE, -1, INT_MAX);
+
+  AddSolverOption("lp:pdlptol pdlptol",
+    "Convergence tolerance for PDLP (default 1e-6)",
+    COPT_DBLPARAM_PDLPTOL, 1e-6, 1e-4);
+
   AddSolverOption("alg:feastol feastol",
     "Primal feasibility tolerance (default 1e-6).",
     COPT_DBLPARAM_FEASTOL, 1e-9, 1e-4);
@@ -603,32 +625,6 @@ void CoptBackend::InitCustomOptions() {
     "and .rhspen on constraints (when nonnegative), else by keywords "
     "alg:lbpen, alg:ubpen, and alg:rhspen, respectively (default values = 1). "
     "Weights < 0 are treated as Infinity, allowing no violation.");
-
-    /*
-          AddStoredOption("alg:feasrelax feasrelax",
-                      "Whether to modify the problem into a feasibility "
-                          "relaxation problem:\n"
-                          "\n"
-                          "| 0 = No (default)\n"
-                          "| 1 = Yes, minimizing the weighted sum of violations\n"
-                          "| 2 = Yes, minimizing the weighted sum of squared violations\n"
-                          "| 3 = Yes, minimizing the weighted count of violations\n"
-                          "| 4-6 = Same objective as 1-3, but also optimize the "
-                             "original objective, subject to the violation "
-                             "objective being minimized.\n"
-                      "\n"
-                      "Weights are given by suffixes .lbpen and .ubpen on variables "
-                      "and .rhspen on constraints (when nonnegative), else by keywords "
-                      "alg:lbpen, alg:ubpen, and alg:rhspen, respectively (default values = 1). "
-                      "Weights < 0 are treated as Infinity, allowing no violation.",
-          feasrelax().mode_);
-      AddStoredOption("alg:lbpen lbpen", "See alg:feasrelax.",
-          storedOptions_.lbpen_);
-      AddStoredOption("alg:ubpen ubpen", "See alg:feasrelax.",
-          storedOptions_.ubpen_);
-      AddStoredOption("alg:rhspen rhspen", "See alg:feasrelax.",
-          storedOptions_.rhspen_);
-          */
 }
 
 

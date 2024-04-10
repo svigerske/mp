@@ -692,17 +692,20 @@ double HighsBackend::MIPGapAbs() {
 
 // AMPLs
 
-AMPLS_MP_Solver* AMPLSOpenHighs(
-  const char* slv_opt, CCallbacks cb = {}) {
-  return AMPLS__internal__Open(std::unique_ptr<mp::BasicBackend>{new mp::HighsBackend()},
-    cb);
+AMPLS_MP_Solver* Open_highs(CCallbacks cb = {}) {
+  AMPLS_MP_Solver* slv =
+    AMPLS__internal__Open(
+      std::unique_ptr<mp::BasicBackend>{new mp::HighsBackend()},
+      cb);
+  return slv;
 }
 
-void AMPLSCloseHighs(AMPLS_MP_Solver* slv) {
+void AMPLSClose_highs(AMPLS_MP_Solver* slv) {
   AMPLS__internal__Close(slv);
 }
 
-void* GetHighsmodel(AMPLS_MP_Solver* slv) {
+void* AMPLSGetModel_highs(AMPLS_MP_Solver* slv) {
   return
     dynamic_cast<mp::HighsBackend*>(AMPLSGetBackend(slv))->lp();
 }
+
