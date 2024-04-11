@@ -313,6 +313,8 @@ and  `time` (=time_solver+time_setup, the total time spent in the driver)::
        * ``time_solver`` time spent solving the model
    
    * - **Values**
+     - Values:
+  
        * **0** - No (default)
        * **1** - Yes 
 
