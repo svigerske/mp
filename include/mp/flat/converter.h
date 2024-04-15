@@ -85,10 +85,14 @@ public:
 
   /// Reverse propagate result variable of an expression
   void PropagateResultOfInitExpr(int var, double lb, double ub, Context ctx) {
-    NarrowVarBounds(var, lb, ub);
+    bool tighterBounds = (lb > MPCD(lb(var)) || ub < MPCD(ub(var)));
+    if (tighterBounds)
+      NarrowVarBounds(var, lb, ub);
     if (HasInitExpression(var)) {
       const auto& ckid = GetInitExpression(var);
-      ckid.GetCK()->PropagateResult(*this, ckid.GetIndex(), lb, ub, ctx);
+      const auto ctx_old = ckid.GetCK()->GetContext(ckid.GetIndex());
+      if (tighterBounds || ctx_old.IsProperSubsetOf(ctx))
+        ckid.GetCK()->PropagateResult(*this, ckid.GetIndex(), lb, ub, ctx);
     }
   }
 
@@ -711,19 +715,15 @@ public:
   void set_var_ub(int var, double ub) { this->GetModel().set_ub(var, ub); }
   /// Set lb(var), propagate context if functional result
   void set_var_lb_context(int var, double lb, Context ctx) {
-    set_var_lb(var, lb);
-    PropagateResultOfInitExpr(var, ctx);
+    PropagateResultOfInitExpr(var, lb, ub(var), ctx);
   }
   /// Set ub(var), propagate context
   void set_var_ub_context(int var, double ub, Context ctx) {
-    set_var_ub(var, ub);
-    PropagateResultOfInitExpr(var, ctx);
+    PropagateResultOfInitExpr(var, lb(var), ub, ctx);
   }
   /// Set bounds(var), propagate context
   void set_var_bounds_context(int var, double lb, double ub, Context ctx) {
-    set_var_lb(var, lb);
-    set_var_ub(var, ub);
-    PropagateResultOfInitExpr(var, ctx);
+    PropagateResultOfInitExpr(var, lb, ub, ctx);
   }
 
   /// Narrow variable domain range

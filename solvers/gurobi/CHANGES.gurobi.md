@@ -18,7 +18,7 @@ Summary of recent updates to gurobi for AMPL
 - *Native handling of POW(x, INT)*.
   - Power expressions with positive integer exponent
     are passed natively vs previously quadratic or linear 
-  - reformulation. For best performance, global solving capability
+    reformulation. For best performance, global solving capability
     might be needed (`global=1`).
 - *Option `report_times`* 
 - *Unused `acc:` options*.

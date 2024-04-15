@@ -3,7 +3,7 @@
 
 namespace mp {
 
-/// Expression context
+/// Expression context.
 ///
 /// Considering the relation (result) <-> (Expression):
 /// - CTX_POS: expression is implied by the boolean result
@@ -19,6 +19,13 @@ public:
 
   /// Is CTX_NONE?
   bool IsNone() const { return CTX_NONE==value_; }
+
+  /// Is a proper subset of \a other?
+  bool IsProperSubsetOf(Context other) const {
+    return
+        (IsNone() && !other.IsNone())
+        || (!IsMixed() && other.IsMixed());
+  }
 
   /// Has CTX_POS?
   bool HasPositive() const { return CTX_POS==value_ || CTX_MIX==value_; }
