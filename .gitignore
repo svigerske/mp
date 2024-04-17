@@ -24,3 +24,4 @@ Testing
 /test/end2end/cases/*.lp
 /test/end2end/*.pyproj
 /nl-writer2/include/mp/nl-opcodes.h
+/doc/env
