@@ -53,7 +53,7 @@ class Tester:
                             help="a solver to test")
 
         parser.add_argument("--lpmethod", type=str, metavar="", default="",
-                            help="algorithm for lp: SIMPLEX or BARRIER")
+                            help="algorithm for lp: SIMPLEX, BARRIER or PDLP")
         parser.add_argument("--nlpmethod", type=str, metavar="", default="",
                             help="nl support: REFORMULATION, NATIVE or NATIVEPL")
         parser.add_argument("--options", type=str, metavar="", default="",

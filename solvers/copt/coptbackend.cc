@@ -878,9 +878,14 @@ void CoptBackend::AddPrimalDualStart(Solution sol0_unpres) {
     return;
   auto mv = GetValuePresolver().PresolveSolution(
     { sol0_unpres.primal, sol0_unpres.dual });
+  int nvars = NumVars();
+  int ncons = NumLinCons();
+
   auto x0 = mv.GetVarValues()();
   auto pi0 = mv.GetConValues()(CG_Linear);
-  COPT_CCALL(COPT_SetLpSolution(lp(), x0.data(), nullptr, pi0.data(), nullptr));
+  std::vector<double> nv(x0.size());
+  std::vector<double> ne(pi0.size());
+  COPT_CCALL(COPT_SetLpSolution(lp(), x0.data(), nv.data(), pi0.data(), ne.data()));
 }
 
 void CoptBackend::AddMIPStart(

@@ -11,6 +11,9 @@ import time
 from threading import Timer  
 
 class Solver(object):
+    LPMETHODS = ["BARRIER", "SIMPLEX", "PDLP"]
+    NLPMETHODS = ["REFORMULATION", "NATIVE", "NATIVEPL"]
+    
     @staticmethod
     def getExecutableName(name):
         path = PurePath(name)
@@ -44,8 +47,9 @@ class Solver(object):
         self._timeout = timeout
         self._nthreads = nthreads
         if lpmethod:
-            if not lpmethod in ["BARRIER", "SIMPLEX"]:
-                raise Exception("Valid methods to be forced are BARRIER and SIMPLEX")
+            
+            if not lpmethod in Solver.LPMETHODS :
+                raise Exception("Valid methods to be forced are: {}").format(".".join(Solver.LPMETHODS))
         self._lpmethod = lpmethod
         self._otherOptions = otherOptions
         self._writeSolverName = writeSolverName
@@ -123,14 +127,14 @@ class Solver(object):
         self._nthreads = nt
         
     def setNLPMethod(self, nlpmethod: str): # REFORMULATION, NATIVE, NATIVEPL 
-        methods=   ["REFORMULATION", "NATIVE", "NATIVEPL"]
-        if not nlpmethod in methods:
-                raise RuntimeError("Valid methods are {}".format(",".join(methods)))
+
+        if not nlpmethod in Solver.NLPMETHODS:
+                raise RuntimeError("Valid methods are {}".format(",".join(Solver.NLPMETHODS)))
         self._nlpmethod = nlpmethod
         
     def setLPMethod(self, lpmethod):
-        if not lpmethod in ["BARRIER", "SIMPLEX"]:
-                raise RuntimeError("Valid methods to be forced are BARRIER and SIMPLEX")
+        if not lpmethod in Solver.LPMETHODS:
+                raise RuntimeError("Valid methods are {}".format(",".join(Solver.LPMETHODS)))
         self._lpmethod = lpmethod
 
     def getNThreads(self):
@@ -997,8 +1001,10 @@ class GCGSolver(MPDirectSolver):
 
 class HighsSolver(MPDirectSolver):
     def _setLPMethod(self, method : str):
-        m  = "simplex" if method == "SIMPLEX" else "ipm"
-        return f"alg:method {m}"
+        mymap = { "SIMPLEX" : "simplex",
+                  "BARRIER" : "ipm",
+                  "PDLP"    : "pdlp"}
+        return f"lpmethod {mymap[method]}"
 
     def _getAMPLOptionsName(self):
         return "highs"
@@ -1022,8 +1028,10 @@ class HighsSolver(MPDirectSolver):
 
 class COPTSolver(MPDirectSolver):
     def _setLPMethod(self, method : str):
-        m  = "1" if method == "SIMPLEX" else "2"
-        return f"lp:method {m}"
+        mymap = { "SIMPLEX" : 1,
+                  "BARRIER" : 2,
+                  "PDLP"    : 6}
+        return f"lp:method {mymap[method]}"
 
     def _getAMPLOptionsName(self):
         return "copt"
@@ -1064,6 +1072,7 @@ class MosekSolver(MPDirectSolver):
                  }
         # ModelTags.quadratic
         super().__init__(exeName, timeout, nthreads, otherOptions, stags)
+
 
 class CPLEXODHSolver(MPDirectSolver):
     def _getAMPLOptionsName(self):

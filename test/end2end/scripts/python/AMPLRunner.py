@@ -184,18 +184,14 @@ class AMPLRunner(object):
     def _getSolverVersion(self, solver) -> tuple:
         """Returns driver version (e.g. 20240316), version string"""
         command = f"shell \"{solver} -v\";"
-        print(f"\nExecuting {command}")
         v=self._ampl.get_output(command)
-        print(f"\nGotten output: {v}")
         driver_version = None
         import re
         for l in v.splitlines():
             driver_match = re.search(r'driver\((\d+)\)', l)
             if driver_match:
                 driver_version = driver_match.group(1)
-                print(f"Matched: {driver_version} in \n{l}")
                 all_string=l
-                print(f"Returning \ndriver_version={driver_version}\nall_string={all_string}")
                 break
         if not driver_version:
            driver_version=v
@@ -261,6 +257,9 @@ class AMPLRunner(object):
       self.setupOptions(model)
       if self.isBenchmark:
          print("\n\t\t{0: <20}: Reading... ".format(self._solver.getName()), flush=True, end="")
+      if model.isScript():
+         print("Executing script..", flush=True, end="")
+         
       amplStats = { "AMPLreadTime" : "-",
                    "AMPLgenerationTime" : "-",
                    "AMPLsolveTime" : "-"
@@ -273,7 +272,7 @@ class AMPLRunner(object):
       
       t.tick()
       try:
-          if self.isBenchmark:
+          if self.isBenchmark and not model.isScript():
                 print("Generating... ", flush=True, end="")
           ncontvars = self._ampl.getValue("_nvars - _snbvars - _snivars")
           nintvars = self._ampl.getValue("_snbvars  + _snivars")

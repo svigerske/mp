@@ -15,9 +15,8 @@ class BenchmarkExporter(Exporter):
         self.bold_style = openpyxl.styles.NamedStyle(name="bold_style")
         self.bold_style.font = openpyxl.styles.Font(bold=True)
 
-        self.font_red = openpyxl.styles.Font( color="FF0000")
-
-        self.font_yellow= openpyxl.styles.Font(  color="FFFF00")
+        self.style_neutral = "Neutral"
+        self.style_bad =     "Bad"
 
     def get_file_name(self):
         base_name, _= os.path.splitext(self._fileName)
@@ -60,11 +59,11 @@ class BenchmarkExporter(Exporter):
             if "solved" in r[-1]["timelimit"]:
                 return None
             elif "limit" in r[-1]["timelimit"]:
-                return self.font_yellow
+                return self.style_neutral
             else:
-                return self.font_red
+                return self.style_bad
         except: 
-            return self.font_red
+            return self.style_bad
 
     def writeLastResultLine(self, mr: ModelRunner):
         i = len( mr.getRuns()[0] )
@@ -100,7 +99,7 @@ class BenchmarkExporter(Exporter):
             cell=self.sheet_main.cell(row=len( mr.getRuns()[0])+1, column=col_num, 
                                  value=header_text)
             if styles[col_num-1] is not None:
-                cell.font=styles[col_num-1]
+                cell.style=styles[col_num-1]
                 
     def _getDictMemberOrMissingStr(self, dct, key):
         try:
