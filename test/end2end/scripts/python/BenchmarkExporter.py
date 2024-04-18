@@ -2,6 +2,7 @@ from Exporter import Exporter
 import ModelRunner
 import openpyxl
 import os
+import math
 import Solver
 class BenchmarkExporter(Exporter):
 
@@ -109,7 +110,12 @@ class BenchmarkExporter(Exporter):
     def addToDict(self, sname, item, value):
         self.solvers[sname][item]=self.solvers[sname][item]+value
 
-    def collectSolverStats(self, runs):
+    def collectSolverStats(self, mr):
+        runs = mr.getRuns()
+        i = len( runs[0] ) 
+        m = mr.getModels()[i-1]
+        exp_obj= m.getExpectedObjective()
+        
         for r in runs:
             lastRun = r[-1]
             sname=lastRun["solver"]
@@ -121,14 +127,17 @@ class BenchmarkExporter(Exporter):
             outcome=lastRun["timelimit"]
             self.addToDict(sname, "time_all", lastRun["solutionTime"]) 
            
-            if not isinstance(r, str):
+            if isinstance(r, str):
                 self.addToDict(sname, "failed", 1)
             else:
                 if "solved" in outcome:
                    self.addToDict(sname, "solved", 1)
                    self.addToDict(sname, "time_solved", lastRun["solutionTime"]) 
                 elif "limit" in outcome:
-                    self.addToDict(sname, "timelimit", 1)
+                    if math.isclose(exp_obj,lastRun["objective"], rel_tol=0.001):
+                        self.addToDict(sname, "timelimit_correct", 1)
+                    else:
+                        self.addToDict(sname, "timelimit", 1)
                 else:
                     self.addToDict(sname, "failed", 1)
 
@@ -142,8 +151,9 @@ class BenchmarkExporter(Exporter):
                 "solved" : 0,
                 "failed" : 0,
                 "timelimit" : 0,
+                "timelimit_correct" : 0,
                 "time_solved" : 0,
-                "time_all" :0
+                "time_all" : 0
             }
     def writeSolverStats(self):
         header = ["Solver"]
@@ -164,7 +174,7 @@ class BenchmarkExporter(Exporter):
             self.writeHeader(mr) 
             self.initSolverStats(mr.getRuns())
         self.writeLastResultLine(mr)
-        self.collectSolverStats(mr.getRuns())
+        self.collectSolverStats(mr)
         self.writeSolverStats()
         self.workbook.save(self.get_file_name())
 
