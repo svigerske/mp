@@ -52,7 +52,7 @@ if(USE_PROFILER)
   SET(CMAKE_SHARED_LINKER_FLAGS "${CMAKE_SHARED_LINKER_FLAGS} -pg")
 endif()
 
-# Sanitizers
+# Sanitizers. Might need `export ASAN_OPTIONS=detect_leaks=0`
 option(USE_SANITIZERS "Use Sanitizers" OFF)
 if(USE_SANITIZERS)
   if (WIN32)

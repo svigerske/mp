@@ -368,6 +368,10 @@ public:
   /// Constraint keeper description
   virtual const std::string& GetDescription() const = 0;
 
+
+  /// Get context of contraint \a i
+  virtual Context GetContext(int i) const = 0;
+
   /// Propagate expression result of constraint \a i top-down
   virtual void PropagateResult(BasicFlatConverter& cvt,
                                int i,
@@ -712,6 +716,10 @@ public:
   int GetConstraintDepth(int i) const
   { assert(check_index(i)); return cons_[i].GetDepth(); }
 
+  /// Get context of contraint \a i
+  Context GetContext(int i) const override
+  { assert(check_index(i)); return cons_[i].con_.GetContext(); }
+
   /// Propagate expression result of constraint \a i top-down
   void PropagateResult(BasicFlatConverter& cvt,
                        int i,
@@ -721,10 +729,10 @@ public:
             GetConstraint(i), lb, ub, ctx);
     } catch (const std::exception& exc) {
       MP_RAISE(Converter::GetTypeName() +
-                             std::string(": propagating result for constraint ") +
-                             std::to_string(i) + " of type '" +
-                             Constraint::GetTypeName() +
-                             "':  " + exc.what());
+               std::string(": propagating result for constraint ") +
+               std::to_string(i) + " of type '" +
+               Constraint::GetTypeName() +
+               "':  " + exc.what());
     }
   }
 
