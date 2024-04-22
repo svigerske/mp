@@ -386,6 +386,12 @@ public:
   /// @return whether any converted
   virtual bool ConvertAllNewWith(BasicFlatConverter& cvt) = 0;
 
+  /// Mark whether to keep result vars
+  virtual void MarkExprsForResultVars(BasicFlatConverter& cvt) = 0;
+
+  /// Convert to use expressions
+  virtual void ConvertWithExpressions(BasicFlatConverter& cvt) = 0;
+
   /// Query (user-chosen, if sensible) constraint acceptance level
   virtual ConstraintAcceptanceLevel GetChosenAcceptanceLevel()
   const {
@@ -510,7 +516,10 @@ public:
 
   /// Set user preferred acceptance level
   virtual void SetChosenAcceptanceLevel(
-      ConstraintAcceptanceLevel acc) { acceptance_level_ = acc;}
+      ConstraintAcceptanceLevel acc) {
+    acceptance_level_ = static_cast<
+        typename std::underlying_type<ConstraintAcceptanceLevel>::type >(acc);
+  }
 
   /// Mark as bridged. Use index only.
   virtual void MarkAsBridged(int i) = 0;
@@ -759,6 +768,18 @@ public:
     return false;
   }
 
+  /// Mark whether to keep result vars
+  void MarkExprsForResultVars(BasicFlatConverter& cvt) override {
+    assert(&cvt == &GetConverter());         // Using the same Converter
+    DoMarkForResultVars();
+  }
+
+  /// Convert to use expressions
+  void ConvertWithExpressions(BasicFlatConverter& cvt) override {
+    assert(&cvt == &GetConverter());         // Using the same Converter
+    DoCvtWithExprs();
+  }
+
   /// Converter's ability to convert the constraint type
   bool IfConverterConverts(
       BasicFlatConverter& cvt ) const override {
@@ -865,12 +886,12 @@ protected:
     int i=i_last;
     const auto acceptanceLevel =
         GetChosenAcceptanceLevel();
-    if (NotAccepted == acceptanceLevel) {
+    if (ConstraintAcceptanceLevel::NotAccepted == acceptanceLevel) {
       for ( ; ++i!=(int)cons_.size(); )
         if (!cons_[i].IsBridged())
           ConvertConstraint(cons_[i], i);
     }
-    else if (AcceptedButNotRecommended == acceptanceLevel) {
+    else if (ConstraintAcceptanceLevel::AcceptedButNotRecommended == acceptanceLevel) {
       for (; ++i != (int)cons_.size(); ) {
         if (!cons_[i].IsBridged()) {
           try {       // Try to convert all but allow failure
@@ -892,6 +913,14 @@ protected:
     i_last = i-1;
     return any_converted;
   }
+
+  void DoMarkForResultVars() {
+    const auto acceptanceLevel =
+        GetChosenAcceptanceLevel();
+
+  }
+
+  void DoCvtWithExprs() { }
 
 	/// Call Converter's RunConversion() and mark as "bridged".
   ///
@@ -1259,6 +1288,18 @@ public:
       for (auto& ck: con_keepers_)
         any_converted = any_converted || ck.second.ConvertAllNewWith(cvt);
     } while (any_converted);
+  }
+
+  /// Mark which expressions should stay as FuncCons or just have a result variable
+  void MarkExprsForResultVars(BasicFlatConverter& cvt) {
+    for (auto& ck: con_keepers_)
+      ck.second.MarkExprsForResultVars(cvt);
+  }
+
+  /// Convert to expression-based model
+  void ConvertWithExpressions(BasicFlatConverter& cvt) {
+    for (auto& ck: con_keepers_)
+      ck.second.ConvertWithExpressions(cvt);
   }
 
   /// Fill counters of unbridged constraints

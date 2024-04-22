@@ -1,7 +1,7 @@
 /*
  Basic flat model API definitions.
 
- Copyright (C) 2021 AMPL Optimization Inc
+ Copyright (C) 2024 AMPL Optimization Inc.
 
  Permission to use, copy, modify, and distribute this software and its
  documentation for any purpose and without fee is hereby granted,
@@ -16,13 +16,11 @@
  whatsoever resulting from loss of use, data or profits, whether in an
  action of contract, negligence or other tortious action, arising out
  of or in connection with the use or performance of this software.
+
+ Author: Gleb Belov <gleb@ampl.com>
 */
 #ifndef FLAT_MODEL_API_BASE_H_
 #define FLAT_MODEL_API_BASE_H_
-
-/**
-  * Basic definitions for a FlatModelAPI
-  */
 
 #include <string>
 
@@ -72,7 +70,14 @@ public:
 
 
 /// Level of acceptance of a constraint by a backend
-enum ConstraintAcceptanceLevel {
+enum class ConstraintAcceptanceLevel {
+  NotAccepted=0,
+  AcceptedButNotRecommended=1,
+  Recommended=2
+};
+
+/// Level of acceptance of an expression by a backend
+enum class ExpressionAcceptanceLevel {
   NotAccepted=0,
   AcceptedButNotRecommended=1,
   Recommended=2
@@ -110,7 +115,7 @@ enum ConstraintGroup {
 class BasicFlatModelAPI {
 public:
   /// Placeholder for GetTypeName()
-  static const char* GetTypeName()    { return "BasicBackendFlatModelAPI"; }
+  static const char* GetTypeName()    { return "BasicFlatModelAPI"; }
   /// Placeholder for GetLongName()
   static const char* GetLongName() { return nullptr; }
 
@@ -155,6 +160,7 @@ public:
           Constraint::GetTypeName() +
           "'. Provide a handler or a converter method");
   }
+
   /// Derived backends have to tell C++ to use default handlers if they are needed
   /// when they overload AddConstraint(), due to C++ name hiding
 #define USE_BASE_CONSTRAINT_HANDLERS(BaseBackend) \
@@ -169,8 +175,13 @@ public:
 
   /// By default, we say constraint XYZ is not accepted but...
   static constexpr ConstraintAcceptanceLevel AcceptanceLevel(const BasicConstraint*) {
-    return NotAccepted;
+    return ConstraintAcceptanceLevel::NotAccepted;
   }
+
+  /// By default, no expressions
+  static constexpr ExpressionAcceptanceLevel \
+      ExpressionInterfaceAcceptanceLevel()
+  { return ExpressionAcceptanceLevel::NotAccepted; }
 
   /// Specifically, ask if the solver accepts non-convex quadratic constraints
   static constexpr bool AcceptsNonconvexQC() { return false; }
@@ -194,7 +205,7 @@ private:
 #define ACCEPT_CONSTRAINT(ConstrType, level, con_grp) \
   static mp::ConstraintAcceptanceLevel \
     AcceptanceLevel(const ConstrType*) \
-  { return (mp::ConstraintAcceptanceLevel)level; } \
+  { return mp::ConstraintAcceptanceLevel::level; } \
   static constexpr int \
     GroupNumber(const ConstrType*) { return con_grp; }
 

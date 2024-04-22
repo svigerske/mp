@@ -5,16 +5,16 @@
 
 #include "mp/env.h"
 #include "scipmpcommon.h"
-#include "mp/flat/model_api_base.h"
+#include "mp/expr/model_api_base.h"
 #include "mp/flat/constr_std.h"
 
 namespace mp {
 
 class ScipModelAPI :
-    public ScipCommon, public EnvKeeper,
-    public BasicFlatModelAPI
+                     public ScipCommon, public EnvKeeper,
+                     public BasicExprModelAPI<SCIP_EXPR*>
 {
-  using BaseModelAPI = BasicFlatModelAPI;
+  using BaseModelAPI = BasicExprModelAPI<SCIP_EXPR*>;
 
 private:
   void linearHelper(const int* pvars, const double* pcoefs, const size_t size, const char* name, const double lb, const double ub);
@@ -47,6 +47,8 @@ public:
 
   //////////////////////////// GENERAL CONSTRAINTS ////////////////////////////
   USE_BASE_CONSTRAINT_HANDLERS(BaseModelAPI)
+  //////////////////////////// EXPRESSION TREES ////////////////////////////
+  ACCEPT_EXPRESSION_INTERFACE(Recommended);
 
   /// For each suppoted constraint type, add the ACCEPT_CONSTRAINT macro
   /// and the relative AddConstraint function.

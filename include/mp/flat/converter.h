@@ -230,7 +230,13 @@ protected:
       // MP_DISPATCH( PreprocessIntermediate() );     // preprocess after each level
       constr_depth_ = 1;  // Workaround. TODO have maps as special constraints
 			MP_DISPATCH( ConvertMaps() );
-      MP_DISPATCH( PreprocessFinal() );               // final prepro
+      MP_DISPATCH( PreprocessFlatFinal() );               // final flat model prepro
+      if constexpr (IfAcceptingNLOutput()) {
+        if (IfWantNLOutput()) {
+          MPD( Convert2NL() );
+          MPD( PreprocessNLFinal() );
+        }
+      }
     } catch (const ConstraintConversionFailure& cff) {
       MP_RAISE(cff.message());
     }
@@ -257,6 +263,25 @@ protected:
   /// Default map conversions. Currently empty
   void ConvertMaps() { }
 
+  /// Option to actually use expressions if available
+  bool IfWantNLOutput() const { return options_.accExpr_; }
+
+  /// Whether solver CAN accept expressions
+  static constexpr bool IfAcceptingNLOutput()
+  { return
+        ExpressionAcceptanceLevel::AcceptedButNotRecommended
+        == ModelAPI::ExpressionInterfaceAcceptanceLevel()
+        ||
+           ExpressionAcceptanceLevel::Recommended
+               == ModelAPI::ExpressionInterfaceAcceptanceLevel(); }
+
+  /// Convert some functional constraints to expressions
+  void Convert2NL() {
+    GetModel().MarkExprsForResultVars(*this);
+    GetModel().ConvertWithExpressions(*this);
+  }
+
+  /// Finish exporting the reformulation graph
   void CloseGraphExporter() {
     value_presolver_.FinishExportingLinkEntries();
     GetModel().GetFileAppender().Close();
@@ -264,7 +289,8 @@ protected:
 
   //////////////////////// WHOLE-MODEL PREPROCESSING /////////////////////////
   void PreprocessIntermediate() { }
-  void PreprocessFinal() { }
+  void PreprocessFlatFinal() { }
+  void PreprocessNLFinal() { }
 
 
   //////////////////////////// CONSTRAINT PROPAGATORS ///////////////////////////////////
@@ -953,6 +979,11 @@ private:
     int passSOCP2QC_ = 0;
     int passExpCones_ = 0;
 
+    int accExpr_ = static_cast<
+        typename std::underlying_type_t<ExpressionAcceptanceLevel> >
+                   (ModelAPI::ExpressionInterfaceAcceptanceLevel())
+        -1;               // If available, 0 or 1
+
     int relax_ = 0;
 
     int solcheckmode_ = 1+2+512;
@@ -1034,6 +1065,12 @@ private:
       "in particular if the objective is quadratic", 1},
     { "2", "Always convert", 2}
   };
+  const mp::OptionValueInfo values_allexpr_acceptance[2] = {
+      { "0", "Not accepted, all expressions will be treated as flat constraints, "
+            "or redefined", 0},
+      { "1", "Accepted. See the individual acc:... options", 1}
+  };
+
 
   void InitOwnOptions() {
     /// Should be called after adding all constraint keepers
@@ -1099,9 +1136,21 @@ private:
                        socp2qc_mode_text_.c_str(),
                        options_.passSOCP2QC_, socp2qc_values_);
     options_.passSOCP2QC_ = DefaultSOCP2QCMode();
+
+    if (IfAcceptingNLOutput())
+      GetEnv().AddStoredOption("acc:_expr",
+                        fmt::format(
+                            "Solver acceptance level for all expressions, "
+                            "default {}:\n\n.. value-table::",
+                                   options_.accExpr_).c_str(),
+                        options_.accExpr_, values_allexpr_acceptance);
+    else
+      GetEnv().AddStoredOption("acc:_expr", "HIDDEN", options_.accExpr_, 0, 1);
+
     GetEnv().AddOption("alg:relax relax",
         "0*/1: Whether to relax integrality of variables.",
         options_.relax_, 0, 1);
+
     GetEnv().AddStoredOption(
           "sol:chk:mode solcheck checkmode chk:mode",
         "Solution checking mode. "

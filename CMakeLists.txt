@@ -396,10 +396,15 @@ add_prefix(MP_FLAT_REDEF_MIP_HEADERS include/mp/flat/redef/MIP/
   piecewise_linear.h
   power_const.h sos2.h)
 
+add_prefix(MP_EXPR_HEADERS include/mp/expr/
+  model_api_base.h)
+
 
 set(MP_ALL_HEADERS ${MP_HEADERS} ${MP_FLAT_HEADERS}
   ${MP_FLAT_REDEF_HEADERS}
-  ${MP_FLAT_REDEF_STD_HEADERS} ${MP_FLAT_REDEF_MIP_HEADERS})
+  ${MP_FLAT_REDEF_STD_HEADERS} ${MP_FLAT_REDEF_MIP_HEADERS}
+  ${MP_EXPR_HEADERS}
+)
 
 
 set(MP_SOURCES )
