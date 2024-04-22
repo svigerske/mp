@@ -564,3 +564,9 @@ if (NOT SKIP_BUILD_MP)
 	endif()
 
 endif()  ## NOT SKIP_BUILD_MP
+
+############## Features summary ##############
+if(${CMAKE_SOURCE_DIR} STREQUAL ${CMAKE_CURRENT_SOURCE_DIR})
+	include(FeatureSummary)
+	feature_summary(WHAT ALL)
+endif()
