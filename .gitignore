@@ -12,16 +12,11 @@ Testing
 *.pyc
 *.user
 *~
-
 .idea
 *.csv
-
 .vscode
-/src/expr-info.cc
-# /nl-writer2/include/mp/nl-opcodes.h
 /test/end2end/.vs
 /test/end2end/env
 /test/end2end/cases/*.lp
 /test/end2end/*.pyproj
-/nl-writer2/include/mp/nl-opcodes.h
 /doc/env
