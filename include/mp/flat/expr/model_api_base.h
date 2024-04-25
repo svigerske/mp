@@ -35,7 +35,7 @@ public:
   /// Placeholder for GetTypeName()
   static const char* GetTypeName()    { return "BasicExprModelAPI"; }
 
-/// A ModelAPI accepting NL trees can declare this.
+/// A ModelAPI accepting NL trees should declare this.
 ///
 /// - NotAccepted: not compiled
 /// - AcceptedButNotRecommended: compiled but off by default (option acc:_expr)

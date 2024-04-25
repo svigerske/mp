@@ -24,12 +24,12 @@ class AlgebraicConstraint :
     public BasicConstraint, public Body, public RhsOrRange {
 public:
   /// Constraint type name
-  static const std::string& GetTypeName() {
+  static const char* GetTypeName() {
     static std::string name {
       std::string("AlgebraicConstraint< ") +
       Body::GetTypeName() + ", " +
       RhsOrRange::GetTypeName() + " >" };
-    return name;
+    return name.c_str();
   }
 
   /// Is logical?

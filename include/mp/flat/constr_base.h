@@ -13,7 +13,6 @@
 #include "mp/common.h"
 
 #include "mp/flat/context.h"
-#include "mp/arrayref.h"
 
 namespace mp {
 
@@ -67,6 +66,25 @@ public:
 
 private:
   std::string name_;
+};
+
+
+/// Wrap (functional) constraint to represent it as an expression.
+///
+/// (Solver)ModelAPI should only inspect it via the
+/// BasicExprModelAPI<>::GetExpr... methods.
+template <class Con>
+class ExprWrapper {
+  Con con_flat_;
+public:
+  /// Construct
+  ExprWrapper(Con c) : con_flat_(std::move(c)) { }
+  /// Constraint type
+  using FlatConType = Con;
+  /// Get const & (con)
+  const Con& GetFlatConstraint() const { return con_flat_; }
+  /// Get & (con)
+  Con& GetFlatConstraint() { return con_flat_; }
 };
 
 
@@ -439,14 +457,15 @@ inline void WriteJSON(JW jw,
 
 
 ////////////////////////////////////////////////////////////////////////
-/// Args is the argument type, e.g., array of variables, or an expression
-/// Params is the parameter type, e.g., array of numbers. Can be empty
+/// Args is the argument type, e.g., array of variables, or an expression.
+/// Params is the parameter type, e.g., array of numbers. Can be empty.
 #define DEF_CUSTOM_FUNC_CONSTR_WITH_PRM(Name, Args, Params, NumLogic, Descr) \
   struct Name ## Id { \
     static constexpr const char* description() { return Descr; } \
     static constexpr const char* GetTypeName() { return #Name; } \
   }; \
-  using Name = CustomFunctionalConstraint<Args, Params, NumLogic, Name ## Id>
+  using Name ## Constraint = CustomFunctionalConstraint<Args, Params, NumLogic, Name ## Id>; \
+  using Name ## Expression = ExprWrapper< Name ## Constraint >
 
 /// Custom numeric constraint without fixed parameters
 #define DEF_NUMERIC_FUNC_CONSTR(Name, Args, Descr) \
@@ -466,7 +485,8 @@ inline void WriteJSON(JW jw,
 
 /// A wrapper on a static constraint making it conditional
 #define DEF_CONDITIONAL_CONSTRAINT_WRAPPER(Name, StaticConName) \
-  using Name = ConditionalConstraint< StaticConName >
+  using Name ## Constraint = ConditionalConstraint< StaticConName >; \
+  using Name ## Expression = ExprWrapper< Name ## Constraint >
 
 ////////////////////////////////////////////////////////////////////////
 /// STATIC CONSTRAINTS

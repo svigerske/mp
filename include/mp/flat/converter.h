@@ -980,7 +980,7 @@ private:
     int passExpCones_ = 0;
 
     int accExpr_ = static_cast<
-        typename std::underlying_type_t<ExpressionAcceptanceLevel> >
+        std::underlying_type_t<ExpressionAcceptanceLevel> >
                    (ModelAPI::ExpressionInterfaceAcceptanceLevel())
         -1;               // If available, 0 or 1
 
@@ -1065,7 +1065,7 @@ private:
       "in particular if the objective is quadratic", 1},
     { "2", "Always convert", 2}
   };
-  const mp::OptionValueInfo values_allexpr_acceptance[2] = {
+  const mp::OptionValueInfo values_allexpr_acceptance_[2] = {
       { "0", "Not accepted, all expressions will be treated as flat constraints, "
             "or redefined", 0},
       { "1", "Accepted. See the individual acc:... options", 1}
@@ -1137,13 +1137,13 @@ private:
                        options_.passSOCP2QC_, socp2qc_values_);
     options_.passSOCP2QC_ = DefaultSOCP2QCMode();
 
-    if (IfAcceptingNLOutput())
+    if constexpr (IfAcceptingNLOutput())
       GetEnv().AddStoredOption("acc:_expr",
                         fmt::format(
                             "Solver acceptance level for all expressions, "
                             "default {}:\n\n.. value-table::",
                                    options_.accExpr_).c_str(),
-                        options_.accExpr_, values_allexpr_acceptance);
+                        options_.accExpr_, values_allexpr_acceptance_);
     else
       GetEnv().AddStoredOption("acc:_expr", "HIDDEN", options_.accExpr_, 0, 1);
 

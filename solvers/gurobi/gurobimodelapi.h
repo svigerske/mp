@@ -1,12 +1,8 @@
 #ifndef GUROBIMODELAPI_H
 #define GUROBIMODELAPI_H
 
-#include <memory>
-
 #include "mp/env.h"
 #include "mp/flat/model_api_base.h"
-#include "mp/flat/constr_std.h"
-
 #include "gurobicommon.h"
 
 namespace mp {

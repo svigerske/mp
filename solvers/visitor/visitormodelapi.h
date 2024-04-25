@@ -1,12 +1,9 @@
 #ifndef VISITORMODELAPI_H
 #define VISITORMODELAPI_H
 
-#include <memory>
-
 #include "mp/env.h"
 #include "visitorcommon.h"
 #include "mp/flat/model_api_base.h"
-#include "mp/flat/constr_std.h"
 
 namespace mp {
 

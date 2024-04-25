@@ -1,12 +1,9 @@
 #ifndef SCIPMODELAPI_H
 #define SCIPMODELAPI_H
 
-#include <memory>
-
 #include "mp/env.h"
 #include "scipmpcommon.h"
-#include "mp/expr/model_api_base.h"
-#include "mp/flat/constr_std.h"
+#include "mp/flat/expr/model_api_base.h"
 
 namespace mp {
 
@@ -47,7 +44,12 @@ public:
 
   //////////////////////////// GENERAL CONSTRAINTS ////////////////////////////
   USE_BASE_CONSTRAINT_HANDLERS(BaseModelAPI)
+
   //////////////////////////// EXPRESSION TREES ////////////////////////////
+  ///
+  /// 'AcceptedButNotRecommended' would outline each expression
+  /// with an auxiliary variable.
+  /// See also per-expression type switches.
   ACCEPT_EXPRESSION_INTERFACE(Recommended);
 
   /// For each suppoted constraint type, add the ACCEPT_CONSTRAINT macro
@@ -61,6 +63,11 @@ public:
   /// - Logical, counting, piecewise-linear constraints.
   /// See \a constr_std.h and other drivers.
 
+  /// For each expression,
+  /// say ACCEPT_EXPRESSION(Recommended)
+  /// or ACCEPT_EXPRESSION(AcceptedButNotRecommended).
+  ACCEPT_EXPRESSION(ExpExpression, Recommended)
+  void AddExpression(const ExpExpression& );
 
   /// The linear range constraint, if fully supported with basis info etc.
   ACCEPT_CONSTRAINT(LinConRange, Recommended, CG_Linear)

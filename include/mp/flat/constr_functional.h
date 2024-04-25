@@ -13,169 +13,169 @@ namespace mp {
 
 
 ////////////////////////////////////////////////////////////////////////
-DEF_NUMERIC_FUNC_CONSTR( MaxConstraint, VarArray,
+DEF_NUMERIC_FUNC_CONSTR( Max, VarArray,
                                    "r = max(v1, v2, ..., vn)");
 
 ////////////////////////////////////////////////////////////////////////
-DEF_NUMERIC_FUNC_CONSTR( MinConstraint, VarArray,
+DEF_NUMERIC_FUNC_CONSTR( Min, VarArray,
                                    "r = min(v1, v2, ..., vn)");
 
 ////////////////////////////////////////////////////////////////////////
-DEF_NUMERIC_FUNC_CONSTR( AbsConstraint, VarArray1,
+DEF_NUMERIC_FUNC_CONSTR( Abs, VarArray1,
                                    "r = abs(v)");
 
 ////////////////////////////////////////////////////////////////////////
-DEF_LOGICAL_FUNC_CONSTR( AndConstraint, VarArray,
+DEF_LOGICAL_FUNC_CONSTR( And, VarArray,
                                    "r = forall({vi})");
 
 ////////////////////////////////////////////////////////////////////////
-DEF_LOGICAL_FUNC_CONSTR( OrConstraint, VarArray,
+DEF_LOGICAL_FUNC_CONSTR( Or, VarArray,
                                    "r = exists({vi})");
 
 
 ////////////////////////////////////////////////////////////////////////
-DEF_LOGICAL_FUNC_CONSTR( NotConstraint, VarArray1,
+DEF_LOGICAL_FUNC_CONSTR( Not, VarArray1,
                                    "r = !v");
 
 ////////////////////////////////////////////////////////////////////////
-/// \brief DivConstraint
-DEF_NUMERIC_FUNC_CONSTR( DivConstraint, VarArray2,
+/// \brief DivConstraint and DivExpression
+DEF_NUMERIC_FUNC_CONSTR( Div, VarArray2,
                                   "r = v1 / v2 and v2!=0");
 
 ////////////////////////////////////////////////////////////////////////
-DEF_NUMERIC_FUNC_CONSTR( IfThenConstraint, VarArrayN<3>,
+DEF_NUMERIC_FUNC_CONSTR( IfThen, VarArrayN<3>,
                          "Expr-valued: if (cond) then (expr1) else (expr2)");
 
 ////////////////////////////////////////////////////////////////////////
-DEF_LOGICAL_FUNC_CONSTR( ImplicationConstraint, VarArrayN<3>,
+DEF_LOGICAL_FUNC_CONSTR( Implication, VarArrayN<3>,
                          "Logic-valued: if (cond) then (con1) else (con2)");
 
 ////////////////////////////////////////////////////////////////////////
-DEF_LOGICAL_FUNC_CONSTR( AllDiffConstraint, VarArray,
+DEF_LOGICAL_FUNC_CONSTR( AllDiff, VarArray,
                                   "alldiff({})");
 
 ////////////////////////////////////////////////////////////////////////
-DEF_NUMERIC_FUNC_CONSTR_WITH_PRM( NumberofConstConstraint,
+DEF_NUMERIC_FUNC_CONSTR_WITH_PRM( NumberofConst,
                                   VarArray, DblParamArray1,
                                   "numberof_const(k, {x0...xn})");
 
 ////////////////////////////////////////////////////////////////////////
-DEF_NUMERIC_FUNC_CONSTR( NumberofVarConstraint, VarArray,
+DEF_NUMERIC_FUNC_CONSTR( NumberofVar, VarArray,
                                   "numberof_var(x0, {x1...xn})");
 
 ////////////////////////////////////////////////////////////////////////
-DEF_NUMERIC_FUNC_CONSTR( CountConstraint, VarArray,
+DEF_NUMERIC_FUNC_CONSTR( Count, VarArray,
                                    "count({x0...xn})");
 
 
 //////////////////// NONLINEAR FUNCTIONS //////////////////////
 ////////////////////////////////////////////////////////////////////////
-DEF_NUMERIC_FUNC_CONSTR( ExpConstraint, VarArray1,
+DEF_NUMERIC_FUNC_CONSTR( Exp, VarArray1,
                                    "r = exp(v)");
 
 ////////////////////////////////////////////////////////////////////////
-DEF_NUMERIC_FUNC_CONSTR_WITH_PRM( ExpAConstraint,
+DEF_NUMERIC_FUNC_CONSTR_WITH_PRM( ExpA,
                   VarArray1, DblParamArray1, "r = a**v");
 
 ////////////////////////////////////////////////////////////////////////
-DEF_NUMERIC_FUNC_CONSTR( LogConstraint, VarArray1,
+DEF_NUMERIC_FUNC_CONSTR( Log, VarArray1,
                                    "r = log(v)");
 
 ////////////////////////////////////////////////////////////////////////
-DEF_NUMERIC_FUNC_CONSTR_WITH_PRM( LogAConstraint,
+DEF_NUMERIC_FUNC_CONSTR_WITH_PRM( LogA,
                   VarArray1, DblParamArray1, "r = log(v)/log(a)");
 
 ////////////////////////////////////////////////////////////////////////
-DEF_NUMERIC_FUNC_CONSTR_WITH_PRM( PowConstraint,
+DEF_NUMERIC_FUNC_CONSTR_WITH_PRM( Pow,
                   VarArray1, DblParamArray1, "r = v ** a");
 
 ////////////////////////////////////////////////////////////////////////
-DEF_NUMERIC_FUNC_CONSTR( SinConstraint, VarArray1,
+DEF_NUMERIC_FUNC_CONSTR( Sin, VarArray1,
                                    "r = sin(v)");
 
 ////////////////////////////////////////////////////////////////////////
-DEF_NUMERIC_FUNC_CONSTR( CosConstraint, VarArray1,
+DEF_NUMERIC_FUNC_CONSTR( Cos, VarArray1,
                                    "r = cos(v)");
 
 ////////////////////////////////////////////////////////////////////////
-DEF_NUMERIC_FUNC_CONSTR( TanConstraint, VarArray1,
+DEF_NUMERIC_FUNC_CONSTR( Tan, VarArray1,
                                    "r = tan(v)");
 
 ////////////////////////////////////////////////////////////////////////
-DEF_NUMERIC_FUNC_CONSTR( AsinConstraint, VarArray1,
+DEF_NUMERIC_FUNC_CONSTR( Asin, VarArray1,
                                    "r = asin(v)");
 
 ////////////////////////////////////////////////////////////////////////
-DEF_NUMERIC_FUNC_CONSTR( AcosConstraint, VarArray1,
+DEF_NUMERIC_FUNC_CONSTR( Acos, VarArray1,
                                    "r = acos(v)");
 
 ////////////////////////////////////////////////////////////////////////
-DEF_NUMERIC_FUNC_CONSTR( AtanConstraint, VarArray1,
+DEF_NUMERIC_FUNC_CONSTR( Atan, VarArray1,
                                    "r = atan(v)");
 
 ////////////////////////////////////////////////////////////////////////
-DEF_NUMERIC_FUNC_CONSTR( SinhConstraint, VarArray1,
+DEF_NUMERIC_FUNC_CONSTR( Sinh, VarArray1,
                                    "r = sinh(v)");
 
 ////////////////////////////////////////////////////////////////////////
-DEF_NUMERIC_FUNC_CONSTR( CoshConstraint, VarArray1,
+DEF_NUMERIC_FUNC_CONSTR( Cosh, VarArray1,
                                    "r = cosh(v)");
 
 ////////////////////////////////////////////////////////////////////////
-DEF_NUMERIC_FUNC_CONSTR( TanhConstraint, VarArray1,
+DEF_NUMERIC_FUNC_CONSTR( Tanh, VarArray1,
                                    "r = tanh(v)");
 
 ////////////////////////////////////////////////////////////////////////
-DEF_NUMERIC_FUNC_CONSTR( AsinhConstraint, VarArray1,
+DEF_NUMERIC_FUNC_CONSTR( Asinh, VarArray1,
                                    "r = asinh(v)");
 
 ////////////////////////////////////////////////////////////////////////
-DEF_NUMERIC_FUNC_CONSTR( AcoshConstraint, VarArray1,
+DEF_NUMERIC_FUNC_CONSTR( Acosh, VarArray1,
                                    "r = acosh(v)");
 
 ////////////////////////////////////////////////////////////////////////
-DEF_NUMERIC_FUNC_CONSTR( AtanhConstraint, VarArray1,
+DEF_NUMERIC_FUNC_CONSTR( Atanh, VarArray1,
                                    "r = atanh(v)");
 
 
 /// Not using: var1 != var2.
 /// Represented by Not { Eq0Constraint... }
 ////////////////////////////////////////////////////////////////////////
-// DEF_LOGICAL_FUNC_CONSTR( NEConstraint__unused, VarArray2,
+// DEF_LOGICAL_FUNC_CONSTR( NE__unused, VarArray2,
 //                                   "r = (v1 != v2)");
 
 
 ////////////////////////////////////////////////////////////////////////
-DEF_CONDITIONAL_CONSTRAINT_WRAPPER(CondLinConLT, LinConLT);
+DEF_CONDITIONAL_CONSTRAINT_WRAPPER(CondLinLT, LinConLT);
+using CondLinConLT = CondLinLTConstraint;
+////////////////////////////////////////////////////////////////////////
+DEF_CONDITIONAL_CONSTRAINT_WRAPPER(CondLinLE, LinConLE);
+using CondLinConLE = CondLinLEConstraint;
+////////////////////////////////////////////////////////////////////////
+DEF_CONDITIONAL_CONSTRAINT_WRAPPER(CondLinEQ, LinConEQ);
+using CondLinConEQ = CondLinEQConstraint;
+////////////////////////////////////////////////////////////////////////
+DEF_CONDITIONAL_CONSTRAINT_WRAPPER(CondLinGE, LinConGE);
+using CondLinConGE = CondLinGEConstraint;
+////////////////////////////////////////////////////////////////////////
+DEF_CONDITIONAL_CONSTRAINT_WRAPPER(CondLinGT, LinConGT);
+using CondLinConGT = CondLinGTConstraint;
 
 ////////////////////////////////////////////////////////////////////////
-DEF_CONDITIONAL_CONSTRAINT_WRAPPER(CondLinConLE, LinConLE);
-
+DEF_CONDITIONAL_CONSTRAINT_WRAPPER(CondQuadLT, QuadConLT);
+using CondQuadConLT = CondQuadLTConstraint;
 ////////////////////////////////////////////////////////////////////////
-DEF_CONDITIONAL_CONSTRAINT_WRAPPER(CondLinConEQ, LinConEQ);
-
+DEF_CONDITIONAL_CONSTRAINT_WRAPPER(CondQuadLE, QuadConLE);
+using CondQuadConLE = CondQuadLEConstraint;
 ////////////////////////////////////////////////////////////////////////
-DEF_CONDITIONAL_CONSTRAINT_WRAPPER(CondLinConGE, LinConGE);
-
+DEF_CONDITIONAL_CONSTRAINT_WRAPPER(CondQuadEQ, QuadConEQ);
+using CondQuadConEQ = CondQuadEQConstraint;
 ////////////////////////////////////////////////////////////////////////
-DEF_CONDITIONAL_CONSTRAINT_WRAPPER(CondLinConGT, LinConGT);
-
-
+DEF_CONDITIONAL_CONSTRAINT_WRAPPER(CondQuadGE, QuadConGE);
+using CondQuadConGE = CondQuadGEConstraint;
 ////////////////////////////////////////////////////////////////////////
-DEF_CONDITIONAL_CONSTRAINT_WRAPPER(CondQuadConLT, QuadConLT);
-
-////////////////////////////////////////////////////////////////////////
-DEF_CONDITIONAL_CONSTRAINT_WRAPPER(CondQuadConLE, QuadConLE);
-
-////////////////////////////////////////////////////////////////////////
-DEF_CONDITIONAL_CONSTRAINT_WRAPPER(CondQuadConEQ, QuadConEQ);
-
-////////////////////////////////////////////////////////////////////////
-DEF_CONDITIONAL_CONSTRAINT_WRAPPER(CondQuadConGE, QuadConGE);
-
-////////////////////////////////////////////////////////////////////////
-DEF_CONDITIONAL_CONSTRAINT_WRAPPER(CondQuadConGT, QuadConGT);
-
+DEF_CONDITIONAL_CONSTRAINT_WRAPPER(CondQuadGT, QuadConGT);
+using CondQuadConGT = CondQuadGTConstraint;
 
 
 ////////////////////////////////////////////////////////////////////////
@@ -214,6 +214,10 @@ public:
     return { std::move(le), -ae.constant_term() };
   }
 };
+
+
+/// Typedef LinExpression
+using LinExpression = ExprWrapper<LinearFunctionalConstraint>;
 
 /// Write LFC without name.
 template <class Writer>
@@ -282,6 +286,10 @@ public:
       MP_RAISE("QuadraticFuncCon: no context");
   }
 };
+
+
+/// Typedef LinExpression
+using QuadExpression = ExprWrapper<QuadraticFunctionalConstraint>;
 
 /// Write LFC without name.
 template <class Writer>
@@ -405,7 +413,7 @@ private:
 
 
 /// Define PLConstraint
-DEF_NUMERIC_FUNC_CONSTR_WITH_PRM( PLConstraint,
+DEF_NUMERIC_FUNC_CONSTR_WITH_PRM( PL,
                   VarArray1, PLConParams, "r = piecewise_linear(x)");
 
 /// Write flat expr/obj/con parameters:

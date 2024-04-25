@@ -83,6 +83,28 @@ enum class ExpressionAcceptanceLevel {
   Recommended=2
 };
 
+
+/// ... then for a certain constraint it can be specified
+#define ACCEPT_CONSTRAINT(ConstrType, level, con_grp) \
+static mp::ConstraintAcceptanceLevel \
+    AcceptanceLevel(const ConstrType*) \
+{ return mp::ConstraintAcceptanceLevel::level; } \
+    static constexpr int \
+    GroupNumber(const ConstrType*) { return con_grp; }
+
+/// ... and/or for expressions, e.g., AbsExpression:
+#define ACCEPT_EXPRESSION(FlatExprType, level) \
+static mp::ExpressionAcceptanceLevel \
+AcceptanceLevel(const FlatExprType*) { \
+  typename FlatExprType::FlatConType* pc{}; \
+  static_assert( std::is_same_v<FlatExprType, \
+      ExprWrapper<typename FlatExprType::FlatConType> >, \
+    #FlatExprType \
+      " should be an ExprWrapper<> - use standard MP flat expressions" ); \
+  return mp::ExpressionAcceptanceLevel::level; \
+}        // pc{} checks that FlatExprType = ExprWrapper<...>
+
+
 /// Constraint group names.
 /// @todo Keep consistent with the \a ConstraintGroups enum.
 const char* ConGroupName(int cg);
@@ -173,15 +195,23 @@ public:
 		return CG_Default;
   }
 
-  /// By default, we say constraint XYZ is not accepted but...
-  static constexpr ConstraintAcceptanceLevel AcceptanceLevel(const BasicConstraint*) {
+  /// By default, we say constraint XYZ is not accepted
+  static constexpr ConstraintAcceptanceLevel AcceptanceLevel(
+      const BasicConstraint*) {
     return ConstraintAcceptanceLevel::NotAccepted;
   }
 
-  /// By default, no expressions
+  /// By default, no expressions (global switch)
   static constexpr ExpressionAcceptanceLevel \
       ExpressionInterfaceAcceptanceLevel()
   { return ExpressionAcceptanceLevel::NotAccepted; }
+
+  /// By default, we say expression XYZ is not accepted
+  template <class FlatCon>
+  static constexpr ExpressionAcceptanceLevel AcceptanceLevel(
+      const ExprWrapper<FlatCon>*) {
+    return ExpressionAcceptanceLevel::NotAccepted;
+  }
 
   /// Specifically, ask if the solver accepts non-convex quadratic constraints
   static constexpr bool AcceptsNonconvexQC() { return false; }
@@ -200,14 +230,6 @@ private:
   const FlatModelInfo* pfmi_ { nullptr };
 };
 
-
-/// ... then for a certain constraint it can be specified
-#define ACCEPT_CONSTRAINT(ConstrType, level, con_grp) \
-  static mp::ConstraintAcceptanceLevel \
-    AcceptanceLevel(const ConstrType*) \
-  { return mp::ConstraintAcceptanceLevel::level; } \
-  static constexpr int \
-    GroupNumber(const ConstrType*) { return con_grp; }
 
 } // namespace mp
 

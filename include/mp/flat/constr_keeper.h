@@ -439,8 +439,12 @@ public:
   pre::NodeRange SelectValueNodeRange(int pos, int n=1)
   { return GetValueNode().Select(pos, n); }
 
-  /// Constraint name
+  /// Constraint type name, e.g., 'AbsConstraint'
   const char* GetConstraintName() const { return constr_name_; }
+
+  /// Expression type, or, if appropriate, constraint type name,
+  /// e.g., 'Abs'
+  virtual const char* GetExprOrConstraintName() const =0;
 
   /// Acceptance option names
   virtual const char* GetAcceptanceOptionNames() const
@@ -455,7 +459,7 @@ public:
   /// whether it is accepted natively by ModelAPI and/or can be
   /// converted by the Converter.
   /// If both, add constraint acceptance option.
-  /// This should be called before using the class.
+  /// @note This should be called before using the class.
   virtual void ConsiderAcceptanceOptions(
       BasicFlatConverter& cvt,
       const BasicFlatModelAPI& ma,
@@ -518,7 +522,7 @@ public:
   virtual void SetChosenAcceptanceLevel(
       ConstraintAcceptanceLevel acc) {
     acceptance_level_ = static_cast<
-        typename std::underlying_type<ConstraintAcceptanceLevel>::type >(acc);
+        std::underlying_type_t<ConstraintAcceptanceLevel> >(acc);
   }
 
   /// Mark as bridged. Use index only.
@@ -695,6 +699,11 @@ public:
   /// Constraint type
   using ConstraintType = Constraint;
 
+  /// Expression type, or, if appropriate, constraint type name,
+  /// e.g., 'Abs'
+  const char* GetExprOrConstraintName() const override
+  { return Constraint::GetTypeName(); }
+
   /// Constrint Keeper description
   const std::string& GetDescription() const override
   { return desc_; }
@@ -715,11 +724,11 @@ public:
 
   /// Get const constraint \a i
   const Constraint& GetConstraint(int i) const
-  { assert(check_index(i)); return cons_[i].con_; }
+  { assert(check_index(i)); return cons_[i].GetCon(); }
 
   /// Get constraint \a i
   Constraint& GetConstraint(int i)
-  { assert(check_index(i)); return cons_[i].con_; }
+  { assert(check_index(i)); return cons_[i].GetCon(); }
 
   /// Get constraint depth in the reformulation tree
   int GetConstraintDepth(int i) const
@@ -727,7 +736,7 @@ public:
 
   /// Get context of contraint \a i
   Context GetContext(int i) const override
-  { assert(check_index(i)); return cons_[i].con_.GetContext(); }
+  { assert(check_index(i)); return cons_[i].GetCon().GetContext(); }
 
   /// Propagate expression result of constraint \a i top-down
   void PropagateResult(BasicFlatConverter& cvt,
@@ -747,7 +756,7 @@ public:
 
   /// Result variable of constraint \a i. Returns -1 if none
   int GetResultVar(int i) const override
-  { assert(check_index(i)); return cons_[i].con_.GetResultVar(); }
+  { assert(check_index(i)); return cons_[i].GetCon().GetResultVar(); }
 
   /// Conversion priority. Uses that from Converter
   double ConversionPriority() const
@@ -853,7 +862,8 @@ protected:
   bool check_index(int i) const { return i>=0 && i<(int)cons_.size(); }
 
   /// Container for a single constraint
-  struct Container {
+  class Container {
+  public:
     Container(int d, Constraint&& c) noexcept
       : con_(std::move(c)), depth_(d) { }
 
@@ -875,7 +885,15 @@ protected:
       is_unused_=true;
     }
 
-    Constraint con_;
+    /// Get the flat constraint, const &
+    const Constraint& GetCon() const { return con_.GetFlatConstraint(); }
+    /// Get the flat constraint &
+    Constraint& GetCon() { return con_.GetFlatConstraint(); }
+
+  private:
+    // Storing in the ExprWrapper,
+    // so we can send (wrapper &) to ModelAPI::AddExpression().
+    ExprWrapper<Constraint> con_;
     int depth_ = 0;
     bool is_bridged_ = false;
     bool is_unused_ = false;
@@ -906,7 +924,7 @@ protected:
     } else { // Recommended == acceptanceLevel &&
       for (; ++i != (int)cons_.size(); )
         if (!cons_[i].IsBridged() &&
-            GetConverter().IfNeedsConversion(cons_[i].con_, i))
+            GetConverter().IfNeedsConversion(cons_[i].GetCon(), i))
           ConvertConstraint(cons_[i], i);
     }
     bool any_converted = i_last!=i-1;
@@ -929,7 +947,7 @@ protected:
   /// @param i constraint index, needed for bridging
   void ConvertConstraint(Container& cnt, int i) {
     assert(!cnt.IsBridged());
-    GetConverter().RunConversion(cnt.con_, i, cnt.GetDepth());
+    GetConverter().RunConversion(cnt.GetCon(), i, cnt.GetDepth());
     MarkAsBridged(cnt, i);
   }
 
@@ -954,10 +972,10 @@ protected:
         MiniJSONWriter jw(wrt);
         jw["CON_TYPE"] = GetShortTypeName();
         jw["index"] = i_con;
-        if (*cnt.con_.name())
-          jw["name"] = cnt.con_.name();
+        if (*cnt.GetCon().name())
+          jw["name"] = cnt.GetCon().name();
         jw["depth"] = cnt.GetDepth();
-        WriteJSON(jw["data"], cnt.con_);
+        WriteJSON(jw["data"], cnt.GetCon());
       }
       wrt.write("\n");                     // EOL
       GetLogger()->Append(wrt);
@@ -975,11 +993,11 @@ protected:
         MiniJSONWriter jw(wrt);
         jw["CON_TYPE"] = GetShortTypeName();
         jw["index"] = i_con;
-        if (*cnt.con_.name()) {
-          jw["name"] = cnt.con_.name();
+        if (*cnt.GetCon().name()) {
+          jw["name"] = cnt.GetCon().name();
           if (pvnam && pvnam->size()) {
             fmt::MemoryWriter pr;
-            WriteFlatCon(pr, cnt.con_, *pvnam);
+            WriteFlatCon(pr, cnt.GetCon(), *pvnam);
             jw["printed"] = pr.c_str();
           }
         }
@@ -1016,7 +1034,7 @@ public:
     const auto& vn = GetValueNode().GetStrVec();
     assert(vn.size()==cons_.size());
     for (auto i=vn.size(); i--; )
-      cons_[i].con_.SetName(vn[i].MakeCurrentName());
+      cons_[i].GetCon().SetName(vn[i].MakeCurrentName());
   }
 
   /// Copy names to ValueNodes
@@ -1024,7 +1042,7 @@ public:
     auto& vn = GetValueNode().GetStrVec();
     assert(vn.size()==cons_.size());
     for (auto i=vn.size(); i--; )
-      vn[i] = std::string(cons_[i].con_.name());
+      vn[i] = std::string(cons_[i].GetCon().name());
   }
 
   /// ForEachActive().
@@ -1033,7 +1051,7 @@ public:
 	void ForEachActive(Fn fn) {
 		for (int i=0; i<(int)cons_.size(); ++i)
 			if (!cons_[i].IsBridged())
-				if (fn(cons_[i].con_, i))
+        if (fn(cons_[i].GetCon(), i))
           MarkAsBridged(cons_[i], i);
 	}
 
@@ -1041,8 +1059,8 @@ public:
   /// (for functional constraints).
   double
   ComputeValue(int i, const VarInfoRecomp& vir) override {
-    assert(cons_[i].con_.GetResultVar() >= 0);
-    return mp::ComputeValue(cons_[i].con_, vir);
+    assert(cons_[i].GetCon().GetResultVar() >= 0);
+    return mp::ComputeValue(cons_[i].GetCon(), vir);
   }
 
   /// Compute violations for this constraint type.
@@ -1050,7 +1068,7 @@ public:
   void ComputeViolations(SolCheck& chk) override {
     if (cons_.size()) {
       auto& conviolmap =
-          cons_.front().con_.IsLogical() ?
+          cons_.front().GetCon().IsLogical() ?
             chk.ConViolLog() :
             chk.ConViolAlg();
       const auto& x = chk.x_ext();
@@ -1065,7 +1083,7 @@ public:
           if (!c_class)
             c_class = 4;      // intermediate
           if (c_class & chk.check_mode()) {
-            auto viol = cons_[i].con_.ComputeViolation(x);
+            auto viol = cons_[i].GetCon().ComputeViolation(x);
             auto cr = viol.Check(
                   chk.GetFeasTol(), chk.GetFeasTolRel());
             if (cr.first) {
@@ -1079,7 +1097,7 @@ public:
                                           ? 2 : 1;
               assert(index < (int)conviolarray->size());
               (*conviolarray)[index].CountViol(
-                    viol, cr.second, cons_[i].con_.name());
+                    viol, cr.second, cons_[i].GetCon().name());
             }
           }
         }
@@ -1098,7 +1116,7 @@ protected:
     for (const auto& cont: cons_) {
       bool adding = !cont.IsBridged();
       if (adding) {
-        static_cast<Backend&>(be).AddConstraint(cont.con_);
+        static_cast<Backend&>(be).AddConstraint(cont.GetCon());
         GetConverter().GetCopyLink().
             AddEntry({
                        GetValueNode().Select(con_index),
