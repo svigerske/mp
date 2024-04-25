@@ -2,6 +2,11 @@ Summary of recent updates to CBCMP for AMPL
 ===========================================
 
 
+## 20240425
+- Fixed reporting of feasible solutions if time limits
+  are reached
+
+
 ## 20240320
 - *SOS constraints*.
   - Fixed handling of SOS2 constraints created by AMPL

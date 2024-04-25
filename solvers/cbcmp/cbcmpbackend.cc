@@ -136,7 +136,8 @@ void CbcmpBackend::SetInterrupter(mp::Interrupter *inter) {
 }
 
 void CbcmpBackend::Solve() {
-  CBCMP_CCALL(Cbc_solve(lp()));
+  // Do not check result. as it returns non-zero for any limit reached
+  Cbc_solve(lp());
   WindupCBCMPSolve();
 }
 
