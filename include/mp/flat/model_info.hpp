@@ -81,12 +81,6 @@ private:
   int nUnfxIntVars_ = 0;
 };
 
-
-/// FlatModelInfo factory
-std::unique_ptr<FlatModelInfo> CreateFlatModelInfo() {
-  return std::unique_ptr<FlatModelInfo>{new FlatModelInfoImpl()};
-}
-
 } // namespace mp
 
 #endif // MODEL_INFO_HPP
