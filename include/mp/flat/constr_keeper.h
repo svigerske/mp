@@ -21,15 +21,9 @@
 
 namespace mp {
 
+
 /// Converters handling custom constraints should derive from
 class BasicFlatConverter;
-
-
-static const mp::OptionValueInfo values_item_acceptance[] = {
-  { "0", "Not accepted natively, automatic redefinition will be attempted", 0},
-  { "1", "Accepted but automatic redefinition will be used where possible", 1},
-  { "2", "Accepted natively and preferred", 2}
-};
 
 
 /// Violation summary for a class of vars/cons/objs
@@ -392,10 +386,13 @@ public:
   /// Convert to use expressions
   virtual void ConvertWithExpressions(BasicFlatConverter& cvt) = 0;
 
-  /// Query (user-chosen, if sensible) constraint acceptance level
-  virtual ConstraintAcceptanceLevel GetChosenAcceptanceLevel()
-  const {
-    assert(0<=acceptance_level_);       // has been initialized
+  /// Query (user-chosen, if sensible) constraint acceptance level.
+  /// This is "combined" for constraint or expression
+  virtual ConstraintAcceptanceLevel GetChosenAcceptanceLevel() const {
+    if (acceptance_level_<0) {      // not initialized
+      std::array<int, 5> alv = {0, 1, 2, 1, 2};
+      acceptance_level_ = alv.at(acc_level_item_);
+    }
     return ConstraintAcceptanceLevel(acceptance_level_);
   }
 
@@ -408,6 +405,16 @@ public:
   /// GetChosenAcceptanceLevel()
   virtual ConstraintAcceptanceLevel GetModelAPIAcceptance(
       const BasicFlatModelAPI& ) const = 0;
+
+  /// ModelAPI's acceptance level for the expression type.
+  /// This should not be used directly, instead:
+  /// GetChosenAcceptanceLevelEXPR()
+  virtual ExpressionAcceptanceLevel GetModelAPIAcceptanceEXPR(
+      const BasicFlatModelAPI& ) const = 0;
+
+  /// Acceptance level of the overall expression interface in the ModelAPI
+  virtual ExpressionAcceptanceLevel GetModelAPIAcceptance_EXPR_INTF(
+      const BasicFlatModelAPI& ba) const = 0;
 
   /// Constraint type_info
   virtual const std::type_info& GetTypeInfo() const =0;
@@ -456,73 +463,16 @@ public:
   virtual const char* GetShortTypeName() const;
 
   /// See what options are available for this constraint:
-  /// whether it is accepted natively by ModelAPI and/or can be
-  /// converted by the Converter.
+  /// whether it is accepted natively by ModelAPI,
+  /// as flat constraint or expression.
   /// If both, add constraint acceptance option.
   /// @note This should be called before using the class.
-  virtual void ConsiderAcceptanceOptions(
+  void ConsiderAcceptanceOptions(
       BasicFlatConverter& cvt,
       const BasicFlatModelAPI& ma,
       Env& env) {
-    auto cancvt = IfConverterConverts(cvt);
-    SetChosenAcceptanceLevel( GetModelAPIAcceptance(ma) );
-    bool optadded = true;
-    if (true || cancvt) {   // Changing to show all native cons
-      if (ConstraintAcceptanceLevel::Recommended ==
-            GetChosenAcceptanceLevel()) {
-        env.AddStoredOption(GetAcceptanceOptionNames(),
-                            fmt::format(
-                              "Solver acceptance level for '{}', "
-                              "default 2:\n\n.. value-table::",
-                              GetConstraintName()).c_str(),
-                            GetAccLevRef(), values_item_acceptance);
-      } else
-        if (ConstraintAcceptanceLevel::AcceptedButNotRecommended ==
-                       GetChosenAcceptanceLevel()) {
-          env.AddStoredOption(GetAcceptanceOptionNames(),
-                              fmt::format(
-                                "Solver acceptance level for '{}', "
-                                "default 1:\n\n.. value-table::",
-                                GetConstraintName()).c_str(),
-                              GetAccLevRef(), values_item_acceptance);
-        } else
-          optadded = false;
-    } else
-      optadded = false;
-    if (!optadded)         // Still add as hidden option
-      env.AddStoredOption(GetAcceptanceOptionNames(),
-                          "HIDDEN",
-                          GetAccLevRef(), 0, 2);
-    // Description table
-    env.SetConstraintListHeader(
-          "List of flat constraints.\n"
-          "For each constraint the following are given:\n"
-          "\n"
-          "  - name,\n"
-          "  - convertibility into simpler forms,\n"
-          "  - solver acceptance natively,\n"
-          "  - driver option(s) to modify acceptance\n"
-          "    (enabled if both convertible and accepted).");
-    std::string con_descr = (cancvt) ? "Convertible" : "NonConvertible";
-    con_descr += "; ";
-    if (ConstraintAcceptanceLevel::Recommended ==
-          GetChosenAcceptanceLevel())
-      con_descr += "NativeRecommended";
-    else if (ConstraintAcceptanceLevel::AcceptedButNotRecommended ==
-          GetChosenAcceptanceLevel())
-      con_descr += "NativeAcceptedButNotRecommended";
-    else
-      con_descr += "NotAccepted";
-    con_descr += "; ";
-    con_descr += GetAcceptanceOptionNames();
-    env.AddConstraintDescr(GetConstraintName(), con_descr);
-  }
-
-  /// Set user preferred acceptance level
-  virtual void SetChosenAcceptanceLevel(
-      ConstraintAcceptanceLevel acc) {
-    acceptance_level_ = static_cast<
-        std::underlying_type_t<ConstraintAcceptanceLevel> >(acc);
+    DoAddAcceptanceOptions(cvt, ma, env);
+    DoPopulateConstraintList(cvt, ma, env);
   }
 
   /// Mark as bridged. Use index only.
@@ -553,7 +503,14 @@ public:
   }
 
 protected:
-  int& GetAccLevRef() { return acceptance_level_; }
+  void DoAddAcceptanceOptions(
+      BasicFlatConverter& cvt,
+      const BasicFlatModelAPI& ma,
+      Env& env);
+  void DoPopulateConstraintList(
+      BasicFlatConverter& cvt,
+      const BasicFlatModelAPI& ma,
+      Env& env);
 
 
 private:
@@ -561,29 +518,11 @@ private:
   const char* const constr_name_;
   const char* const solver_opt_nm_;
   mutable std::string type_name_short_;
-  int acceptance_level_ {-1};
+  mutable int acceptance_level_ {-1};     // combined, for either con or expr
+  int acc_level_item_ {0};                // item, corresp. to the solver option 0..4
+  mutable int acc_level_expr_ {-1};       // expression only
   BasicLogger* exporter_{};
 };
-
-const char*
-BasicConstraintKeeper::GetShortTypeName() const {
-  if (type_name_short_.empty()) {
-    std::string acc_opt = GetAcceptanceOptionNames();
-    assert(acc_opt.size());
-    auto word_end = std::min(acc_opt.find(' '),
-                             acc_opt.size());
-    auto colon_pos = acc_opt.find(':');
-    if (colon_pos>word_end)
-      colon_pos = 0;
-    type_name_short_ = acc_opt.substr(
-          colon_pos, word_end-colon_pos);
-    for (auto& c: type_name_short_)
-      if (':'==c)
-        c = '_';                // Markdown
-    assert(type_name_short_.size());
-  }
-  return type_name_short_.c_str();
-}
 
 
 /// Full id of a constraint: CK + index
@@ -699,6 +638,9 @@ public:
   /// Constraint type
   using ConstraintType = Constraint;
 
+  /// The corresponding flat expression type
+  using FlatExprType = ExprWrapper<Constraint>;
+
   /// Expression type, or, if appropriate, constraint type name,
   /// e.g., 'Abs'
   const char* GetExprOrConstraintName() const override
@@ -804,6 +746,22 @@ public:
         AcceptanceLevel((Constraint*)nullptr);
   }
 
+  /// Acceptance level of the corresponding expression type in the ModelAPI
+  ExpressionAcceptanceLevel GetModelAPIAcceptanceEXPR(
+      const BasicFlatModelAPI& ba) const override {
+    return
+        static_cast<const Backend&>( ba ).
+        AcceptanceLevel((FlatExprType*)nullptr);
+  }
+
+  /// Acceptance level of the overall expression interface in the ModelAPI
+  ExpressionAcceptanceLevel GetModelAPIAcceptance_EXPR_INTF(
+      const BasicFlatModelAPI& ba) const override {
+    return
+        static_cast<const Backend&>( ba ).
+        ExpressionInterfaceAcceptanceLevel();
+  }
+
   /// Constraint type_info
   const std::type_info& GetTypeInfo() const override
   { return typeid(ConstraintType); }
@@ -893,7 +851,7 @@ protected:
   private:
     // Storing in the ExprWrapper,
     // so we can send (wrapper &) to ModelAPI::AddExpression().
-    ExprWrapper<Constraint> con_;
+    FlatExprType con_;
     int depth_ = 0;
     bool is_bridged_ = false;
     bool is_unused_ = false;

@@ -96,7 +96,6 @@ static mp::ConstraintAcceptanceLevel \
 #define ACCEPT_EXPRESSION(FlatExprType, level) \
 static mp::ExpressionAcceptanceLevel \
 AcceptanceLevel(const FlatExprType*) { \
-  typename FlatExprType::FlatConType* pc{}; \
   static_assert( std::is_same_v<FlatExprType, \
       ExprWrapper<typename FlatExprType::FlatConType> >, \
     #FlatExprType \

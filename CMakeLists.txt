@@ -411,11 +411,11 @@ set(MP_SOURCES )
 add_prefix(MP_SOURCES src/
   expr.cc expr-writer.h nl-reader.cc option.cc os.cc
   problem.cc rstparser.cc sol.cc solver.cc solver-c.h sp.h sp.cc
-  std_constr.cc
   utils_file.cc utils_string.cc utils_clock.cc)
 
 set(MP_FLAT_SOURCES )
 add_prefix(MP_FLAT_SOURCES src/mp/flat/
+  std_constr.cc
   encodings.cpp piecewise_linear.cpp)
 
 

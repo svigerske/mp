@@ -463,6 +463,7 @@ inline void WriteJSON(JW jw,
   struct Name ## Id { \
     static constexpr const char* description() { return Descr; } \
     static constexpr const char* GetTypeName() { return #Name; } \
+    static constexpr const char* GetExprTypeName() { return #Name "Expression"; } \
   }; \
   using Name ## Constraint = CustomFunctionalConstraint<Args, Params, NumLogic, Name ## Id>; \
   using Name ## Expression = ExprWrapper< Name ## Constraint >

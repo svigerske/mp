@@ -219,7 +219,7 @@ public:
 
   /// Retrieve T, dummy version
   template <class T>
-  const T& GetVal(size_t ) const { return {}; }
+  const T& GetVal(size_t ) const { assert(false); return {}; }
 
   /// Set T, dummy version
   template <class T>
@@ -337,32 +337,32 @@ private:
 
 
 template <>
-std::vector<double>& ValueNode::GetValVec<double>() { return vd_; }
+inline std::vector<double>& ValueNode::GetValVec<double>() { return vd_; }
 
 template <>
-std::vector<int>& ValueNode::GetValVec<int>() { return vi_; }
+inline std::vector<int>& ValueNode::GetValVec<int>() { return vi_; }
 
 template <>
-std::vector<VCString>& ValueNode::GetValVec<VCString>() { return vStr_; }
+inline std::vector<VCString>& ValueNode::GetValVec<VCString>() { return vStr_; }
 
 template <>
-const double& ValueNode::GetVal<double>(size_t i) const { return GetDblRef(i); }
+inline const double& ValueNode::GetVal<double>(size_t i) const { return GetDblRef(i); }
 
 template <>
-const int& ValueNode::GetVal<int>(size_t i) const { return GetIntRef(i); }
+inline const int& ValueNode::GetVal<int>(size_t i) const { return GetIntRef(i); }
 
 template <>
-const VCString& ValueNode::GetVal<VCString>(size_t i) const
+inline const VCString& ValueNode::GetVal<VCString>(size_t i) const
 { return GetStr(i); }
 
 template <>
-void ValueNode::SetVal<double>(size_t i, double v) { SetDbl(i, v); }
+inline void ValueNode::SetVal<double>(size_t i, double v) { SetDbl(i, v); }
 
 template <>
-void ValueNode::SetVal<int>(size_t i, int v) { SetInt(i, v); }
+inline void ValueNode::SetVal<int>(size_t i, int v) { SetInt(i, v); }
 
 template <>
-void ValueNode::SetVal<VCString>(size_t i, VCString v)
+inline void ValueNode::SetVal<VCString>(size_t i, VCString v)
 { SetStr(i, std::move(v)); }
 
 
