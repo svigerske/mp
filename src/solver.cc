@@ -573,7 +573,7 @@ BasicSolver::BasicSolver(
 }
 
 void BasicSolver::InitMetaInfoAndOptions(
-    fmt::CStringRef name, fmt::CStringRef long_name, long date, int flags) {
+  fmt::CStringRef name, fmt::CStringRef long_name, long date, int flags) {
   name_ = name.c_str();
   long_name_ = (long_name.c_str() ? long_name : name).c_str();
   date_ = date;
@@ -581,13 +581,13 @@ void BasicSolver::InitMetaInfoAndOptions(
   version_ = long_name_;
 
   struct VersionOption : SolverOption {
-    BasicSolver &s;
-    VersionOption(BasicSolver &s) : SolverOption("tech:version version",
-        "Single-word phrase: report version details "
-        "before solving the problem.", ValueArrayRef(), true), s(s) {}
+    BasicSolver& s;
+    VersionOption(BasicSolver& s) : SolverOption("tech:version version",
+      "Single-word phrase: report version details "
+      "before solving the problem.", ValueArrayRef(), true), s(s) {}
 
-    void Write(fmt::Writer &w) { w << ((s.bool_options_ & SHOW_VERSION) != 0); }
-    void Parse(const char *&, bool) { s.bool_options_ |= SHOW_VERSION; }
+    void Write(fmt::Writer& w) { w << ((s.bool_options_ & SHOW_VERSION) != 0); }
+    void Parse(const char*&, bool) { s.bool_options_ |= SHOW_VERSION; }
     Option_Type type() {
       return Option_Type::BOOL;
     }
@@ -595,41 +595,41 @@ void BasicSolver::InitMetaInfoAndOptions(
   AddOption(OptionPtr(new VersionOption(*this)));
 
   AddStrOption(
-        "tech:optionfile optionfile option:file",
-        "Name of an AMPL solver option file to read "
-        "(surrounded by 'single' or "
-        "\"double\" quotes if the name contains blanks). "
-        "Lines that start with # are ignored.  Otherwise, each nonempty "
-        "line should contain \"name=value\", e.g., \"lim:iter=500\".",
-        &Solver::GetOptionFile, &Solver::UseOptionFile);
+    "tech:optionfile optionfile option:file",
+    "Name of an AMPL solver option file to read "
+    "(surrounded by 'single' or "
+    "\"double\" quotes if the name contains blanks). "
+    "Lines that start with # are ignored.  Otherwise, each nonempty "
+    "line should contain \"name=value\", e.g., \"lim:iter=500\".",
+    &Solver::GetOptionFile, &Solver::UseOptionFile);
 
 
   AddIntOption(
-        "tech:wantsol wantsol",
-        "In a stand-alone invocation (no ``-AMPL`` on the command line), "
-        "what solution information to write.  Sum of\n"
-        "\n"
-        "| 1 - Write ``.sol`` file\n"
-        "| 2 - Primal variables to stdout\n"
-        "| 4 - Dual variables to stdout\n"
-        "| 8 - Suppress solution message.",
-        &Solver::GetWantSol, &Solver::SetWantSol);
+    "tech:wantsol wantsol",
+    "In a stand-alone invocation (no ``-AMPL`` on the command line), "
+    "what solution information to write.  Sum of\n"
+    "\n"
+    "| 1 - Write ``.sol`` file\n"
+    "| 2 - Primal variables to stdout\n"
+    "| 4 - Dual variables to stdout\n"
+    "| 8 - Suppress solution message.",
+    &Solver::GetWantSol, &Solver::SetWantSol);
 
   AddIntOption(
-        "obj:no objno",
-        "Objective to optimize:\n"
-        "\n"
-        "| 0 - None\n"
-        "| 1 - First (default, if available)\n"
-        "| 2 - Second (if available), etc.\n",
-        &Solver::GetObjNo, &Solver::SetObjNo);
+    "obj:no objno",
+    "Objective to optimize:\n"
+    "\n"
+    "| 0 - None\n"
+    "| 1 - First (default, if available)\n"
+    "| 2 - Second (if available), etc.\n",
+    &Solver::GetObjNo, &Solver::SetObjNo);
 
   struct BoolOption : TypedSolverOption<int> {
-    bool &value_;
-    BoolOption(bool &value, const char *name, const char *description)
-    : TypedSolverOption<int>(name, description), value_(value) {}
+    bool& value_;
+    BoolOption(bool& value, const char* name, const char* description)
+      : TypedSolverOption<int>(name, description), value_(value) {}
 
-    void GetValue(fmt::LongLong &value) const { value = value_; }
+    void GetValue(fmt::LongLong& value) const { value = value_; }
     void SetValue(fmt::LongLong value) {
       if (value != 0 && value != 1)
         throw InvalidOptionValue(name(), value);
@@ -639,19 +639,24 @@ void BasicSolver::InitMetaInfoAndOptions(
 
 
   AddOption(OptionPtr(new BoolOption(debug_, "tech:debug debug",
-                                     "0*/1: whether to assist testing & debugging, e.g., "
-                                     "by outputting auxiliary information.")));
+    "0*/1: whether to assist testing & debugging, e.g., "
+    "by outputting auxiliary information.")));
 
   if ((flags & MULTIPLE_OBJ) != 0) {
     AddOption(OptionPtr(new BoolOption(multiobj_, "obj:multi multiobj",
-                                       "0*/1:  Whether to use multi-objective optimization. "
-                                       "If set to 1 multi-objective optimization is performed using "
-                                       "lexicographic method with the first objective treated as the most "
-                                       "important, then the second objective and so on.")));
+      "0*/1:  Whether to use multi-objective optimization. "
+      "If set to 1 multi-objective optimization is performed using "
+      "lexicographic method with the first objective treated as the most "
+      "important, then the second objective and so on.")));
   }
 
-  AddOption(OptionPtr(new BoolOption(timing_, "tech:timing timing",
-      "0*/1: Whether to display timings for the run.")));
+  AddIntOption("tech:timing timing tech:reporttimes reporttimes",
+    "0*/1/2: Whether to print and return timings for the run, all times are wall "
+    "times. If set to 1, return the solution times in the problem suffixes "
+    "'time_solver', 'time_setup' and 'time', 'time'= time_solver+time_setup+time_output is a "
+    "measure of the total time spent in the solver driver. If set to 2, return "
+    "more granular times, including 'time_read', 'time_conversion' and 'time_output'.",
+    &Solver::GetTiming, &Solver::SetTiming);
 
   if ((flags & MULTIPLE_SOL) != 0) {
 

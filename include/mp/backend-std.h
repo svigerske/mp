@@ -25,7 +25,6 @@
 #include <cmath>
 #include <functional>
 
-#include "mp/utils-clock.h"
 #include "mp/backend-with-mm.h"
 
 /// Issue this if you redefine std feature switches
@@ -214,7 +213,7 @@ public:
                      const std::string& filename_no_ext) override {
     ReadNL(nl_filename, filename_no_ext, GetArgvOptions());
     InputExtras();
-
+    
     SetupTimerAndInterrupter();
     if (exportFileMode() > 0)
       ExportModel(export_file_names());
@@ -227,6 +226,7 @@ public:
 
       Report();
     }
+    
   }
 
   /// Detailed steps for AMPLS C API
@@ -273,8 +273,6 @@ protected:
 //    if (verbose_mode())
 //    if (!ampl_flag())     // otherwise to solve_message
 //      PrintWarnings();
-    if ( timing() )
-      PrintTimingInfo();
   }
 
   /// Standard extras
@@ -307,31 +305,53 @@ protected:
   /// Placeholder for interrupt notifier in Impl
   virtual void SetInterrupter(mp::Interrupter*) = 0;
 
-  /// Record setup time
-  virtual void RecordSetupTime() {
-    stats_.setup_time = GetTimeAndReset(stats_.time);
-  }
+  virtual void ReportTimes() {
+    // First of all record solution output time
+    RecordOutputTime();
+    
 
-  /// Record solve time
-  virtual void RecordSolveTime() {
-    stats_.solution_time = GetTimeAndReset(stats_.time);
-  }
+    // time_read
+    // time_conversion
+    // time_solver
+    // time_setup = time_read + time_conversion + ...
+    // time_output = sol file write
+    // time = total in the driver = time_setup+time_solver+time_output
 
-  virtual void ReportSolveTime() {
-    double value[]{ stats_.solution_time };
+    double output_time[]{ stats().output_time };
+    if (timing() > 1) {
+      SuffixDef<double> sufTimeRead = { "time_read", suf::PROBLEM | suf::OUTONLY };
+      SuffixDef<double> sufTimeConversion = { "time_conversion", suf::PROBLEM | suf::OUTONLY };
+      SuffixDef<double> sufTimeOutput = { "time_output", suf::PROBLEM | suf::OUTONLY };
+
+      double read_time[]{ stats().read_time };
+      double conversion_time[]{ stats().conversion_time };
+      
+      ReportSuffix(sufTimeRead, read_time);
+      ReportSuffix(sufTimeConversion, conversion_time);
+      ReportSuffix(sufTimeOutput, output_time);
+    }
+
     SuffixDef<double> sufTimeSolver = { "time_solver", suf::PROBLEM | suf::OUTONLY };
     SuffixDef<double> sufTimeSetup = { "time_setup", suf::PROBLEM | suf::OUTONLY };
     SuffixDef<double> sufTime = { "time", suf::PROBLEM | suf::OUTONLY };
-    double solution_time[]{ stats_.solution_time };
-    double setup_time[]{ stats_.setup_time };
-    double time[]{ stats_.solution_time + stats_.setup_time };
-    ReportSuffix(sufTimeSolver, solution_time);
+  
+    double solver_time[]{ stats().solution_time };
+    double setup_time[]{ stats().setup_time };
+    double time[]{ stats().solution_time + stats().setup_time + stats().output_time};
+    ReportSuffix(sufTimeSolver, solver_time);
     ReportSuffix(sufTimeSetup, setup_time);
     ReportSuffix(sufTime, time);
+
     AddToSolverMessage(
-      fmt::format("Setup time:    {}s\n", stats_.setup_time));
+      fmt::format("Setup time = {:.6f}s\n", setup_time[0]));
     AddToSolverMessage(
-      fmt::format("Solution time: {}s\n", value[0]));
+      fmt::format("Solver time = {:.6f}s\n", solver_time[0]));
+    if (timing() > 1) {
+      AddToSolverMessage(
+        fmt::format("Output time = {:.6f}s\n", output_time[0]));
+    }
+    AddToSolverMessage(
+      fmt::format("Total time = {:.6f}s\n", time[0]));
   }
 
   /// Input feasrelax data
@@ -371,8 +391,8 @@ protected:
     if (IsProblemSolved() && exportKappa()) {
       ReportKappa();
     }
-    if (exportTimes()) {
-      ReportSolveTime();
+    if (timing()) {
+      ReportTimes();
     }
   }
 
@@ -416,7 +436,7 @@ protected:
     const auto& scw0 = GetWarning(GetSolCheckWarningKey(false));
     const auto& scw1 = GetWarning(GetSolCheckWarningKey(true));
     if (scw0.second.size() || scw1.second.size()) {
-      ++ stats_.n_altern_sol_checks_failed_;
+       stats().n_altern_sol_checks_failed_= stats().n_altern_sol_checks_failed_+1;
       ClearWarning(GetSolCheckWarningKey(false));
       ClearWarning(GetSolCheckWarningKey(true));
     }
@@ -487,10 +507,10 @@ protected:
                      kIntermSol_,
                      solution_stub(), solution_stub(),
                      kIntermSol_);
-      if (stats_.n_altern_sol_checks_failed_)
+      if (stats().n_altern_sol_checks_failed_)
         writer.write(
               "{} alternative solution checks failed.\n",
-              stats_.n_altern_sol_checks_failed_);
+              stats().n_altern_sol_checks_failed_);
     }
     auto wrn = GetWarnings();
     if (wrn.size())
@@ -504,15 +524,6 @@ protected:
   /// Abort
   virtual void Abort(int solve_code_now, std::string msg) {
     MP_RAISE_WITH_CODE(solve_code_now, msg);
-  }
-
-  /// Final timing info
-  virtual void PrintTimingInfo() {
-    double output_time = GetTimeAndReset(stats_.time);
-    MP_DISPATCH( Print("Setup time = {:.6f}s\n"
-                       "Solution time = {:.6f}s\n"
-                       "Output time = {:.6f}s\n",
-                       stats_.setup_time, stats_.solution_time, output_time) );
   }
 
   /// MIP solution rounding. Better use solver's capabilities
@@ -619,14 +630,6 @@ protected:
   virtual bool IsSolStatusRetrieved() const {
     return sol::NOT_SET!=SolveCode();
   }
-
-  struct Stats {
-    std::chrono::steady_clock::time_point time = std::chrono::steady_clock::now();
-    double setup_time = 0.0;
-    double solution_time = 0.0;
-    int n_altern_sol_checks_failed_ = 0;
-  };
-  Stats stats_;
 
 
   /////////////////////////////// SOME MATHS ////////////////////////////////
@@ -799,7 +802,6 @@ private:
     int round_=0;
     double round_reptol_=1e-9;
 
-    int report_times_ = 0;
     /// For write prob
     std::vector<std::string> export_files_;
     std::vector<std::string> just_export_files_;
@@ -839,8 +841,6 @@ private:
 
 protected:  //////////// Option accessors ////////////////
   int exportKappa() const { return storedOptions_.exportKappa_; }
-
-  bool exportTimes() const { return (bool)storedOptions_.report_times_; }
 
   /// Feasrelax I/O data
   FeasrelaxIO& feasrelax() { return feasRelaxIO_; }
@@ -953,13 +953,6 @@ protected:
         "File name extensions can be "
         "``.sol[.tar.gz]``, ``.json``, ``.bas``, ``.ilp``, etc.",
         storedOptions_.export_sol_files_);
-
-    AddStoredOption("tech:reporttimes reporttimes report_times",
-                    "0*/1: Set to 1 to return the solution times in the problem suffixes "
-                    "'time_solver', 'time_setup' and 'time' and in the solver message. "
-                    "'time'= 'time_solver'+'time_setup' is a measure of the total time "
-                    "spent in the solver driver; all times are wall times.",
-                    storedOptions_.report_times_);
   }
 
   virtual void InitCustomOptions() { }

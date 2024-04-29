@@ -6,6 +6,7 @@
 
 #include "solver-opt.h"
 #include "common.h"
+#include "mp/utils-clock.h"
 
 namespace mp {
 
@@ -224,6 +225,13 @@ public:
     objno_ = value;
   }
 
+  int GetTiming(const SolverOption&) const { return timing_; }
+  void SetTiming(const SolverOption& opt, int value)  {
+    if ((value < 0)||(value>2))
+      throw InvalidOptionValue(opt, value);
+    timing_= value;
+  }
+
   /// Returns the solver name.
   /// This is used to extract solver options from
   /// the env variable (solver_name)_options.
@@ -307,8 +315,8 @@ public:
   /// the objective(s), solvers should not use these options.
   bool multiobj() const { return multiobj_ && objno_<0; }
 
-  /// Returns true if the timing is enabled
-  bool timing() const { return timing_; }
+  /// >0 if the timing is enabled
+  int timing() const { return timing_; }
 
   /// Return error handler
   ErrorHandler *error_handler() { return error_handler_; }
@@ -489,6 +497,27 @@ public:
   /// Show constraint descriptions
   bool ShowConstraintDescriptions();
 
+
+  virtual void RecordOutputTime() {
+    stats_.output_time = GetTimeAndReset(stats_.time);
+  }
+  /// Record setup time
+  virtual void RecordSetupTime() {
+    stats_.setup_time = GetTimeAndReset(stats_.time);
+  }
+  void SetReadTime(double read_time) {
+    stats_.read_time = read_time;
+  }
+  void SetConversionTime(double conv_time) {
+    stats_.conversion_time = conv_time;
+  }
+
+  /// Record solve time
+  virtual void RecordSolveTime() {
+    stats_.solution_time = GetTimeAndReset(stats_.time);
+  }
+
+
 protected:
   /// Constructs a BasicSolver object.
   /// @param date:  The solver date in YYYYMMDD format.
@@ -525,6 +554,17 @@ protected:
   /// Sets the flags for Problem::Read.
   void set_read_flags(unsigned flags) { read_flags_ = flags; }
 
+  struct Stats {
+    std::chrono::steady_clock::time_point time = std::chrono::steady_clock::now();
+    // Total setup time, from initialization to 
+    double setup_time = 0.0; 
+    double solution_time = 0.0;
+    double read_time = 0.0;
+    double conversion_time = 0.0;
+    double output_time = 0.0;
+    int n_altern_sol_checks_failed_ = 0;
+  };
+  Stats& stats() { return stats_; }
 
 private:
   std::string name_;
@@ -559,7 +599,10 @@ private:
 
   bool verbose_ {true};
   bool debug_ {false};
-  bool timing_ {false};
+  int timing_ {0};
+  Stats stats_;
+
+
   bool multiobj_ {false};
 
   bool has_errors_ {false};

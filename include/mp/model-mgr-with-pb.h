@@ -93,8 +93,11 @@ protected:
     ReadNames(filename_no_ext);
 
     double read_time = GetTimeAndReset(start);
-    if (GetEnv().timing())
-      GetEnv().Print("NL model read time = {:.6f}s\n", read_time);
+    if (GetEnv().timing() > 1)
+    {
+        GetEnv().SetReadTime(read_time);
+        GetEnv().Print("NL model read time = {:.6f}s\n", read_time);
+    }
 
     ConvertModelAndUpdateBackend();
 
@@ -105,8 +108,11 @@ protected:
     }
 
     double cvt_time = GetTimeAndReset(start);
-    if (GetEnv().timing())
+    if (GetEnv().timing() > 1)
+    {
+      GetEnv().SetConversionTime(cvt_time);
       GetEnv().Print("NL model conversion time = {:.6f}s\n", cvt_time);
+    }
   }
 
   /// Read the NL file
