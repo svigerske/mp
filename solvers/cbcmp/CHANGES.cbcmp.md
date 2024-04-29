@@ -2,6 +2,12 @@ Summary of recent updates to CBCMP for AMPL
 ===========================================
 
 
+## 20240429
+- [BREAKING] Merged `report_times` and `timing`; they 
+  are now aliases, set the value to 1 to have basic info,
+  to 2 to have more detailed info.
+
+
 ## 20240425
 - Fixed reporting of feasible solutions if time limits
   are reached

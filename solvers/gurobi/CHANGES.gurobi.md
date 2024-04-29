@@ -1,6 +1,12 @@
 Summary of recent updates to gurobi for AMPL
 ============================================
 
+## 20240429
+- [BREAKING] Merged `report_times` and `timing`; they 
+  are now aliases, set the value to 1 to have basic info,
+  to 2 to have more detailed info.
+
+  
 ## 20240327
 - Added support for Web License Server parameters, via options
   `wls_licenseid`, `wls_accessid`, `wls_secret`, `wls_token`, 
