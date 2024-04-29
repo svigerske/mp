@@ -285,22 +285,23 @@ Report solution time
 --------------------
 
 All solvers can measure the execution times of the solution process;
-by setting this option to 1, the solver will display and return via
-problem suffixes this information.
-The reported times are: `time_solver` (the time taken by the solver itself
-to solve the model), `time_setup` (the time spent in the solver driver for
+is this option is sset to 1 the solver will display and return via
+problem suffixes this information. Setting it to 2 will give more granular
+information. The reported times with the options set to 1 are: `time_solver` 
+(the time taken by the solver itself to solve the model), `time_setup` (the time spent in the solver driver for
 reading the model file, reformulating it and prepare all the memory structures)
-and  `time` (=time_solver+time_setup, the total time spent in the driver)::
+and  `time` (=time_solver+time_setup, the total time spent in the driver). By setting
+it to 2 `time_read`, `time_conversion` and `time_output` are also reported. Example::
 
 
-    option <solver>_options 'report_times=1';
+    option <solver>_options 'timing=1';
 
 
 .. list-table::
    :header-rows: 0
 
    * - **Option**
-     - ``tech:reporttimes``
+     - ``tech::timing``, ``tech:reporttimes``
    * - **Applicability**
      - All models
    * - **Input**
@@ -309,14 +310,18 @@ and  `time` (=time_solver+time_setup, the total time spent in the driver)::
      - Suffixes (on problem):
 
        * ``time`` total time spent in the driver
-       * ``time_setup`` time spent to read and reformulate the model
+       * ``time_setup`` time spent to read, reformulate and allocate the model
        * ``time_solver`` time spent solving the model
+       * ``time_read`` time spent to read the NL file
+       * ``time_conversion`` time spent in the reformulation process
+       * ``time_output`` time spent reporting the results
    
    * - **Values**
      - Values:
   
        * **0** - No (default)
-       * **1** - Yes 
+       * **1** - Yes, basic information
+       * **2** - Yes, granular information 
 
    * - **Example**
      - Use :ref:`this model <nQueensModel>`

@@ -2,6 +2,13 @@ Summary of recent updates to the AMPL MP Library
 ================================================
 
 
+## 20240429
+- *Options `report_times` and `timing`*.
+  - Options `timing` and `report_times` now have the same effect:
+    setting their value to 1 returns basic timing information, 
+    setting it to 2 returns more granular info.
+
+
 ## 20240320
 - *SOS constraints*.
   - Fixed handling of SOS2 constraints created by AMPL
