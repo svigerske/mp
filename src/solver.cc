@@ -650,7 +650,7 @@ void BasicSolver::InitMetaInfoAndOptions(
       "important, then the second objective and so on.")));
   }
 
-  AddIntOption("tech:timing timing tech:reporttimes reporttimes",
+  AddIntOption("tech:timing timing tech:report_times report_times",
     "0*/1/2: Whether to print and return timings for the run, all times are wall "
     "times. If set to 1, return the solution times in the problem suffixes "
     "'time_solver', 'time_setup' and 'time', 'time'= time_solver+time_setup+time_output is a "
