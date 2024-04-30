@@ -304,6 +304,7 @@ endfunction ()
 add_mp_library(format OBJECT
 	include/mp/format.h include/mp/posix.h src/format.cc src/posix.cc)
 
+
 # gen-expr-info
 set(MP_EXPR_INFO_FILE ${MP_SOURCE_DIR}/src/expr-info.cc)
 set(MP_NL_OPCODES_FILE
@@ -356,10 +357,11 @@ add_prefix(MP_HEADERS include/mp/
   utils-clock.h utils-file.h
   util-json-write.h util-json-write.hpp
   utils-hash.h utils-hash-stream.h
-  utils-string.h utils-math.h)
+  utils-string.h utils-math.h utils-vec.h)
 
 add_prefix(MP_FLAT_HEADERS include/mp/flat/
   backend_flat.h
+  constr_2_expr.h
   constr_base.h constr_eval.h constr_keeper.h constr_hash.h
   constr_std.h constr_static.h constr_functional.h
   constr_algebraic.h constr_general.h

@@ -5,6 +5,7 @@
 #include <vector>
 #include <string>
 #include <cmath>
+#include <functional>
 #include <utility>
 #include <typeinfo>
 
@@ -274,6 +275,27 @@ inline void WriteJSON(JW jw,
   jw["res_var"] = cfc.GetResultVar();
   WriteJSON(jw["args"], cfc.GetArguments());
   WriteJSON(jw["params"], cfc.GetParameters());
+}
+
+
+/// Argument container visitor: VarArrayN
+template <size_t N>    // Needs to appear before the generic template version, CLang 15
+inline void VisitArguments(const std::array<int, N>& cnt, std::function<void (int)> argv) {
+  for (auto v: cnt)
+    argv(v);
+}
+
+/// Generic constraint/objective argument visitor
+template <class Item>
+inline void VisitArguments(const Item& item, std::function<void (int)> argv) {
+  VisitArguments(item.GetArguments(), argv);      // redirect to the arguments' visitor
+}
+
+/// Argument container visitor: VarArray
+template <>
+inline void VisitArguments(const std::vector<int>& cnt, std::function<void (int)> argv) {
+  for (auto v: cnt)
+    argv(v);
 }
 
 

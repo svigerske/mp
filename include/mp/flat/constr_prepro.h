@@ -1,7 +1,7 @@
 #ifndef CONSTR_PREPRO_H
 #define CONSTR_PREPRO_H
 
-/**
+/*
  * Preprocess flat constraints before adding.
  *
  * Possible tasks:

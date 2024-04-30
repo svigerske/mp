@@ -17,6 +17,7 @@
 #include "mp/flat/expr_bounds.h"
 #include "mp/flat/constr_prepro.h"
 #include "mp/flat/constr_prop_down.h"
+#include "mp/flat/constr_2_expr.h"
 #include "mp/flat/sol_check.h"
 #include "mp/valcvt.h"
 #include "mp/flat/redef/std/range_con.h"
@@ -35,13 +36,14 @@ namespace mp {
 template <class Impl, class ModelAPI,
           class FlatModel = FlatModel< > >
 class FlatConverter :
-    public BasicFlatConverter,
-    public FlatModel,
-    public BoundComputations<Impl>,
-    public ConstraintPreprocessors<Impl>,
-    public ConstraintPropagatorsDown<Impl>,
-    public SolutionChecker<Impl>,
-    public EnvKeeper
+                      public BasicFlatConverter,
+                      public FlatModel,
+                      public BoundComputations<Impl>,
+                      public ConstraintPreprocessors<Impl>,
+                      public ConstraintPropagatorsDown<Impl>,
+                      public Constraints2Expr<Impl>,
+                      public SolutionChecker<Impl>,
+                      public EnvKeeper
 {
 public:
   /// Class name
@@ -853,6 +855,7 @@ public:
 				(GET_CONST_CONSTRAINT_KEEPER(ConType))
 				== ci.GetCK();
 	}
+
 
   /////////////////////// AUTO LINKING ////////////////////////////
 

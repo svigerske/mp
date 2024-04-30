@@ -308,6 +308,22 @@ void WriteJSON(JSONW jw, const QuadAndLinTerms& qlt) {
   WriteJSON(jw["lin_terms"], qlt.GetLinTerms());
 }
 
+void VisitArguments(const LinTerms& lt, std::function<void (int)> argv) {
+  for (auto v: lt.vars())
+    argv(v);
+}
+
+void VisitArguments(const QuadTerms& lt, std::function<void (int)> argv) {
+  for (auto v: lt.vars1())
+    argv(v);
+  for (auto v: lt.vars2())
+    argv(v);
+}
+
+void VisitArguments(const QuadAndLinTerms& qlt, std::function<void (int)> argv) {
+  VisitArguments(qlt.GetLinTerms(), argv);
+  VisitArguments(qlt.GetQPTerms(), argv);
+}
 
 /// FlatModelInfo factory
 std::unique_ptr<FlatModelInfo> CreateFlatModelInfo() {

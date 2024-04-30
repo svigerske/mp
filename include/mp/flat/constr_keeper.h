@@ -386,14 +386,23 @@ public:
   /// Convert to use expressions
   virtual void ConvertWithExpressions(BasicFlatConverter& cvt) = 0;
 
-  /// Query (user-chosen, if sensible) constraint acceptance level.
+  /// Query (user-chosen) acceptance level.
   /// This is "combined" for constraint or expression
-  virtual ConstraintAcceptanceLevel GetChosenAcceptanceLevel() const {
+  ConstraintAcceptanceLevel GetChosenAcceptanceLevel() const {
     if (acceptance_level_<0) {      // not initialized
       std::array<int, 5> alv = {0, 1, 2, 1, 2};
       acceptance_level_ = alv.at(acc_level_item_);
     }
     return ConstraintAcceptanceLevel(acceptance_level_);
+  }
+
+  /// Query (user-chosen) expression acceptance level.
+  ExpressionAcceptanceLevel GetChosenAcceptanceLevelEXPR() const {
+    if (acc_level_expr_<0) {      // not initialized
+      std::array<int, 5> alv = {0, 0, 0, 1, 2};
+      acc_level_expr_ = alv.at(acc_level_item_);
+    }
+    return ExpressionAcceptanceLevel(acc_level_expr_);
   }
 
   /// Converter's ability to convert the constraint type
@@ -465,14 +474,15 @@ public:
   /// See what options are available for this constraint:
   /// whether it is accepted natively by ModelAPI,
   /// as flat constraint or expression.
-  /// If both, add constraint acceptance option.
+  /// Add acceptance option(s) "acc:...".
+  /// Populate constraint list for -c output.
   /// @note This should be called before using the class.
   void ConsiderAcceptanceOptions(
       BasicFlatConverter& cvt,
       const BasicFlatModelAPI& ma,
       Env& env) {
     DoAddAcceptanceOptions(cvt, ma, env);
-    DoPopulateConstraintList(cvt, ma, env);
+    DoPopulateConstraintList(cvt, ma, env);  // for -c option
   }
 
   /// Mark as bridged. Use index only.
@@ -507,6 +517,7 @@ protected:
       BasicFlatConverter& cvt,
       const BasicFlatModelAPI& ma,
       Env& env);
+  /// For -c
   void DoPopulateConstraintList(
       BasicFlatConverter& cvt,
       const BasicFlatModelAPI& ma,
@@ -891,9 +902,15 @@ protected:
   }
 
   void DoMarkForResultVars() {
-    const auto acceptanceLevel =
-        GetChosenAcceptanceLevel();
-
+    const auto eal        // expr only
+        = GetChosenAcceptanceLevelEXPR();
+    for (int i=0; i< (int)cons_.size(); ++i) {
+      const auto& cnt = cons_[i];
+      if (!cnt.IsBridged()) {      // Delegate actual logic to Converter
+        const auto& con = cnt.GetCon();
+        GetConverter().ConsiderMarkingResultAndArgVars(con, i, eal);
+      }
+    }
   }
 
   void DoCvtWithExprs() { }

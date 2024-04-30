@@ -236,6 +236,12 @@ public:
 template <>
 void WriteJSON(JSONW jw, const QuadAndLinTerms& qt);
 
+/// Specialize
+void VisitArguments(const QuadTerms& lt, std::function<void (int) > argv);
+
+/// Specialize
+void VisitArguments(const QuadAndLinTerms& lt, std::function<void (int) > argv);
+
 
 /// Typedef QuadraticExpr
 using QuadraticExpr = AlgebraicExpression<QuadAndLinTerms>;

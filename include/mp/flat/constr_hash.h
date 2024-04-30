@@ -1,8 +1,6 @@
 #ifndef CONSTRAINT_HASH_H
 #define CONSTRAINT_HASH_H
 
-/// Specialize std::hash<> for some standard constraints
-
 #include <functional>
 #include <array>
 #include <vector>

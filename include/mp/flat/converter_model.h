@@ -228,6 +228,20 @@ public:
     var_ub_[v] = u;
   }
 
+  /// Mark as an explicit result variable
+  void MarkAsResultVar(int v) {
+    if (var_result_.size()<=v)
+      var_result_.resize(num_vars());
+    var_result_[v] = true;
+  }
+
+  /// Is the variable an explicit result var?
+  bool IsResultVar(int v) const {
+    if (var_result_.size()<=v)
+      var_result_.resize(num_vars());
+    return var_result_[v];
+  }
+
   ///////////////////////////// OBJECTIVES ////////////////////////////
 public:
   /// List of objectives
@@ -379,6 +393,10 @@ private:
   VarBndVec var_lb_, var_ub_;
   /// Variables' types
   VarTypeVec var_type_;
+  /// Whether the variable, being the result variable of a functional constraint,
+  /// needs to stay a variable (vs being eliminated because the constraint
+  /// is becoming an expression)
+  std::vector<bool> var_result_;
   ///  Variables' names
   mutable VarNameVec var_names_;
   std::vector<std::string> var_names_storage_;

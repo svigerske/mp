@@ -6,6 +6,7 @@
 #include <string>
 #include <algorithm>
 #include <cmath>
+#include <functional>
 #include <cassert>
 
 #include "mp/arrayref.h"
@@ -159,6 +160,8 @@ private:
 template <>
 void WriteJSON(JSONW jw, const LinTerms& qt);
 
+/// Specialize
+void VisitArguments(const LinTerms& lt, std::function<void (int) > argv);
 
 /// Typedef AffineExpr
 using AffineExpr = AlgebraicExpression<LinTerms>;

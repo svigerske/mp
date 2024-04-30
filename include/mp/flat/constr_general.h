@@ -1,7 +1,7 @@
 #ifndef CONSTRAINTS_GENERAL_H
 #define CONSTRAINTS_GENERAL_H
 
-/**
+/*
   * Static general constraints
   */
 
@@ -99,6 +99,15 @@ inline void WriteJSON(JSONW jw,
 }
 
 
+/// Specialize
+template <class Con>
+inline void VisitArguments(const IndicatorConstraint<Con>& ic,
+                           std::function<void (int) > argv) {
+  argv(ic.get_binary_var());
+  VisitArguments(ic.get_constraint(), argv);
+}
+
+
 /// Unary encoding.
 /// Currently a dummy constraint just to build
 /// the reformulation graph.
@@ -147,6 +156,8 @@ public:
   int size() const { return (int)v_.size(); }
   /// Returns vector of variables, sorted by weights
   const std::vector<int>& get_vars() const { return v_; }
+  /// vars via GetArguments()
+  const std::vector<int>& GetArguments() const { return get_vars(); }
   /// Returns weights, sorted
   const std::vector<double>& get_weights() const { return w_; }
   /// SOS2 extra info
@@ -337,6 +348,15 @@ inline void WriteJSON(JSONW jw,
                       const ComplementarityConstraint<Expr>& cc) {
   WriteJSON(jw["expr"], cc.GetExpression());
   jw["compl_var"] = cc.GetVariable();
+}
+
+
+/// Specialize
+template <class Expr>
+inline void VisitArguments(const ComplementarityConstraint<Expr>& cc,
+                           std::function<void (int) > argv) {
+  argv(cc.GetVariable());
+  VisitArguments(cc.GetExpression(), argv);
 }
 
 

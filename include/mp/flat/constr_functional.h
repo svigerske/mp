@@ -1,7 +1,7 @@
 #ifndef CONSTRAINTS_FUNCTIONAL_H
 #define CONSTRAINTS_FUNCTIONAL_H
 
-/**
+/*
   * Functional flat constraints
   */
 

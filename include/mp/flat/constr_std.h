@@ -1,7 +1,7 @@
 #ifndef STD_CONSTR_H
 #define STD_CONSTR_H
 
-/**
+/*
   * Convenience header to include all standard
   * flat constraints
   */

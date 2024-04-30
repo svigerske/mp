@@ -1,7 +1,7 @@
 #ifndef CONSTR_PROP_DOWN_H
 #define CONSTR_PROP_DOWN_H
 
-/**
+/*
  * Propagate flat constraints from result (result bounds & context)
  * "down", i.e., to the arguments
  */

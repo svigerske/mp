@@ -1,7 +1,7 @@
 #ifndef CONSTR_EVAL_H
 #define CONSTR_EVAL_H
 
-/**
+/*
   * Evaluations and violations
   * of (mainly functional) constraints.
   *

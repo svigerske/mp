@@ -1,7 +1,7 @@
 #ifndef CONSTRAINTS_ALGEBRAIC_H
 #define CONSTRAINTS_ALGEBRAIC_H
 
-/**
+/*
   * Static algebraic constraints
   */
 

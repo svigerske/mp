@@ -65,6 +65,11 @@ public:
   /// Get the body
   Body& GetBody() { return (Body&)(*this); }
 
+  /// Get the body, const
+  const Body& GetArguments() const { return GetBody(); }
+  /// Get the body
+  Body& GetArguments() { return GetBody(); }
+
   /// Get the body (variable terms)
   /// of a corresponding algebraic constraint
   const Body& GetAlgConBody() const { return GetBody(); }
