@@ -47,7 +47,13 @@ protected:
   void DoMarkArgsAsVars(   // needs to appear before the most generic template
       const AlgebraicConstraint<Body, RhsOrRange>& , int ) { }
 
-  /// @todo not mark Complementarity (NL accepts expressions)
+  /// Complementarity: only mark the var
+  /// (NL accepts expressions for the expression part)
+  template <class Expr>
+  void DoMarkArgsAsVars(   // needs to appear before the most generic template
+      const ComplementarityConstraint<Expr>& cc, int ) {
+    MPD( MarkAsResultVar(cc.GetVariable()) );
+  }
 
   /// Generic arguments marking call
   template <class Con>
