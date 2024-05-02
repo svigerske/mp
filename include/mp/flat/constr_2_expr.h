@@ -13,23 +13,41 @@ namespace mp {
 template <class Impl>
 class Constraints2Expr {
 public:
-
-  /// Consider marking the result and argument variables as
-  /// "explicit variables" (not expressions)
-  template <class Con>
-  void ConsiderMarkingResultAndArgVars(
-      const Con& con, int i, ExpressionAcceptanceLevel eal) {
-    if (con.HasResultVar()) {         // A functional constraint
-      if (ExpressionAcceptanceLevel::NotAccepted==eal) {
-        MPD( MarkAsResultVar(con.GetResultVar()) );
-      }
-    }                          // Any constraint
-    MPD( ConsiderMarkingArgumentsAsVars(con, i, eal) );
+  /// Convert some functional constraints to expressions
+  void Convert2NL() {
+    MPD( MarkExpressions() );
+    MPD( GetModel() ).ConvertWithExpressions(*(Impl*)this);
   }
 
-  /// Generic request to consider marking arguments
+  /// Mark which functional constraints to be used as expressions,
+  /// vs assigning their result to a variable
+  void MarkExpressions() {
+    MPD( MarkAllResultVarsAsVars() );
+    MPD( GetModel() ).MarkExprResultVars(*(Impl*)this);
+    MPD( GetModel() ).MarkArguments(*(Impl*)this);
+  }
+
+  /// Consider marking the result variables as
+  /// possible expressions
   template <class Con>
-  void ConsiderMarkingArgumentsAsVars(
+  void ConsiderMarkingResultVar(
+      const Con& con, int , ExpressionAcceptanceLevel eal) {
+    if (con.HasResultVar()) {         // A functional constraint
+      // Check that it will be expression, but possibly with a dedicated result variable
+      if (ExpressionAcceptanceLevel::NotAccepted!=eal) {
+        assert(                     // Check: the result var has \a con as the init expr
+            MPD( template GetInitExpressionOfType<Con>(con.GetResultVar()) )
+                       == &con);
+        MPD( MarkAsExpression(con.GetResultVar()) );   // can be changed later
+      }
+    }
+  }
+
+  /// Consider marking the argument variables as
+  /// "explicit variables" (not expressions.)
+  /// Generic request.
+  template <class Con>
+  void ConsiderMarkingArguments(
       const Con& con, int i, ExpressionAcceptanceLevel eal) {
     bool fMarkArgs = false;
     if (con.HasResultVar())    // func cons: non-accepted ones by default

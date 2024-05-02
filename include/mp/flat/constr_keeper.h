@@ -380,8 +380,11 @@ public:
   /// @return whether any converted
   virtual bool ConvertAllNewWith(BasicFlatConverter& cvt) = 0;
 
-  /// Mark whether to keep result vars
-  virtual void MarkExprsForResultVars(BasicFlatConverter& cvt) = 0;
+  /// Mark whether we could keep result vars
+  virtual void MarkExprResultVars(BasicFlatConverter& cvt) = 0;
+
+  /// Then, mark flat constraint arguments as vars
+  virtual void MarkArguments(BasicFlatConverter& cvt) = 0;
 
   /// Convert to use expressions
   virtual void ConvertWithExpressions(BasicFlatConverter& cvt) = 0;
@@ -730,10 +733,17 @@ public:
     return false;
   }
 
-  /// Mark whether to keep result vars
-  void MarkExprsForResultVars(BasicFlatConverter& cvt) override {
+  /// Mark whether we could result vars of functional constraints
+  /// as vars, vs using these constraints as expressions
+  void MarkExprResultVars(BasicFlatConverter& cvt) override {
     assert(&cvt == &GetConverter());         // Using the same Converter
     DoMarkForResultVars();
+  }
+
+  /// Then, mark arguments of flat constraints as proper vars
+  void MarkArguments(BasicFlatConverter& cvt) override {
+    assert(&cvt == &GetConverter());         // Using the same Converter
+    DoMarkForArguments();
   }
 
   /// Convert to use expressions
@@ -908,7 +918,19 @@ protected:
       const auto& cnt = cons_[i];
       if (!cnt.IsBridged()) {      // Delegate actual logic to Converter
         const auto& con = cnt.GetCon();
-        GetConverter().ConsiderMarkingResultAndArgVars(con, i, eal);
+        GetConverter().ConsiderMarkingResultVar(con, i, eal);
+      }
+    }
+  }
+
+  void DoMarkForArguments() {
+    const auto eal        // expr only
+        = GetChosenAcceptanceLevelEXPR();
+    for (int i=0; i< (int)cons_.size(); ++i) {
+      const auto& cnt = cons_[i];
+      if (!cnt.IsBridged()) {      // Delegate actual logic to Converter
+        const auto& con = cnt.GetCon();
+        GetConverter().ConsiderMarkingArguments(con, i, eal);
       }
     }
   }
@@ -1283,10 +1305,16 @@ public:
     } while (any_converted);
   }
 
-  /// Mark which expressions should stay as FuncCons or just have a result variable
-  void MarkExprsForResultVars(BasicFlatConverter& cvt) {
+  /// Mark which func cons can be expressions
+  void MarkExprResultVars(BasicFlatConverter& cvt) {
     for (auto& ck: con_keepers_)
-      ck.second.MarkExprsForResultVars(cvt);
+      ck.second.MarkExprResultVars(cvt);
+  }
+
+  /// Then, mark arguments of flat cons as vars
+  void MarkArguments(BasicFlatConverter& cvt) {
+    for (auto& ck: con_keepers_)
+      ck.second.MarkArguments(cvt);
   }
 
   /// Convert to expression-based model

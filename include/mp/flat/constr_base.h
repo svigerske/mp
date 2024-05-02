@@ -56,8 +56,8 @@ public:
   void SetContext(Context ) const { }
   /// Add (merge) context, if meaningful
   void AddContext(Context ) const { }
-    /// Has result var (is functional)?
-    bool HasResultVar() const { return false; }
+  /// Has result var (is functional)?
+  bool HasResultVar() const { return false; }
   /// For functional constraints, result variable index
   int GetResultVar() const { return -1; }
   /// Compute violation

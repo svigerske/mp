@@ -228,18 +228,25 @@ public:
     var_ub_[v] = u;
   }
 
+  /// To be called first
+  void MarkAllResultVarsAsVars() {
+    var_result_.clear();
+    var_result_.resize(num_vars(), true);
+  }
+
   /// Mark as an explicit result variable
   void MarkAsResultVar(int v) {
-    if (var_result_.size()<=v)
-      var_result_.resize(num_vars());
-    var_result_[v] = true;
+    var_result_.at(v) = true;
+  }
+
+  /// Mark as a proper expression
+  void MarkAsExpression(int v) {
+    var_result_.at(v) = false;
   }
 
   /// Is the variable an explicit result var?
   bool IsResultVar(int v) const {
-    if (var_result_.size()<=v)
-      var_result_.resize(num_vars());
-    return var_result_[v];
+    return var_result_.at(v);
   }
 
   ///////////////////////////// OBJECTIVES ////////////////////////////

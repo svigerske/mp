@@ -277,12 +277,6 @@ protected:
            ExpressionAcceptanceLevel::Recommended
                == ModelAPI::ExpressionInterfaceAcceptanceLevel(); }
 
-  /// Convert some functional constraints to expressions
-  void Convert2NL() {
-    GetModel().MarkExprsForResultVars(*this);
-    GetModel().ConvertWithExpressions(*this);
-  }
-
   /// Finish exporting the reformulation graph
   void CloseGraphExporter() {
     value_presolver_.FinishExportingLinkEntries();
