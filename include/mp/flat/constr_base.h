@@ -14,27 +14,9 @@
 #include "mp/common.h"
 
 #include "mp/flat/context.h"
+#include "mp/flat/sol_check_data.h"
 
 namespace mp {
-
-/// Constraint/obj violation
-struct Violation {
-  double viol_;    // abs violation: >0 if really violated
-  double valX_;    // value compared to
-  /// Compute whether violated + relative violation.
-  /// Both absolute and relative should be violated
-  /// (relative only if refvar!=0.)
-  std::pair<bool, double> Check(
-      double epsabs, double epsrel) const {
-    double violRel {0.0};
-    if (viol_ > epsabs
-        && (0.0==std::fabs(valX_)
-            || (violRel=std::fabs(viol_/valX_))>epsrel))
-      return {true, violRel};
-    return {false, 0.0};
-  }
-};
-
 
 /// Custom constraints to derive from, so that overloaded default settings work
 class BasicConstraint {
