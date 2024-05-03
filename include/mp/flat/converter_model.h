@@ -7,6 +7,8 @@
 #include <cmath>
 #include <cfloat>
 
+#include "mp/utils-vec.h"
+
 #include "mp/flat/obj_std.h"
 #include "mp/flat/constr_std.h"
 #include "mp/flat/constr_keeper.h"
@@ -235,18 +237,19 @@ public:
   }
 
   /// Mark as an explicit result variable
+  /// @todo AutoExpand fills 'false' for new elements...
   void MarkAsResultVar(int v) {
-    var_result_.at(v) = true;
+    AutoExpand(var_result_, v) = true;
   }
 
   /// Mark as a proper expression
   void MarkAsExpression(int v) {
-    var_result_.at(v) = false;
+    AutoExpand(var_result_, v) = false;
   }
 
   /// Is the variable an explicit result var?
-  bool IsResultVar(int v) const {
-    return var_result_.at(v);
+  bool IsResultVar(int v) {
+    return AutoExpand(var_result_, v);
   }
 
   ///////////////////////////// OBJECTIVES ////////////////////////////

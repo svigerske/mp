@@ -61,6 +61,8 @@ public:
 
 protected:
   /// Algebraic cons: no marking (when NLConstraint accepted?)
+  /// @todo Do we need to consider NLConstraint / NLObjective at this step?
+  /// Are they added during marking?
   template <class Body, class RhsOrRange>
   void DoMarkArgsAsVars(   // needs to appear before the most generic template
       const AlgebraicConstraint<Body, RhsOrRange>& , int ) { }

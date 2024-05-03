@@ -66,8 +66,9 @@ public:
   /// For each expression,
   /// say ACCEPT_EXPRESSION(Recommended)
   /// or ACCEPT_EXPRESSION(AcceptedButNotRecommended).
+  /// This can be user-configured via options 'acc:exp' etc.
   ACCEPT_EXPRESSION(ExpExpression, Recommended)
-  void AddExpression(const ExpExpression& );
+  SCIP_EXPR* AddExpression(const ExpExpression& );
 
   /// The linear range constraint, if fully supported with basis info etc.
   ACCEPT_CONSTRAINT(LinConRange, Recommended, CG_Linear)
