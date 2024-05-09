@@ -142,8 +142,8 @@ class AMPLRunner(object):
                       self._ampl.read(str(f.absolute().resolve()))
         return mp
 
-    def writeNL(self, model, outdir=None):
-        """ Write an NL file corresponding to the specified model. 
+    def writeModel(self, model, outdir=None, writeMPS: bool=False):
+        """ Export a model as NL (default) or MPS.
             By default it writes in the model directory, unless outdir is specified"""
         print(f"Opening {model.getName()}.", end=" ", flush=True)
         self.doInit(model)
@@ -156,8 +156,14 @@ class AMPLRunner(object):
 
         self._ampl.cd(dir)
         nlname = model.getName()
-        print(f"Writing NL file {nlname}.nl.", end=" ", flush=True)
-        self._ampl.eval("write 'g{}';".format(nlname))
+        if writeMPS:
+           typename="MPS"
+           prefix="m"
+        else:
+            typename="NL"
+            prefix="g"
+        print(f"Writing {typename} file {nlname}.nl.", end=" ", flush=True)
+        self._ampl.eval(f"write '{prefix}{nlname}';")
         print("Done.", flush=True)
         self._terminateAMPL()
 

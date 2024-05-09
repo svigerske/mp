@@ -324,8 +324,49 @@ class LindoSolver(AMPLSolver):
                     return
                 prev = line
         self._stats["outmsg"] = stdout
-        
 
+class IPOptSolver(AMPLSolver):
+    def _setTimeLimit(self, seconds):
+        return "max_cpu_time={}".format(seconds)
+
+    def _setNThreads(self, threads):
+        return ""
+
+    def _getAMPLOptionsName(self):
+        return "ipopt"
+
+    def _setLPMethod(self, method : str):
+        return ""
+
+    def __init__(self, exeName, timeout=None, nthreads=None, otherOptions=None):
+       stags = {ModelTags.continuous, ModelTags.integer, ModelTags.binary,
+                 ModelTags.linear,
+                 ModelTags.plinear,
+                 ModelTags.quadratic,
+                 ModelTags.quadratic_obj,
+                 ModelTags.quadraticnonconvex,
+
+                 ModelTags.socp,      
+                 ModelTags.socp_hard_to_recognize,
+                 ModelTags.nonlinear, ModelTags.log, ModelTags.trigonometric}
+
+       super().__init__(exeName, timeout, nthreads, otherOptions, stags)
+    
+    def _doParseSolution(self, st, stdout=None):
+        if st:
+            tag = "OBJECTIVE VALUE:"
+            prev = ""
+            for line in st:
+                if "LOCAL" in line:
+                    self._stats["timelimit"] = True
+                if line.startswith(tag):
+                    n = line[len(tag):]
+                    self._stats["outmsg"] = prev
+                    self._stats["objective"] = float(n)
+                    return
+                prev = line
+        self._stats["outmsg"] = stdout
+        
 class LgoSolver(AMPLSolver):
     def _setTimeLimit(self, seconds):
         return "timelim={}".format(seconds)

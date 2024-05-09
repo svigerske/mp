@@ -8,13 +8,18 @@ from sys import platform
 from AMPLRunner import AMPLRunner
 from Model import ModelTags
 
-def writeNLFiles(directory, recursive=False, modelList=False):
+def writeModels(directory,modelList=True, justNL=False, recursive=False,preferAMPLModels=False, writeMPS=False):
     m = ModelsDiscovery()
-    modelList = m.FindModelsGeneral(directory, recursive=recursive, modellist=modelList)
+    modelList = m.FindModelsGeneral(directory, recursive=recursive, modellist=modelList,
+                                    preferAMPLModels=preferAMPLModels,
+                                    justNL=justNL)
     amplRunner = AMPLRunner()
-    toGenerate = filter(lambda m: not m.isNL(), modelList)
+    if not writeMPS:
+        toGenerate = filter(lambda m: not m.isNL(), modelList)
+    else:
+        toGenerate = modelList
     for m in toGenerate:
-        amplRunner.writeNL(m)
+        amplRunner.writeModel(m, writeMPS=writeMPS)
 
 
 def runModels(directory, solvers : list,

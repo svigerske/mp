@@ -53,6 +53,7 @@ def addStdSolvers(solvers: SolverCollection, binPath=""):
     solvers.addSolver(Solver.CPLEXODHSolver(path.join(binPath, "cplexodh")))
     solvers.addSolver(Solver.GUROBIODHSolver(path.join(binPath, "gurobiodh")))
     solvers.addSolver(Solver.LgoSolver(path.join(binPath, "lgo")))
+    solvers.addSolver(Solver.IPOptSolver(path.join(binPath, "ipopt")))
 
 
 # if __name__ == "__main__":

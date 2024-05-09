@@ -1,7 +1,7 @@
 from sys import platform
 import argparse
 
-from runModels import runModels
+from runModels import runModels,writeModels
 import Exporter
 import Solver
 import SolverCollection
@@ -14,7 +14,7 @@ class Tester:
                     benchmark: bool = False, junit: bool=False, nonrecursive: bool=False,
                     allfiles: bool=False, prefer_nl: bool = False, export_lp: bool = False,
                     just_nl: bool = False, keep_logs: bool = False, verbose: bool = False,
-                    exporter = None):
+                    exporter = None, export_ampl = None):
         self.initSolvers(timeout, nthreads, bin_path, lpmethod, nlpmethod, export_lp)
         if printsolvers:
             self.printSolvers()
@@ -24,10 +24,20 @@ class Tester:
                                 benchmark, junit, nonrecursive,
                                 allfiles, prefer_nl, export_lp, 
                                 just_nl, keep_logs, verbose, exporter)
+    def exportModelsAPI(self, directory, modelList=True, justNL=False, recursive=False,
+                        preferAMPLModels=False, writeMPS=False):
+        writeModels(directory, modelList, justNL, recursive, preferAMPLModels, writeMPS)
+
     def run_from_command_line(self):
         args = self.parseOptions()
         args= vars(args)
-        self.runTestsAPI(args["solvers"],
+        if args["export_ampl"]:
+            MPS = args["export_ampl"]=="mps"
+            print("export_ampl option specified, will only export the models")
+            self.exportModelsAPI(args["dir"], not args["allfiles"], args["just_nl"], not args["nonrecursive"],
+                                 not args["prefer_nl"], MPS)
+        else:
+            self.runTestsAPI(args["solvers"],
                          args["lpmethod"],
                          args["nlpmethod"],
                          args["options"],
@@ -90,6 +100,8 @@ class Tester:
                         help="keep log files for each run, filenames: {model}.{solver}.log")
         parser.add_argument("-v", "--verbose", action="store_true",
                         help="print solver output")
+        parser.add_argument("-e", "--export_ampl", choices=["mps", "nl"],
+                        help="export model at AMPL level, possible values are 'mps' or 'nl'")
 
         return parser.parse_args()
 
