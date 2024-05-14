@@ -308,7 +308,17 @@ class LindoSolver(AMPLSolver):
         return ""
 
     def __init__(self, exeName, timeout=None, nthreads=None, otherOptions=None):
-        super().__init__(exeName, timeout, nthreads, otherOptions)
+        stags = {ModelTags.continuous, ModelTags.integer, ModelTags.binary,
+            ModelTags.linear,
+            ModelTags.plinear,
+            ModelTags.quadratic,
+            ModelTags.quadratic_obj,
+            ModelTags.quadraticnonconvex,
+
+            ModelTags.socp,      
+            ModelTags.socp_hard_to_recognize,
+            ModelTags.nonlinear, ModelTags.log, ModelTags.trigonometric}
+        super().__init__(exeName, timeout, nthreads, otherOptions, stags)
 
     def _doParseSolution(self, st, stdout=None):
         if st:
