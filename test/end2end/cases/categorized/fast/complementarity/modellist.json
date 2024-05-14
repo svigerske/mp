@@ -4,7 +4,7 @@
     "files" : ["econ2.mod", "econ2.dat"],
     "tags" : ["linear", "continuous", "complementarity"],
     "options": {
-      "ANYSOLVER_options": "cvt:bigm=1e5"
+      "mp_options": "cvt:bigm=1e5"
     },
     "values": {
       "Price['AA1']": 0.0,
