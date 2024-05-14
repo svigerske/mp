@@ -96,7 +96,7 @@ sent to the underlying solver.
 Tool invocation
 ~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-To use the reformulation explorer online, go to http://ampl.com/streamlit.
+To use the reformulation explorer online, go to `Reformulation Explorer <https://ampl.com/streamlit/Reformulation_Explorer>`_.
 
 To run locally, download the `MP repository <https://github.com/ampl/mp>`_.
 In subfolder `support/modelexplore`, run the command::
