@@ -1,6 +1,12 @@
 Summary of recent updates to gurobi for AMPL
 ============================================
 
+
+## 20240518
+- Updated to Gurobi libraries 11.0.2, which include many 
+  bug fixes.
+
+
 ## 20240429
 - [BREAKING] Merged `report_times` and `timing`; they 
   are now aliases, set the value to 1 to have basic info,
