@@ -71,8 +71,9 @@ public:
 
 
   /**
-   * MULTISOL support
-   * No API, see ReportIntermediateSolution()
+   * MULTISOL support.
+   *  If (need_multiple_solutions()),
+   *  call ReportIntermediateSolution() during solve or after.
    **/
   ALLOW_STD_FEATURE(MULTISOL, true)
 
@@ -138,9 +139,13 @@ public:
 
 
 public:  // public for static polymorphism
-  /// Solve, no model modification any more (such as feasrelax).
-  /// Can report intermediate results via ReportIntermediateSolution() during this,
-  /// otherwise/finally via ReportResults()
+  /// Solve, to be overloaded by the solver.
+  /// No model modification any more.
+  /// @note If using STD_FEATURE( MULTISOL ),
+  /// can report intermediate results
+  /// via ReportIntermediateSolution() during this
+  /// (check if (need_multiple_solutions())),
+  /// otherwise afterwards.
   void Solve() override;
 
   /// Default impl of GetObjValues()
@@ -181,7 +186,7 @@ protected:
   double SimplexIterations() const;
   int BarrierIterations() const;
 
-  std::pair<int, std::string> ConvertVISITORStatus();
+  std::pair<int, std::string> GetSolveResult() override;
   void AddVISITORMessages();
 
   /// Return basis.

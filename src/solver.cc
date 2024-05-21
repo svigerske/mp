@@ -577,6 +577,8 @@ void BasicSolver::InitMetaInfoAndOptions(
   name_ = name.c_str();
   long_name_ = (long_name.c_str() ? long_name : name).c_str();
   date_ = date;
+  if (flags & MULTIPLE_OBJ_NATIVE)
+    multiobj_has_native_ = true;
 
   version_ = long_name_;
 

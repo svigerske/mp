@@ -207,6 +207,9 @@ public:
     objs_.SetName(nm+"_objs");
   }
 
+  /// Default copy construct
+  ModelValues(const ModelValues& ) = default;
+
   /// Default move-copy
   ModelValues(ModelValues&& ) = default;
 
@@ -223,16 +226,20 @@ public:
   /// Construct from ModelValues<AnotherVMap>
   template <class VM2>
   ModelValues(const ModelValues<VM2>& vm) :
-    vars_(vm.GetVarValues()),
-    cons_(vm.GetConValues()),
-    objs_(vm.GetObjValues()) { }
+      name_(vm.GetName()),
+      vars_(vm.GetVarValues()),
+      cons_(vm.GetConValues()),
+      objs_(vm.GetObjValues()),
+      p_extra_(vm.ExtraData())  { }
 
   /// Assign from ModelValues<AnotherVMap>
   template <class VM2>
   ModelValues& operator=(const ModelValues<VM2>& vm) {
+    name_ = vm.GetName();
     vars_ = vm.GetVarValues();
     cons_ = vm.GetConValues();
     objs_ = vm.GetObjValues();
+    p_extra_ = vm.ExtraData();
     return *this;
   }
 
@@ -242,6 +249,9 @@ public:
   /// Empty(). True when all VMaps are
   bool Empty() const
   { return vars_.Empty() && cons_.Empty() && objs_.Empty(); }
+
+  /// Get name
+  const std::string& GetName() const { return name_; }
 
   /// Retrieve vars map, const
   const VMap& GetVarValues() const { return vars_; }

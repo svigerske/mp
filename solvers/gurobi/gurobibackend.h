@@ -228,7 +228,7 @@ protected:
   void ReportResults() override;
   void ReportGurobiResults();
 
-  std::pair<int, std::string> ConvertGurobiStatus() const;
+  std::pair<int, std::string> GetSolveResult() override;
   void AddGurobiMessage();
 
   void ReportGurobiPool();

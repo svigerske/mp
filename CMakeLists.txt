@@ -368,6 +368,7 @@ add_prefix(MP_FLAT_HEADERS include/mp/flat/
   constr_prepro.h constr_prop_down.h
   context.h
   converter.h converter_model.h converter_model_base.h
+  converter_multiobj.h
   convert_functional.h
   eexpr.h expr_algebraic.h expr_affine.h expr_quadratic.h
   expr_bounds.h

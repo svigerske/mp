@@ -221,7 +221,7 @@ void CoptBackend::ReportResults() {
 }
 
 void CoptBackend::ReportCOPTResults() {
-  SetStatus( ConvertCOPTStatus() );
+  SetStatus( GetSolveResult() );
   AddCOPTMessages();
   if (need_multiple_solutions())
     ReportCOPTPool();
@@ -266,7 +266,7 @@ void CoptBackend::AddCOPTMessages() {
           fmt::format("{} branching nodes\n", nnd));
 }
 
-std::pair<int, std::string> CoptBackend::ConvertCOPTStatus() {
+std::pair<int, std::string> CoptBackend::GetSolveResult() {
   namespace sol = mp::sol;
   if (IsMIP())
   {
@@ -792,7 +792,7 @@ void CoptBackend::SetBasis(SolutionBasis basis) {
 
 void CoptBackend::ComputeIIS() {
   COPT_CCALL(COPT_ComputeIIS(lp()));
-  SetStatus(ConvertCOPTStatus());   // could be new information
+  SetStatus(GetSolveResult());   // could be new information
 }
 
 IIS CoptBackend::GetIIS() {

@@ -243,7 +243,7 @@ void XpressmpBackend::ReportResults() {
 
 
 void XpressmpBackend::ReportXPRESSMPResults() {
-  SetStatus( ConvertXPRESSMPStatus() );
+  SetStatus( GetSolveResult() );
   AddXPRESSMPMessages();
   if (need_multiple_solutions())
     ReportXPRESSMPPool();
@@ -356,7 +356,7 @@ std::string XpressmpBackend::DoXpressFixedModel()
         fmt::format("{} branching nodes\n", nnd));
   }
 
-  std::pair<int, std::string> XpressmpBackend::ConvertXPRESSMPStatus() {
+  std::pair<int, std::string> XpressmpBackend::GetSolveResult() {
 
     namespace sol = mp::sol;
     auto solvestatus = getIntAttr(XPRS_SOLVESTATUS);

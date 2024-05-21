@@ -315,6 +315,9 @@ public:
   /// the objective(s), solvers should not use these options.
   bool multiobj() const { return multiobj_ && objno_<0; }
 
+  /// Whether the solver natively supports multiobj
+  bool multiobj_has_native() const { return multiobj_has_native_; }
+
   /// >0 if the timing is enabled
   int timing() const { return timing_; }
 
@@ -461,7 +464,10 @@ public:
 
     /// Multiple objectives support.
     /// Makes Solver register the "multiobj" option
-    MULTIPLE_OBJ = 2
+    MULTIPLE_OBJ = 2,
+
+    /// If the multiobj support is solver-native (not emulated.)
+    MULTIPLE_OBJ_NATIVE = 4
   };
 
   /// Deafult / testing constructor
@@ -604,6 +610,7 @@ private:
 
 
   bool multiobj_ {false};
+  bool multiobj_has_native_ {false};
 
   bool has_errors_ {false};
   OutputHandler *output_handler_ {this};

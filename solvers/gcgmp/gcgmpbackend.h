@@ -149,7 +149,7 @@ protected:
   double SimplexIterations() const;
   int BarrierIterations() const;
 
-  std::pair<int, std::string> ConvertGCGStatus();
+  std::pair<int, std::string> GetSolveResult() override;
   void AddGCGMessages();
 
   ArrayRef<int> VarStatii();

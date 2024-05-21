@@ -141,7 +141,7 @@ protected:
   double SimplexIterations() const;
   int BarrierIterations() const;
 
-  std::pair<int, std::string> ConvertCBCMPStatus();
+  std::pair<int, std::string> GetSolveResult() override;
   void AddCBCMPMessages();
 
 private:

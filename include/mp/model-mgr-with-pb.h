@@ -286,6 +286,15 @@ protected:
     GetSolH().HandleFeasibleSolution(solve_code, msg, x, y, obj);
   }
 
+  /// Need and successfully prepared the next solve iteration?
+  bool PrepareSolveIteration() override
+  { return GetCvt().PrepareSolveIteration(); }
+
+  /// Process solve iteration solution
+  void ProcessIterationSolution(const Solution& sol, int status) override
+  { GetCvt().ProcessIterationSolution(sol, status); }
+
+
   const std::vector<bool>& IsVarInt() const override {
     return GetModel().IsVarInt();
   }

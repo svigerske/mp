@@ -22,7 +22,6 @@ bool InterruptGurobi(void *model) {
 
 std::unique_ptr<mp::BasicBackend> CreateGurobiBackend() {
   return std::unique_ptr<mp::BasicBackend>{new mp::GurobiBackend()};
-  return std::unique_ptr<mp::BasicBackend>{new mp::GurobiBackend()};
 }
 
 namespace mp {
@@ -1039,7 +1038,7 @@ void GurobiBackend::ReportResults() {
 }
 
 void GurobiBackend::ReportGurobiResults() {
-  SetStatus( ConvertGurobiStatus() );
+  SetStatus( GetSolveResult() );
   AddGurobiMessage();
   if (need_multiple_solutions())
     ReportGurobiPool();
@@ -1231,7 +1230,7 @@ void GurobiBackend::SetPartitionValues() {
 //////////////////////////////////////////////////////////////////////
 ////////////////////////// Solution Status ///////////////////////////
 //////////////////////////////////////////////////////////////////////
-std::pair<int, std::string> GurobiBackend::ConvertGurobiStatus() const {
+std::pair<int, std::string> GurobiBackend::GetSolveResult() {
   namespace sol = mp::sol;
   int optimstatus;
   GRB_CALL( GRBgetintattr(model(), GRB_INT_ATTR_STATUS, &optimstatus) );
@@ -1312,7 +1311,7 @@ std::pair<int, std::string> GurobiBackend::ConvertGurobiStatus() const {
 
 void GurobiBackend::ComputeIIS() {
   GRB_CALL(GRBcomputeIIS(model()));
-  SetStatus( ConvertGurobiStatus() );   // could be new information
+  SetStatus( GetSolveResult() );   // could be new information
 }
 
 

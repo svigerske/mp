@@ -238,7 +238,8 @@ private:
   BasicLink::EntryItems entry_items_;
 };
 
-
+/// Pre-postsolver callback
+using PrePostsolverType = std::function<void(MVOverEl<double>&)>;
 /// How to call a solution checker
 using SolCheckerCall = bool(
     ArrayRef<double> x,
@@ -254,11 +255,12 @@ using SolCheckerType = std::function<SolCheckerCall>;
 class ValuePresolver : public ValuePresolverImpl {
 public:
   ValuePresolver(BasicFlatModel& m, Env& env,
-                 BasicLogger& bts, SolCheckerType sc={})
-    : ValuePresolverImpl(env, bts), model_(m), solchk_(sc) { }
+                 BasicLogger& bts,
+                 SolCheckerType sc={}, PrePostsolverType pps={})
+      : ValuePresolverImpl(env, bts), model_(m), solchk_(sc), preposts_(pps) { }
 
   /// Override PresolveSolution().
-  /// Move warm start values into the bounds.
+  /// Update warm start values to fit into their bounds.
   MVOverEl<double> PresolveSolution (
       const MVOverEl<double>& mv) override {
     auto result = ValuePresolverImpl::PresolveSolution(mv);
@@ -282,24 +284,28 @@ public:
   /// mv's ExtraData() is passed to the checker.
   MVOverEl<double> PostsolveSolution (
       const MVOverEl<double>& mv) override {
+    auto mv_copy = mv;
+    if (preposts_)
+      preposts_(mv_copy);
     if (solchk_) {
-      const auto& mx = mv.GetVarValues();
-      const auto& mo = mv.GetObjValues();
+      const auto& mx = mv_copy.GetVarValues();
+      const auto& mo = mv_copy.GetObjValues();
       if (mx.IsSingleKey()
           && mx().size()) {          // solution available
         ArrayRef<double> objs;
         if (mo.IsSingleKey())
           objs = mo();
-        solchk_(mx(), mv.GetConValues(), objs, mv.ExtraData());
+        solchk_(mx(), mv_copy.GetConValues(), objs, mv_copy.ExtraData());
       }
     }
-    return ValuePresolverImpl::PostsolveSolution(mv);
+    return ValuePresolverImpl::PostsolveSolution(mv_copy);
   }
 
 
 private:
   BasicFlatModel& model_;
   SolCheckerType solchk_;
+  PrePostsolverType preposts_;
 };
 
 

@@ -128,7 +128,7 @@ protected:
   double SimplexIterations() const;
   int BarrierIterations() const;
 
-  std::pair<int, std::string> ConvertHIGHSStatus();
+  std::pair<int, std::string> GetSolveResult() override;
   void AddHIGHSMessages();
   
   ArrayRef<int> VarStatii();

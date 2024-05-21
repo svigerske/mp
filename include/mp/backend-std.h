@@ -61,20 +61,7 @@ DEFAULT_STD_FEATURES_TO( false )
 #endif
 
 
-
 namespace mp {
-
-/// Solution (postsolved)
-struct Solution {
-  /// primal
-  std::vector<double> primal;
-  /// dual
-  std::vector<double> dual;
-  /// objective values
-  std::vector<double> objvals;
-  /// Sparsity, if solver wants it
-  ArrayRef<int> spars_primal;
-};
 
 /// StdBackend: the standard solver API wrapper
 ///
@@ -139,11 +126,13 @@ protected:
   virtual void ObjRelTol(ArrayRef<double>) { }
 
   /**
-   * MULTISOL support
-   * No API to overload,
-   *  Impl should check need_multiple_solutions()
-   *  and call ReportIntermediateSolution({x, pi, objvals}) for each
-   *  (postsolve the values if needed)
+   * MULTISOL support.
+   *  Impl can implement ReportSolutionPool()
+   *  and call the supplied function with ({x, pi, objvals}) for each
+   *  (postsolve the values if needed.)
+   *
+   *  Alternatively, if (need_multiple_solutions()),
+   *  call ReportIntermediateSolution() during solve.
    **/
   DEFINE_STD_FEATURE( MULTISOL )
   ALLOW_STD_FEATURE( MULTISOL, false )
@@ -221,7 +210,7 @@ public:
     // exportFileMode == 2 -> do not solve, just export
     if (exportFileMode() != 2) 
     {
-      Solve();
+      RunSolveIterations();
       RecordSolveTime();
 
       Report();
@@ -247,14 +236,19 @@ public:
   }
 
   /// Input warm start, suffixes, and all that can modify the model.
-  /// This is used by the AMPLS C API
+  /// Usually overloaded by user and calls this one at last.
+  /// This is used by the AMPLS C API.
   void InputExtras() override {
     InputStdExtras();
   }
+
+  /// Set solution file name
   void SetSolutionFileName(const std::string& filename) {
     GetMM().SetSolutionFileName(filename);
   }
-  /// Report results
+
+  /// Report results.
+  /// Usually overloaded by user and calls this one at last.
   void ReportResults() override {
     ReportSuffixes();
     ReportSolution();
@@ -262,10 +256,23 @@ public:
 
 
 protected:
-  /// Solve, no model modification any more.
-  /// Can report intermediate results via ReportIntermediateSolution() during this,
-  /// otherwise in ReportResults()
+  /// Solve, to be overloaded by the solver.
+  /// No model modification any more.
+  /// @note If using STD_FEATURE( MULTISOL ),
+  /// can report intermediate results
+  /// via ReportIntermediateSolution() during this or after
+  /// (check if (need_multiple_solutions()).)
   virtual void Solve() override = 0;
+
+  /// Our solving procedure.
+  virtual void RunSolveIterations() {
+    while (GetMM().PrepareSolveIteration()) {
+      Solve();
+      SetStatus( GetSolveResult() );      // before GetSolution()
+      sol_last_ = GetSolution();
+      GetMM().ProcessIterationSolution(sol_last_, status_.first);
+    }
+  }
 
   /// Report
   virtual void Report() {
@@ -274,6 +281,9 @@ protected:
 //    if (!ampl_flag())     // otherwise to solve_message
 //      PrintWarnings();
   }
+
+  /// User to implement
+  virtual std::pair<int, std::string> GetSolveResult() = 0;
 
   /// Standard extras
   virtual void InputStdExtras() {
@@ -573,62 +583,45 @@ protected:
   //////////////////////// SOLUTION STATUS ACCESS ///////////////////////////////
 
   /// Solve result number
-  virtual int SolveCode() const { return status_.first; }
+  virtual sol::Status SolveCode() const {
+    assert(IsSolStatusRetrieved());
+    return sol::Status(status_.first);
+  }
   /// Solver result message
   const char* SolveStatus() const { return status_.second.c_str(); }
   /// Set solve result
   void SetStatus(std::pair<int, std::string> stt) { status_=stt; }
 
   //////////////////////// SOLUTION STATUS ADAPTERS ///////////////////////////////
-  /** Following the taxonomy of the enum sol, returns true if
+  /** Following the taxonomy of the enum sol::Status, returns true if
       we have an optimal solution or a feasible solution for a
       satisfaction problem */
-  virtual bool IsProblemSolved() const {
-    assert(IsSolStatusRetrieved());
-    return sol::SOLVED<=SolveCode()
-        && SolveCode()<=sol::SOLVED_LAST;
-  }
+  virtual bool IsProblemSolved() const
+  { return sol::IsProblemSolved(SolveCode()); }
+
   /// Solved or feasible
-  virtual bool IsProblemSolvedOrFeasible() const {
-    assert( IsSolStatusRetrieved() );
-    return
-        (sol::SOLVED_LAST>=SolveCode() &&
-         sol::SOLVED<=SolveCode())
-        ||
-        (sol::LIMIT_FEAS>=SolveCode() &&
-         sol::LIMIT_FEAS_LAST<=SolveCode())
-        ||
-        (sol::UNBOUNDED_FEAS>=SolveCode() &&
-         sol::UNBOUNDED_NO_FEAS_LAST<=SolveCode());
-  }
+  virtual bool IsProblemSolvedOrFeasible() const
+  { return sol::IsProblemSolvedOrFeasible(SolveCode()); }
+
   /// Undecidedly infeas or unbnd
-  virtual bool IsProblemIndiffInfOrUnb() const {
-    assert( IsSolStatusRetrieved() );
-    return sol::LIMIT_INF_UNB<=SolveCode()
-        && SolveCode()<=sol::LIMIT_INF_UNB_LAST;
-  }
+  virtual bool IsProblemIndiffInfOrUnb() const
+  { return sol::IsProblemIndiffInfOrUnb(SolveCode()); }
+
   /// Infeasible or unbounded
-  virtual bool IsProblemInfOrUnb() const {
-    assert( IsSolStatusRetrieved() );
-    auto sc = SolveCode();
-    return
-        (sol::INFEASIBLE<=sc
-         && sol::UNBOUNDED_NO_FEAS_LAST>=sc)
-        || IsProblemIndiffInfOrUnb();
-  }
-  virtual bool IsProblemInfeasible() const {
-    assert( IsSolStatusRetrieved() );
-    auto sc = SolveCode();
-    return sol::INFEASIBLE<=sc && sol::INFEASIBLE_LAST>sc;
-  }
-  virtual bool IsProblemUnbounded() const {
-    assert( IsSolStatusRetrieved() );
-    auto sc = SolveCode();
-    return sol::UNBOUNDED_FEAS<=sc
-        && sol::UNBOUNDED_NO_FEAS_LAST>=sc;
-  }
+  virtual bool IsProblemInfOrUnb() const
+  { return sol::IsProblemInfOrUnb(SolveCode()); }
+
+  /// Problem infeasible?
+  virtual bool IsProblemInfeasible() const
+  { return sol::IsProblemInfeasible(SolveCode()); }
+
+  /// Problem unbounded?
+  virtual bool IsProblemUnbounded() const
+  { return sol::IsProblemUnbounded(SolveCode()); }
+
+  /// Is sol status retrieved?
   virtual bool IsSolStatusRetrieved() const {
-    return sol::NOT_SET!=SolveCode();
+    return sol::NOT_SET!=status_.first;
   }
 
 
@@ -661,6 +654,7 @@ private:
   std::pair<int, std::string> status_ { sol::NOT_SET, "status not set" };
   int kIntermSol_ = 0;   // last written intermed solution index
   std::pair<double, double> objIntermSol_ { -1e100, 1e100 };
+  Solution sol_last_;
 
   ///////////////////////// STORING SOLVER MESSAGES //////////////////////
 private:
@@ -981,8 +975,10 @@ public:
     int flg=0;
     if ( IMPL_HAS_STD_FEATURE(MULTISOL) )
       flg |= BasicSolver::MULTIPLE_SOL;
+    /// Allow native or emulated multiobj
+    flg |= BasicSolver::MULTIPLE_OBJ;
     if ( IMPL_HAS_STD_FEATURE(MULTIOBJ) )
-      flg |= BasicSolver::MULTIPLE_OBJ;
+      flg |= BasicSolver::MULTIPLE_OBJ_NATIVE;
     return flg;
   }
 

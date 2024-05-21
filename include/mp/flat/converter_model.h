@@ -262,6 +262,10 @@ public:
   ObjList& get_objectives() { return objs_; }
   /// N obj
   int num_objs() const { return (int)objs_.size(); }
+  /// Skip pushing objectives?
+  bool if_skip_pushing_objs() const { return if_skip_push_objs_bjs_; }
+  /// Set skip pushing objs
+  void set_skip_pushing_objs(bool v=true) { if_skip_push_objs_bjs_=v; }
   /// Get obj [i]
   const QuadraticObjective& get_obj(int i) const
   { return get_objectives().at(i); }
@@ -334,7 +338,8 @@ public:
 
     mapi.InitProblemModificationPhase(GetModelInfo());
     PushVariablesTo(mapi);
-    PushObjectivesTo(mapi);
+    if (!if_skip_pushing_objs())
+      PushObjectivesTo(mapi);
     PushCustomConstraintsTo(mapi);
     mapi.FinishProblemModificationPhase();
   }
@@ -374,10 +379,7 @@ protected:
     if (int n_objs = num_objs()) {
       for (int i = 0; i < n_objs; ++i) {
         const auto& obj = get_obj(i);
-        if (obj.GetQPTerms().size())
-          backend.SetQuadraticObjective(i, obj);
-        else
-          backend.SetLinearObjective(i, obj);
+        SetObjectiveTo(backend, i, obj);
         ExportObjective(i, obj);      // can change e.g., for SOCP
       }
     }
@@ -397,6 +399,16 @@ public:
   /// Model info
   const FlatModelInfo* GetModelInfo() const  { return pfmi_.get(); }
 
+  /// Set given objective
+  template <class Backend>
+  void SetObjectiveTo(
+      Backend& backend, int i, const QuadraticObjective& obj) const {
+    if (obj.GetQPTerms().size())
+      backend.SetQuadraticObjective(i, obj);
+    else
+      backend.SetLinearObjective(i, obj);
+  }
+
 
 private:
   /// Variables' bounds
@@ -414,6 +426,9 @@ private:
   int num_vars_orig_ {0};
   /// Objectives
   ObjList objs_;
+  /// Whether to skip pushing objectives
+  /// (can be set by the MOManager.)
+  bool if_skip_push_objs_bjs_ {false};
 
   /// Flat model info
   std::unique_ptr<FlatModelInfo>

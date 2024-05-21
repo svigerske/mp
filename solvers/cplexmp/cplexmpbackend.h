@@ -187,7 +187,7 @@ protected:
   double SimplexIterations() const;
   int BarrierIterations() const;
 
-  std::pair<int, std::string> ConvertCPLEXStatus();
+  std::pair<int, std::string> GetSolveResult() override;
   void AddCPLEXMessages();
   void ReportCPLEXPool();
 

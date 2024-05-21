@@ -29,6 +29,7 @@ class FlatBackend :
 public:
   /// Default GetSolution() for flat backends.
   /// Invokes postsolver.
+  /// @note requires solve code retrieved.
   Solution GetSolution() override {
     auto x = PrimalSolution();
     auto y = DualSolution();
@@ -43,7 +44,7 @@ public:
       x1.clear();      // don't send variable values
     auto y1 = std::move(mv.GetConValues()());
     if (y.Empty())
-        y1.clear();      // don't send variable values
+        y1.clear();      // don't send dual values
     return{ x1,
             y1,
             mv.GetObjValues()() };

@@ -70,6 +70,12 @@ public:
                               const double *, const double *,
                               double) = 0;
 
+  /// Need and successfully prepared the next solve iteration?
+  virtual bool PrepareSolveIteration() = 0;
+
+  /// Process solve iteration solution
+  virtual void ProcessIterationSolution(const Solution& , int status) = 0;
+
   /// Integrality flags of the variables in the original instance.
   /// Used for solution rounding
   virtual const std::vector<bool>& IsVarInt() const = 0;

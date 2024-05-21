@@ -170,7 +170,7 @@ void ScipBackend::ReportResults() {
 }
 
 void ScipBackend::ReportSCIPResults() {
-  SetStatus( ConvertSCIPStatus() );
+  SetStatus( GetSolveResult() );
   AddSCIPMessages();
   if (need_multiple_solutions())
     ReportSCIPPool();
@@ -218,7 +218,7 @@ void ScipBackend::AddSCIPMessages() {
   }
 }
 
-std::pair<int, std::string> ScipBackend::ConvertSCIPStatus() {
+std::pair<int, std::string> ScipBackend::GetSolveResult() {
   namespace sol = mp::sol;
   SCIP_STATUS status = SCIPgetStatus(getSCIP());
   auto solu = SCIPgetBestSol(getSCIP());

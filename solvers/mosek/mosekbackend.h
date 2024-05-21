@@ -147,7 +147,7 @@ protected:
   int BarrierIterations() const;
 
   /// Solution + termination status
-  std::pair<int, std::string> ConvertMOSEKStatus();
+  std::pair<int, std::string> GetSolveResult() override;
   /// Text to add for termination status
   std::string ConvertMOSEKTermStatus();
   void AddMOSEKMessages();

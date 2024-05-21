@@ -165,7 +165,7 @@ void GcgBackend::ReportResults() {
 }
 
 void GcgBackend::ReportGCGResults() {
-  SetStatus( ConvertGCGStatus() );
+  SetStatus( GetSolveResult() );
   AddGCGMessages();
   if (need_multiple_solutions())
     ReportGCGPool();
@@ -213,7 +213,7 @@ void GcgBackend::AddGCGMessages() {
   }
 }
 
-std::pair<int, std::string> GcgBackend::ConvertGCGStatus() {
+std::pair<int, std::string> GcgBackend::GetSolveResult() {
   namespace sol = mp::sol;
   SCIP_STATUS status = SCIPgetStatus(getSCIP());
   auto solu = SCIPgetBestSol(getSCIP());
@@ -1079,7 +1079,7 @@ void GcgBackend::SetBasis(SolutionBasis basis) {
 
 void GcgBackend::ComputeIIS() {
   //GCG_CCALL(GCG_ComputeIIS(lp()));
-  SetStatus(ConvertGCGStatus());   // could be new information
+  SetStatus(GetSolveResult());   // could be new information
 }
 
 IIS GcgBackend::GetIIS() {

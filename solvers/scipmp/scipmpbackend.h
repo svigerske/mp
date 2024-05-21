@@ -145,7 +145,7 @@ protected:
   double SimplexIterations() const;
   int BarrierIterations() const;
 
-  std::pair<int, std::string> ConvertSCIPStatus();
+  std::pair<int, std::string> GetSolveResult() override;
   void AddSCIPMessages();
 
   ArrayRef<int> VarStatii();

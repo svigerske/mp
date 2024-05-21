@@ -202,7 +202,7 @@ void VisitorBackend::ReportResults() {
 }
 
 void VisitorBackend::ReportVISITORResults() {
-  SetStatus( ConvertVISITORStatus() );
+  SetStatus( GetSolveResult() );
   AddVISITORMessages();
   if (need_multiple_solutions())
     ReportVISITORPool();
@@ -296,7 +296,7 @@ void VisitorBackend::AddVISITORMessages() {
           fmt::format("{} branching nodes\n", nnd));
 }
 
-std::pair<int, std::string> VisitorBackend::ConvertVISITORStatus() {
+std::pair<int, std::string> VisitorBackend::GetSolveResult() {
   namespace sol = mp::sol;
   /*
    * TODO.
@@ -664,7 +664,7 @@ void VisitorBackend::SetBasis(SolutionBasis basis) {
 
 void VisitorBackend::ComputeIIS() {
   //VISITOR_CCALL(VISITOR_ComputeIIS(lp()));
-  SetStatus(ConvertVISITORStatus());   // could be new information
+  SetStatus(GetSolveResult());   // could be new information
 }
 
 IIS VisitorBackend::GetIIS() {

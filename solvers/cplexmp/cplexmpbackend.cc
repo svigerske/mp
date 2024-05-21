@@ -496,7 +496,7 @@ void CplexBackend::ReportResults() {
 }
 
 void CplexBackend::ReportCPLEXResults() {
-  SetStatus( ConvertCPLEXStatus() );
+  SetStatus( GetSolveResult() );
   AddCPLEXMessages();
   if (need_multiple_solutions())
     ReportCPLEXPool();
@@ -547,7 +547,7 @@ void CplexBackend::AddCPLEXMessages() {
           fmt::format("{} branching nodes\n", nnd));
 }
 
-std::pair<int, std::string> CplexBackend::ConvertCPLEXStatus() {
+std::pair<int, std::string> CplexBackend::GetSolveResult() {
   namespace sol = mp::sol;
   int optimstatus = CPXgetstat(env(), lp());
   switch (optimstatus) {

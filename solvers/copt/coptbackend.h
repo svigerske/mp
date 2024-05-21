@@ -160,7 +160,7 @@ protected:
   double SimplexIterations() const;
   int BarrierIterations() const;
 
-  std::pair<int, std::string> ConvertCOPTStatus();
+  std::pair<int, std::string> GetSolveResult() override;
   void AddCOPTMessages();
 
   ArrayRef<int> VarStatii();

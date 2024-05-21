@@ -135,7 +135,7 @@ void HighsBackend::ReportResults() {
 }
 
 void HighsBackend::ReportHIGHSResults() {
-  SetStatus( ConvertHIGHSStatus() );
+  SetStatus( GetSolveResult() );
   AddHIGHSMessages();
 }
 
@@ -340,7 +340,7 @@ void HighsBackend::AddHIGHSMessages() {
           fmt::format("{} branching nodes\n", nnd));
 }
 
-std::pair<int, std::string> HighsBackend::ConvertHIGHSStatus() {
+std::pair<int, std::string> HighsBackend::GetSolveResult() {
   namespace sol = mp::sol;
   int optstatus = Highs_getModelStatus(lp());
   auto obj = Highs_getObjectiveValue(lp());

@@ -41,6 +41,8 @@ void VisitorModelAPI::SetLinearObjective( int iobj, const LinearObjective& lo ) 
     /*
     VISITOR_CCALL(VISITOR_SetObjSense(lp(), 
                     obj::Type::MAX==lo.obj_sense() ? VISITOR_MAXIMIZE : VISITOR_MINIMIZE) );
+    // This should set the objective exactly as given,
+    // even when changing from a previous objective.
     VISITOR_CCALL(VISITOR_SetColObj(lp(), lo.num_terms(),
                            lo.vars().data(), lo.coefs().data()) ); */
   } else {

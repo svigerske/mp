@@ -17,6 +17,7 @@
 #include "mp/flat/expr_bounds.h"
 #include "mp/flat/constr_prepro.h"
 #include "mp/flat/constr_prop_down.h"
+#include "mp/flat/converter_multiobj.h"
 #include "mp/flat/constr_2_expr.h"
 #include "mp/flat/sol_check.h"
 #include "mp/valcvt.h"
@@ -41,6 +42,7 @@ class FlatConverter :
                       public BoundComputations<Impl>,
                       public ConstraintPreprocessors<Impl>,
                       public ConstraintPropagatorsDown<Impl>,
+                      public MOManager<Impl>,
                       public Constraints2Expr<Impl>,
                       public SolutionChecker<Impl>,
                       public EnvKeeper
@@ -222,6 +224,26 @@ protected:
 		return refcnt_vars_[i];
 	}
 
+
+public:
+  /// Signal if the model needs a solve.
+  /// This should be used in particular with MO emulation.
+  /// @return true if the next solve should be executed
+  /// and its results passed via ProcessSolveIterationSolution().
+  bool PrepareNextSolveIteration() {
+    if (MPCD( IsMOActive() ))
+      return MPD( PrepareMOIteration() );
+    return !(n_solve_iter_++);
+  }
+
+  /// Process solve iteration solution.
+  void ProcessSolveIterationSolution(const Solution& sol, int status) {
+    if (MPCD( IsMOActive() ))
+      MPD( ProcessMOIterationPostsolvedSolution(sol, status) );
+  }
+
+
+protected:
   //////////////////////////// CUSTOM CONSTRAINTS CONVERSION ////////////////////////////
   ///
   //////////////////////////// THE CONVERSION LOOP: BREADTH-FIRST ///////////////////////
@@ -233,6 +255,7 @@ protected:
       constr_depth_ = 1;  // Workaround. TODO have maps as special constraints
 			MP_DISPATCH( ConvertMaps() );
       MP_DISPATCH( PreprocessFlatFinal() );               // final flat model prepro
+      MP_DISPATCH( ConsiderEmulatingMultiobj() );
       if constexpr (IfAcceptingNLOutput()) {
         if (IfWantNLOutput()) {
           MPD( Convert2NL() );
@@ -298,7 +321,7 @@ protected:
   //////////////////////////// SPECIFIC CONSTRAINT RESULT-TO-ARGUMENTS PROPAGATORS //////
   /// Currently we should propagate to all arguments, be it always the CTX_MIX.
 
-  /// Allow ConstraintKeeper to PropagateResult(), use GetBackend() etc
+  /// Allow ConstraintKeeper to PropagateResult(), use GetModelAPI() etc
   template <class , class , class >
   friend class ConstraintKeeper;
 
@@ -1276,19 +1299,23 @@ private:
   /// We store ModelApi in the converter for speed.
   /// Should be before constraints
   ModelAPIType modelapi_;
+  /// solve iteration
+  int n_solve_iter_ {0};
   /// ValuePresolver: should be init before constraint keepers
   /// and links
   pre::ValuePresolver value_presolver_
   {
-    GetModel(), GetEnv(), (BasicLogger&)GetModel().GetFileAppender(),
-        [this](
-        ArrayRef<double> x,
-        const pre::ValueMapDbl& y,
-        ArrayRef<double> obj,
-        void* p_extra) -> bool {
-      return !this->options_.solcheckmode_   // not desired
-                 || MPD( CheckSolution(x, y, obj, p_extra) );
-    }
+      GetModel(), GetEnv(), (BasicLogger&)GetModel().GetFileAppender(),
+      [this](                           // Solution checker
+          ArrayRef<double> x,
+          const pre::ValueMapDbl& y,
+          ArrayRef<double> obj,
+          void* p_extra) -> bool {
+        return !this->options_.solcheckmode_   // not desired
+               || MPD( CheckSolution(x, y, obj, p_extra) );
+      },
+      [this](pre::ModelValuesDbl& sol)
+      { MPD( ProcessMOIterationUnpostsolvedSolution(sol) ); }
   };
   pre::CopyLink copy_link_ { GetValuePresolver() }; // the copy links
   pre::One2ManyLink one2many_link_ { GetValuePresolver() }; // the 1-to-many links

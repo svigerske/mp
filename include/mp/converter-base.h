@@ -32,6 +32,12 @@ public:
   /// Convert the model into the solver API
   virtual void ConvertModel() = 0;
 
+  /// Need and successfully prepared the next solve iteration?
+  virtual bool PrepareSolveIteration() = 0;
+
+  /// Process solve iteration solution
+  virtual void ProcessIterationSolution(const Solution& , int status) = 0;
+
   /// Fill model traits
   virtual void FillModelTraits(AMPLS_ModelTraits& ) = 0;
 

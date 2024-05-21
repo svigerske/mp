@@ -123,6 +123,15 @@ public:
     GetFlatCvt().FinishModelInput();      // Chance to flush to the Backend
   }
 
+  /// Need and successfully prepared the next solve iteration?
+  bool PrepareSolveIteration() override
+  { return GetFlatCvt().PrepareNextSolveIteration(); }
+
+  /// Process solve iteration solution
+  void ProcessIterationSolution(const Solution& sol, int status) override
+  { GetFlatCvt().ProcessSolveIterationSolution(sol, status); }
+
+
   /// Fill model traits
   void FillModelTraits(AMPLS_ModelTraits& mt) override {
     GetFlatCvt().FillModelTraits(mt);

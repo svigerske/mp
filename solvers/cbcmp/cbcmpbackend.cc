@@ -149,7 +149,7 @@ void CbcmpBackend::ReportResults() {
 }
 
 void CbcmpBackend::ReportCBCMPResults() {
-  SetStatus( ConvertCBCMPStatus() );
+  SetStatus( GetSolveResult() );
   AddCBCMPMessages();
   if (need_multiple_solutions())
     ReportCBCMPPool();
@@ -193,7 +193,7 @@ void CbcmpBackend::AddCBCMPMessages() {
           fmt::format("{} branching nodes\n", nnd));
 }
 
-std::pair<int, std::string> CbcmpBackend::ConvertCBCMPStatus() {
+std::pair<int, std::string> CbcmpBackend::GetSolveResult() {
   namespace sol = mp::sol;
   auto obj = Cbc_getObjValue(lp());
   bool hasSol = (-1e20<obj && obj<1e20);

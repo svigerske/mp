@@ -245,7 +245,7 @@ void MosekBackend::ReportResults() {
 }
 
 void MosekBackend::ReportMOSEKResults() {
-  SetStatus( ConvertMOSEKStatus() );
+  SetStatus( GetSolveResult() );
   AddMOSEKMessages();
   if (need_multiple_solutions())
     ReportMOSEKPool();
@@ -292,7 +292,7 @@ void MosekBackend::AddMOSEKMessages() {
           fmt::format("{} branching nodes\n", nnd));
 }
 
-std::pair<int, std::string> MosekBackend::ConvertMOSEKStatus() {
+std::pair<int, std::string> MosekBackend::GetSolveResult() {
   namespace sol = mp::sol;
   std::string term_info = ConvertMOSEKTermStatus();
   // TODO Keep result code registry in AddOptons() up2date.

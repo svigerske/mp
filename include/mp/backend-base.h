@@ -76,7 +76,8 @@ public:
   virtual void InitOptionParsing() { }
   /// Chance to consider options immediately (open cloud, etc)
   virtual void FinishOptionParsing() { }
-  /// Having everything set up, solve the problem
+  /// Having everything set up, (re)solve the problem.
+  /// This is to be overloaded by the implementation.
   virtual void Solve() { }
 
   /// Callbacks typedef

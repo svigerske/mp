@@ -321,6 +321,7 @@ public:
                this->IsProblemIndiffInfOrUnb() ) &&
         GetMIPOptions().exportIIS_) {
       ComputeIIS();
+      this->SetStatus( this->GetSolveResult() );
 
       auto iis = GetIIS();
 
