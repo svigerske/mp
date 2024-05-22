@@ -269,7 +269,7 @@ protected:
     while (GetMM().PrepareSolveIteration()) {
       Solve();
       SetStatus( GetSolveResult() );      // before GetSolution()
-      sol_last_ = GetSolution();
+      sol_last_ = GetSolution();          // @todo don't need it in the last iteration
       GetMM().ProcessIterationSolution(sol_last_, status_.first);
     }
   }

@@ -31,12 +31,14 @@ void HighsModelAPI::AddVariables(const VarArrayDef& v) {
 
 void HighsModelAPI::SetLinearObjective( int iobj, const LinearObjective& lo ) {
   if (iobj < 1) {
-  // Highs_changeObjectiveOffset(highs, offset); TODO offset?
-    HIGHS_CCALL(Highs_changeColsCostBySet(lp(), lo.num_terms(), 
-      lo.vars().data(), lo.coefs().data()));
+    // Highs_changeObjectiveOffset(highs, offset); TODO offset?
+    std::vector<double> objc_new(NumVars());         // dense vector to
+    for (auto i=lo.vars().size(); i--; )
+      objc_new[lo.vars()[i]] = lo.coefs()[i];
+    HIGHS_CCALL(Highs_changeColsCostByRange(lp(), 0, NumVars()-1, objc_new.data()));
     HIGHS_CCALL(Highs_changeObjectiveSense(lp(), 
-                    obj::Type::MAX==lo.obj_sense() ? 
-      kHighsObjSenseMaximize : kHighsObjSenseMinimize) );
+                                           obj::Type::MAX==lo.obj_sense() ?
+                                               kHighsObjSenseMaximize : kHighsObjSenseMinimize) );
   } else {
       throw std::runtime_error("HighS does not support multiple objectives.");
   }
@@ -77,26 +79,28 @@ void HighsModelAPI::SetQuadraticObjective(int iobj, const QuadraticObjective& qo
 }
 
 void HighsModelAPI::AddConstraint(const LinConRange& lc) {
-  AccConstraints.add(lc);
+  acc_constraints_.add(lc);
 }
 void HighsModelAPI::AddConstraint(const LinConLE& lc) {
-  AccConstraints.add(lc);
+  acc_constraints_.add(lc);
 }
 void HighsModelAPI::AddConstraint(const LinConEQ& lc) {
-  AccConstraints.add(lc);
+  acc_constraints_.add(lc);
 }
 void HighsModelAPI::AddConstraint(const LinConGE& lc) {
-  AccConstraints.add(lc);
+  acc_constraints_.add(lc);
 }
 
 void HighsModelAPI::FinishProblemModificationPhase() {
   HIGHS_CCALL(Highs_addRows(lp(),
-    AccConstraints.lb.size(),
-    AccConstraints.lb.data(),
-    AccConstraints.ub.data(),
-    AccConstraints.coeffs.size(),
-    AccConstraints.starts.data(),
-    AccConstraints.indices.data(),
-    AccConstraints.coeffs.data()));
+    acc_constraints_.lb.size(),
+    acc_constraints_.lb.data(),
+    acc_constraints_.ub.data(),
+    acc_constraints_.coeffs.size(),
+    acc_constraints_.starts.data(),
+    acc_constraints_.indices.data(),
+    acc_constraints_.coeffs.data()));
+  acc_constraints_ = AccConstraints();      // reinitialize accumulator for model modification
 }
+
 } // namespace mp

@@ -39,7 +39,7 @@ public:
   USE_BASE_CONSTRAINT_HANDLERS(BaseModelAPI)
 
 
-  struct AccConstraints{
+  struct AccConstraints {
       /* This is to accumulate the constraints in a format suitable for
       Highs_addRows(...). Adding them one by one was killing performance
       unacceptably. */
@@ -81,7 +81,7 @@ public:
       AccConstraints() {
         starts.push_back(0);
       }
-  } AccConstraints;
+  } acc_constraints_;
 
   ACCEPT_CONSTRAINT(LinConRange, Recommended, CG_Linear)
   void AddConstraint(const LinConRange& lc);

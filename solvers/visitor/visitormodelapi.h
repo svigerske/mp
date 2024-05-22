@@ -25,6 +25,8 @@ public:
 
   /// Called before problem input.
   /// Model info can be used to preallocate memory.
+  /// @note this is called before each phase of model modification
+  ///   which can happen during iterative solving.
   void InitProblemModificationPhase(const FlatModelInfo*);
   /// After
   void FinishProblemModificationPhase();

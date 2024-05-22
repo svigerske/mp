@@ -107,21 +107,36 @@ protected:
     obj_new_ = MPD( get_objectives() );   // no linking
     if (MPD( GetEnv() ).verbose_mode())
       MPD( GetEnv() ).Print(
-          "\n\nMULTIOBJECTIVE MODE WITH {} OBJECTIVES.\n", obj_new_.size());
+          "\n\n"
+          "==============================================================================\n"
+          "MULTI-OBJECTIVE MODE: starting with {} objectives ...\n"
+          "==============================================================================\n"
+          "==============================================================================\n\n"
+          , obj_new_.size());
   }
 
   /// Do prepare next solve
   bool DoPrepareNextMultiobjSolve() {
     if (++i_current_obj_ >= obj_new_.size()) {
       status_ = MOManagerStatus::FINISHED;
+      MPD( GetEnv() ).Print(
+          "\n\n"
+          "==============================================================================\n"
+          "MULTI-OBJECTIVE MODE: done.\n\n");
       return false;                              // all done
     }
+    if (MPD( GetEnv() ).verbose_mode())
+      MPD( GetEnv() ).Print(
+          "\n\n"
+          "MULTI-OBJECTIVE MODE: objective {} (out of {}) ...\n"
+          "==============================================================================\n\n"
+          , i_current_obj_+1, obj_new_.size());
+    MPD( GetModelAPI() ).InitProblemModificationPhase(
+        MPD( GetModelInfo() ));
     ReplaceCurrentObj();
     if (i_current_obj_)
       RestrictLastObjVal();
-    if (MPD( GetEnv() ).verbose_mode())
-      MPD( GetEnv() ).Print(
-          "\n\nMULTIOBJECTIVE MODE: OBJECTIVE {} OUT OF {}.\n", i_current_obj_+1, obj_new_.size());
+    MPD( GetModelAPI() ).FinishProblemModificationPhase();
     return true;
   }
 
