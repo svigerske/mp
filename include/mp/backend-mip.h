@@ -638,15 +638,15 @@ private:
 
   const SuffixTable iis_table =
       "\n"
-      "0	non	not in the iis\n"
-      "1	low	at lower bound\n"
-      "2	fix	fixed\n"
-      "3	upp	at upper bound\n"
-      "4	mem	member\n"
-      "5	pmem	possible member\n"
-      "6	plow	possibly at lower bound\n"
-      "7	pupp	possibly at upper bound\n"
-      "8	bug\n";
+      "0\tnon\tnot in the iis\n"
+      "1\tlow\tlower bound in the iis\n"
+      "2\tfix\tboth bounds in the iis\n"
+      "3\tupp\tupper bound in the iis\n"
+      "4\tmem\tmember\n"
+      "5\tpmem\tpossible member\n"
+      "6\tplow\tpossibly lower bound\n"
+      "7\tpupp\tpossibly upper bound\n"
+      "8\tbug\n";
   const SuffixDef<int> sufIISCon = { "iis", suf::CON | suf::OUTPUT, iis_table };
   const SuffixDef<int> sufIISVar = { "iis", suf::VAR | suf::OUTPUT, iis_table };
 

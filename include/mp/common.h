@@ -1162,10 +1162,10 @@ inline const char *expr::str(expr::Kind kind) {
 enum class IISStatus {
   non = 0,
   low = 1,
-  fix = 2,
+  fix = 2,    // both bounds in IIS
   upp = 3,
   mem = 4,
-  pmem = 5,
+  pmem = 5,   // 'possibly member'
   plow = 6,
   pupp = 7,
   bug = 8
