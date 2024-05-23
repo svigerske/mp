@@ -2101,16 +2101,7 @@ void GurobiBackend::InitCustomOptions() {
   /// Option "multiobj" is created internally if
   /// std feature MULTIOBJ is set.
   /// Change the help text
-  ReplaceOptionDescription("obj:multi",
-                           "0*/1: Whether to do multi-objective optimization.\n"
-                           "When obj:multi = 1 and several objectives are present, suffixes "
-                           ".objpriority, .objweight, .objreltol, and .objabstol on the "
-                           "objectives are relevant.  Objectives with greater .objpriority "
-                           "values (integer values) have higher priority.  Objectives with "
-                           "the same .objpriority are weighted by .objweight.  Objectives "
-                           "with positive .objabstol or .objreltol are allowed to be "
-                           "degraded by lower priority objectives by amounts not exceeding "
-                           "the .objabstol (absolute) and .objreltol (relative) limits. "
+  AddToOptionDescription("obj:multi",
                            "The objectives must all be linear.  Objective-specific "
                            "convergence tolerances and method values may be assigned via "
                            "keywords of the form obj_n_<name>, such as obj_1_method for the "

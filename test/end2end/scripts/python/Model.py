@@ -51,7 +51,7 @@ class ModelTags(enum.Enum):
     mipstart=20008
 
     multiobj=30009
-    obj_priority=30010
+    obj_priority=30010           # understands obj:2:priority etc.
 
     multisol = 40011
     sstatus = 40012              # Basis I/O

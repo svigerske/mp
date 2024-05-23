@@ -118,6 +118,9 @@ public:
 public:
   /// Convert the whole model, e.g., after reading from NL
   void ConvertModel() override {
+    GetFlatCvt().SetSuffixGetters(
+        [this](const SuffixDef<int>& sd) { return GetModel().ReadIntSuffix(sd); },
+        [this](const SuffixDef<double>& sd) { return GetModel().ReadDblSuffix(sd); });
     GetFlatCvt().StartModelInput();
     MP_DISPATCH( ConvertStandardItems() );
     GetFlatCvt().FinishModelInput();      // Chance to flush to the Backend

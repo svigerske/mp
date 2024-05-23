@@ -10,6 +10,7 @@
 #include "mp/env.h"
 #include "mp/format.h"
 #include "mp/solver-base.h"
+#include "mp/suffix.h"
 #include "mp/flat/converter_model.h"
 #include "mp/flat/convert_functional.h"
 #include "mp/flat/constr_keeper.h"
@@ -1294,6 +1295,22 @@ public:
           std::move(key), std::move(msg), replace);
   }
 
+  /// Provide suffix getters
+  void SetSuffixGetters(
+      std::function<ArrayRef<int>(const SuffixDef<int>& )> sgi,
+      std::function<ArrayRef<double>(const SuffixDef<double>& )> sgd)
+  { suf_get_int_=sgi; suf_get_dbl_=sgd; }
+
+
+public:
+  /// Read int suffix
+  ArrayRef<int> ReadIntSuffix(const SuffixDef<int>& sd)
+  { assert(suf_get_int_); return suf_get_int_(sd); }
+
+  /// Read double suffix
+  ArrayRef<double> ReadDblSuffix(const SuffixDef<double>& sd)
+  { assert(suf_get_dbl_); return suf_get_dbl_(sd); }
+
 
 private:
   /// We store ModelApi in the converter for speed.
@@ -1301,6 +1318,10 @@ private:
   ModelAPIType modelapi_;
   /// solve iteration
   int n_solve_iter_ {0};
+  /// Suffix getter int
+  std::function<ArrayRef<int>(const SuffixDef<int>& )> suf_get_int_;
+  /// Suffix getter double
+  std::function<ArrayRef<double>(const SuffixDef<double>& )> suf_get_dbl_;
   /// ValuePresolver: should be init before constraint keepers
   /// and links
   pre::ValuePresolver value_presolver_

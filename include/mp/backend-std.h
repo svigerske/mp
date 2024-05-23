@@ -287,7 +287,7 @@ protected:
 
   /// Standard extras
   virtual void InputStdExtras() {
-    if (multiobj()) {
+    if (multiobj() && multiobj_has_native()) {
       if (auto suf = ReadSuffix(suf_objpriority))
         ObjPriorities( suf );
       if (auto suf = ReadSuffix(suf_objweight))

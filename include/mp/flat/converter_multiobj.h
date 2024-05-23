@@ -104,15 +104,56 @@ protected:
     MPD(set_skip_pushing_objs());  // could have a cleaner system of linking
       // via custom link restoring original objective values,
       // instead of current manual postsolving in ValuePresolver::PostsolveSolution().
-    obj_new_ = MPD( get_objectives() );   // no linking
+    const auto& obj_orig = MPD( get_objectives() );   // no linking
+    ///////////////// Read / set default suffixes ///////////////////
+    std::vector<double> objpr = MPD( ReadDblSuffix( {"objpriority", suf::OBJ} ) );
+    objpr.resize(obj_orig.size(), 0.0);               // blend objectives by default
+    std::vector<double> objwgt = MPD( ReadDblSuffix( {"objweight", suf::OBJ} ) );
+    objwgt.resize(obj_orig.size(), 1.0);
+    std::vector<double> objtola = MPD( ReadDblSuffix( {"objabstol", suf::OBJ} ) );
+    objtola.resize(obj_orig.size(), 0.0);
+    std::vector<double> objtolr = MPD( ReadDblSuffix( {"objreltol", suf::OBJ} ) );
+    objtolr.resize(obj_orig.size(), 0.0);
+    std::map<double, std::vector<int>, std::greater<double> > pr_map;      // Decreasing order
+    for (int i=0; i<objpr.size(); ++i)
+      pr_map[objpr[i]].push_back(i);
+    obj_new_ = {};         ////////////////// Aggregate new objectives ///////////////////
+    obj_new_.reserve(pr_map.size());
+    obj_new_tola_.reserve(pr_map.size());
+    obj_new_tolr_.reserve(pr_map.size());
+    for (const auto& pr_level: pr_map) {
+      const auto& i0_vec = pr_level.second;
+      obj_new_.push_back(obj_orig.at(i0_vec.front()));
+      obj_new_.back().GetLinTerms() *= objwgt.at(i0_vec.front());   // Use weight
+      obj_new_.back().GetQPTerms() *= objwgt.at(i0_vec.front());
+      obj_new_tola_.push_back(objtola.at(i0_vec.front()));
+      obj_new_tolr_.push_back(objtolr.at(i0_vec.front()));
+      for (auto i0i=i0_vec.size(); --i0i; ) {
+        // Add next objective with weight and sense factor
+        double sensef
+            = (obj_orig.at(i0_vec.front()).obj_sense() == obj_orig.at(i0_vec[i0i]).obj_sense())
+                  ? 1.0 : -1.0;
+        auto lt1 = obj_orig.at(i0_vec[i0i]).GetLinTerms();
+        lt1 *= sensef * objwgt.at(i0_vec[i0i]);
+        auto qt1 = obj_orig.at(i0_vec[i0i]).GetQPTerms();
+        qt1 *= sensef * objwgt.at(i0_vec[i0i]);
+        obj_new_.back().GetLinTerms().add(lt1);
+        obj_new_.back().GetQPTerms().add(qt1);
+        // Max the tolerances
+        obj_new_tola_.back() = std::max(obj_new_tola_.back(), objtola.at(i0_vec[i0i]));
+        obj_new_tolr_.back() = std::max(obj_new_tolr_.back(), objtolr.at(i0_vec[i0i]));
+      }
+      obj_new_.back().GetLinTerms().sort_terms();
+      obj_new_.back().GetQPTerms().sort_terms();
+    }
     if (MPD( GetEnv() ).verbose_mode())
       MPD( GetEnv() ).Print(
           "\n\n"
           "==============================================================================\n"
-          "MULTI-OBJECTIVE MODE: starting with {} objectives ...\n"
+          "MULTI-OBJECTIVE MODE: starting with {} objectives ({} combined) ...\n"
           "==============================================================================\n"
           "==============================================================================\n\n"
-          , obj_new_.size());
+          , obj_orig.size(), obj_new_.size());
   }
 
   /// Do prepare next solve
@@ -143,6 +184,10 @@ protected:
   void RestrictLastObjVal() {
     assert(i_current_obj_ && i_current_obj_<obj_new_.size());
     const auto& obj_last = obj_new_[i_current_obj_-1];
+    auto lim = objval_last_;
+    auto diff = std::max(                 // Apply degradation tolerance
+        obj_new_tola_[i_current_obj_-1], std::fabs(lim) * obj_new_tolr_[i_current_obj_-1]);
+    lim += diff * (obj::MAX==obj_last.obj_sense() ? -1.0 : 1.0);
     if (obj_last.GetQPTerms().size()) {
       if (obj::MAX == obj_last.obj_sense())
         MPD( GetModelAPI() ).AddConstraint(
@@ -169,6 +214,8 @@ protected:
 private:
   MOManagerStatus status_ {MOManagerStatus::NOT_SET};
   std::vector<QuadraticObjective> obj_new_;     // ranked aggregated objectives
+  std::vector<double> obj_new_tola_;
+  std::vector<double> obj_new_tolr_;
   int i_current_obj_ {-1};
   double objval_last_ {};
 };

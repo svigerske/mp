@@ -36,6 +36,7 @@ void HighsModelAPI::SetLinearObjective( int iobj, const LinearObjective& lo ) {
     for (auto i=lo.vars().size(); i--; )
       objc_new[lo.vars()[i]] = lo.coefs()[i];
     HIGHS_CCALL(Highs_changeColsCostByRange(lp(), 0, NumVars()-1, objc_new.data()));
+    std::printf("     HIGHS OPBJ SENSE:  %d \n", lo.obj_sense());
     HIGHS_CCALL(Highs_changeObjectiveSense(lp(), 
                                            obj::Type::MAX==lo.obj_sense() ?
                                                kHighsObjSenseMaximize : kHighsObjSenseMinimize) );

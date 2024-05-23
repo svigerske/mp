@@ -474,7 +474,11 @@ class CPLEXSolver(AMPLSolver):
         stags = {ModelTags.continuous, ModelTags.integer, ModelTags.binary,
                   ModelTags.linear, ModelTags.quadratic, ModelTags.sos,
                  ModelTags.return_mipgap,
-                 ModelTags.sstatus}
+                 ModelTags.sstatus,
+                 ModelTags.multisol,
+                 ModelTags.multiobj,
+                 ModelTags.iis,
+                 ModelTags.feasrelax}
         super().__init__(exeName, timeout, nthreads, otherOptions, stags)
 
     def _doParseSolution(self, st, stdout=None):
@@ -828,7 +832,8 @@ class MPDirectSolver(AMPLSolver):
                     ModelTags.logical,
                     ModelTags.plinear,
                     ModelTags.nonlinear,
-                    ModelTags.log
+                    ModelTags.log,
+                    ModelTags.multiobj
                 }
             # Direct/FlatConverter drivers with non-convex quadratics:
             if ModelTags.quadraticnonconvex in stags:
@@ -980,7 +985,7 @@ class XPRESSDirectSolver(MPDirectSolver):
                  ModelTags.return_mipgap,
 
                  ModelTags.warmstart, ModelTags.mipstart,
-                 ModelTags.multiobj, ModelTags.obj_priority,
+                 ModelTags.multiobj,
                  ModelTags.multisol, ModelTags.sstatus,
                  ModelTags.iis, ModelTags.fixmodel,
                  

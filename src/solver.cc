@@ -646,10 +646,16 @@ void BasicSolver::InitMetaInfoAndOptions(
 
   if ((flags & MULTIPLE_OBJ) != 0) {
     AddOption(OptionPtr(new BoolOption(multiobj_, "obj:multi multiobj",
-      "0*/1:  Whether to use multi-objective optimization. "
-      "If set to 1 multi-objective optimization is performed using "
-      "lexicographic method with the first objective treated as the most "
-      "important, then the second objective and so on.")));
+      "0*/1:  Whether to use multi-objective optimization.\n"
+                                       "\n"
+                                       "When obj:multi = 1 and several objectives are present, suffixes "
+                                       ".objpriority, .objweight, .objreltol, and .objabstol on the "
+                                       "objectives are relevant.  Objectives with greater .objpriority "
+                                       "values (integer values) have higher priority.  Objectives with "
+                                       "the same .objpriority are weighted by .objweight.  Objectives "
+                                       "with positive .objabstol or .objreltol are allowed to be "
+                                       "degraded by lower priority objectives by amounts not exceeding "
+                                       "the .objabstol (absolute) and .objreltol (relative) limits. "                                       )));
   }
 
   AddIntOption("tech:timing timing tech:report_times report_times",

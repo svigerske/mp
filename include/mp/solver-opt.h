@@ -146,6 +146,7 @@ public:
   { return inline_synonyms_; }
   /// Add additional "inline" synonyms
   void add_synonyms_front(const char* names_list);
+  /// Add "inline" synonyms to the back
   void add_synonyms_back(const char* names_list);
 
   /// Is hidden?
@@ -155,19 +156,25 @@ public:
   bool is_wildcard() const { return wc_headtails_.size(); }
   /// Checks if matches, then saves key & body
   bool wc_match(const std::string& key);
+  /// Wildcard head
   const std::string& wc_head() const
   { assert(is_wildcard()); return wc_headtails_[0].first; }
+  /// Wildcard tail
   const std::string& wc_tail() const
   { assert(is_wildcard()); return wc_headtails_[0].second; }
+  /// Last wildcard key
   const std::string& wc_key_last() const { return wc_key_last_; }
+  /// Last wildcard keybody
   const std::string& wc_keybody_last() const { return wc_body_last_; }
   /// Printing last parsed wc key in std form
   std::string wc_key_last__std_form() const
   { return wc_head() + wc_body_last_ + wc_tail(); }
 
-  /// Return/set the option description.
+  /// Option description.
   const char *description() const { return description_.c_str(); }
+  /// Set option description
   void set_description(const char* d) { description_=d; }
+  /// Add to option description
   void add_to_description(const char* d) { description_ += d; }
 
   /// Append the formatted description to the writer

@@ -31,12 +31,14 @@ public:
   /// After
   void FinishProblemModificationPhase();
 
-  /// TODO Implement the following functions using the solver's API
+  /// TODO Implement adding variables
   void AddVariables(const VarArrayDef& );
+  /// TODO Implement setting (also changing) a linear (part of the) objective
   void SetLinearObjective( int iobj, const LinearObjective& lo );
   /// Whether accepting quadratic objectives:
   /// 0 - no, 1 - convex, 2 - nonconvex
   static int AcceptsQuadObj() { return 0; }
+  /// TODO Implement setting (also changing) a quadratic objective
   void SetQuadraticObjective(int iobj, const QuadraticObjective& qo);
 
   //////////////////////////// GENERAL CONSTRAINTS ////////////////////////////

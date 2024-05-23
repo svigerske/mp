@@ -1220,8 +1220,10 @@ public:
   /// take that
   ArrayRef<double> ReadDblSuffix(const SuffixDef<double>& sufdef) {
     auto suf_dbl = ReadSuffix_OneTypeOnly(sufdef);
+    std::printf("   SUFD %s: %ld elements\n", sufdef.name(), suf_dbl.size());
     if (!suf_dbl) {
       auto suf_int = ReadSuffix_OneTypeOnly(sufdef.to_type<int>());
+      std::printf("        SUFI %s: %ld elements\n", sufdef.name(), suf_int.size());
       if (suf_int)
         return std::vector<double>(suf_int.begin(), suf_int.end());
     }
