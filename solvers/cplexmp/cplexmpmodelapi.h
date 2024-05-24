@@ -71,13 +71,13 @@ public:
 
   /// Discrete generals constraints
 
-  /// Enabling built-in indicator for infinite bounds,
-  /// but not recommended otherwise --- may be slow as of CPLEX 12.10
-  ACCEPT_CONSTRAINT(IndicatorConstraintLinLE, AcceptedButNotRecommended, CG_General)
+  /// Enabling built-in indicator for infinite bounds.
+  /// May be slow as of CPLEX 12.10 - consider setting to AcceptedButNotRecommended
+  ACCEPT_CONSTRAINT(IndicatorConstraintLinLE, Recommended, CG_General)
   void AddConstraint(const IndicatorConstraintLinLE& mc);
-  ACCEPT_CONSTRAINT(IndicatorConstraintLinEQ, AcceptedButNotRecommended, CG_General)
+  ACCEPT_CONSTRAINT(IndicatorConstraintLinEQ, Recommended, CG_General)
   void AddConstraint(const IndicatorConstraintLinEQ& mc);
-  ACCEPT_CONSTRAINT(IndicatorConstraintLinGE, AcceptedButNotRecommended, CG_General)
+  ACCEPT_CONSTRAINT(IndicatorConstraintLinGE, Recommended, CG_General)
   void AddConstraint(const IndicatorConstraintLinGE& mc);
 
   ACCEPT_CONSTRAINT(PLConstraint, Recommended, CG_General)
