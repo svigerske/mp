@@ -317,16 +317,23 @@ public:
   }
 
   virtual void CalculateAndReportIIS() {
-    if (( this->IsProblemInfOrUnb() ||
+    if (( this->IsProblemInfeasible() ||
                this->IsProblemIndiffInfOrUnb() ) &&
         GetMIPOptions().exportIIS_) {
-      ComputeIIS();
+      try {
+        ComputeIIS();
+      } catch (const std::exception& exc) {
+        this->AddWarning("IIS_COMPUTE",   // Can add warning before SOL output
+                   std::string("Error computing IIS: ")
+                       + exc.what());
+      }
       this->SetStatus( this->GetSolveResult() );
 
-      auto iis = GetIIS();
-
-      ReportSuffix(sufIISCon, iis.coniis);
-      ReportSuffix(sufIISVar, iis.variis);
+      if (this->IsProblemInfeasible()) {      // can be unbounded
+        auto iis = GetIIS();
+        ReportSuffix(sufIISCon, iis.coniis);
+        ReportSuffix(sufIISVar, iis.variis);
+      }
     }
   }
 

@@ -119,9 +119,12 @@ public:
   * Compute the IIS and obtain relevant values
   **/
   ALLOW_STD_FEATURE(IIS, true)
-  /// Compute IIS
+  /// Compute IIS.
+  /// This method can fail (MP_RAISE)
+  /// if it discovers a different problem status.
   void ComputeIIS() override;
-  /// Retrieve IIS elements
+  /// Retrieve IIS elements.
+  /// Only called if the status was confirmed Infeasible.
   IIS GetIIS() override;
 
   /////////////////////////// Model attributes /////////////////////////
