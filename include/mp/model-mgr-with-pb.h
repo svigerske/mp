@@ -294,6 +294,10 @@ protected:
   void ProcessIterationSolution(const Solution& sol, int status) override
   { GetCvt().ProcessIterationSolution(sol, status); }
 
+  /// Objective weights
+  ArrayRef<double> GetObjWeightsAdapted() override
+  { return GetCvt().GetObjWeightsAdapted(); }
+
 
   const std::vector<bool>& IsVarInt() const override {
     return GetModel().IsVarInt();

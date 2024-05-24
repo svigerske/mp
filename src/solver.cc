@@ -652,10 +652,27 @@ void BasicSolver::InitMetaInfoAndOptions(
                                        ".objpriority, .objweight, .objreltol, and .objabstol on the "
                                        "objectives are relevant.  Objectives with greater .objpriority "
                                        "values (integer values) have higher priority.  Objectives with "
-                                       "the same .objpriority are weighted by .objweight.  Objectives "
+                                       "the same .objpriority are weighted by .objweight, "
+                                       "according to the option obj:multi:weight.\n"
+                                       "\n"
+                                       "Objectives "
                                        "with positive .objabstol or .objreltol are allowed to be "
                                        "degraded by lower priority objectives by amounts not exceeding "
-                                       "the .objabstol (absolute) and .objreltol (relative) limits. "                                       )));
+                                       "the .objabstol (absolute) and .objreltol (relative) limits. ")));
+
+    static const mp::OptionValueInfo values_multiobjweight_[] = {
+        { "1", "relative to the sense of the 1st objective", 1},
+        { "2", "relative to its own sense (default)", 2}
+    };
+    AddStoredOption("obj:multi:weight multiobjweight obj:multi:weights multiobjweights",
+                                       "How to interpret each objective's weight sign:\n"
+                    "\n.. value-table::\n\n"
+                    "With the 1st option (legacy behaviour), negative .objweight "
+                    "for objective i would make "
+                    "objective i's sense the opposite of the model's 1st objective. "
+                    "Otherwise, it would make objective i's sense the opposite to its sense "
+                    "defined in the model.",
+                    multiobj_weight_, values_multiobjweight_);
   }
 
   AddIntOption("tech:timing timing tech:report_times report_times",

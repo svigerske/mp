@@ -116,7 +116,9 @@ protected:
   virtual void ObjPriorities(ArrayRef<int>)
   { MP_UNSUPPORTED("Backend::ObjPriorities"); }
   /// Placeholder: set objective weights.
-  /// Presolve the values if needed
+  /// Presolve the values if needed.
+  /// @note The weights are provided in the format common for many solver APIs,
+  /// corresponding to the legacy setting of the option obj:multi:weight.
   virtual void ObjWeights(ArrayRef<double>) { }
   /// Placeholder: set objective abs tol
   /// Presolve the values if needed
@@ -290,7 +292,7 @@ protected:
     if (multiobj() && multiobj_has_native()) {
       if (auto suf = ReadSuffix(suf_objpriority))
         ObjPriorities( suf );
-      if (auto suf = ReadSuffix(suf_objweight))
+      if (auto suf = GetMM().GetObjWeightsAdapted())
         ObjWeights( suf );
       if (auto suf = ReadSuffix(suf_objabstol))
         ObjAbsTol( suf );
@@ -957,7 +959,6 @@ protected:
   //////////////////////////////////////////////////////////////////////////////
 private:
   const SuffixDef<int> suf_objpriority = { "objpriority", suf::OBJ | suf::INPUT };
-  const SuffixDef<double> suf_objweight = { "objweight", suf::OBJ | suf::INPUT };
   const SuffixDef<double> suf_objabstol = { "objabstol", suf::OBJ | suf::INPUT };
   const SuffixDef<double> suf_objreltol = { "objreltol", suf::OBJ | suf::INPUT };
 

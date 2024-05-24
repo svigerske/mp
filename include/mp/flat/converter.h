@@ -243,6 +243,9 @@ public:
       MPD( ProcessMOIterationPostsolvedSolution(sol, status) );
   }
 
+  /// Objective weights
+  ArrayRef<double> GetObjWeightsAdapted() { return MPD( GetMOWeightsLegacy() ); }
+
 
 protected:
   //////////////////////////// CUSTOM CONSTRAINTS CONVERSION ////////////////////////////

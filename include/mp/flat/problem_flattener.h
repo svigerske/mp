@@ -134,6 +134,10 @@ public:
   void ProcessIterationSolution(const Solution& sol, int status) override
   { GetFlatCvt().ProcessSolveIterationSolution(sol, status); }
 
+  /// Objective weights
+  ArrayRef<double> GetObjWeightsAdapted() override
+  { return GetFlatCvt().GetObjWeightsAdapted(); }
+
 
   /// Fill model traits
   void FillModelTraits(AMPLS_ModelTraits& mt) override {

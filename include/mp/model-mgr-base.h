@@ -76,6 +76,9 @@ public:
   /// Process solve iteration solution
   virtual void ProcessIterationSolution(const Solution& , int status) = 0;
 
+  /// Objective weights in the 'legacy' format of the obj:multi:weight option
+  virtual ArrayRef<double> GetObjWeightsAdapted() = 0;
+
   /// Integrality flags of the variables in the original instance.
   /// Used for solution rounding
   virtual const std::vector<bool>& IsVarInt() const = 0;

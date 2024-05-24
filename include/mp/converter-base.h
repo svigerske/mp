@@ -38,6 +38,9 @@ public:
   /// Process solve iteration solution
   virtual void ProcessIterationSolution(const Solution& , int status) = 0;
 
+  /// Objective weights
+  virtual ArrayRef<double> GetObjWeightsAdapted() = 0;
+
   /// Fill model traits
   virtual void FillModelTraits(AMPLS_ModelTraits& ) = 0;
 

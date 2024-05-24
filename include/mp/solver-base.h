@@ -318,6 +318,9 @@ public:
   /// Whether the solver natively supports multiobj
   bool multiobj_has_native() const { return multiobj_has_native_; }
 
+  /// Option obj:multi:weight
+  int multiobj_weight() const { return multiobj_weight_; }
+
   /// >0 if the timing is enabled
   int timing() const { return timing_; }
 
@@ -611,6 +614,7 @@ private:
 
   bool multiobj_ {false};
   bool multiobj_has_native_ {false};
+  int multiobj_weight_ {2};
 
   bool has_errors_ {false};
   OutputHandler *output_handler_ {this};

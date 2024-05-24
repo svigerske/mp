@@ -54,7 +54,9 @@ public:
   /////////////// OPTIONAL STANDARD FEATURES /////////////////
   ////////////////////////////////////////////////////////////
   // Use this section to declare and implement some standard features
-  // that may or may not need additional functions. 
+  // that may or may not need additional functions.
+  // For a full list of features possible,
+  // grep "STD_FEATURE".
   USING_STD_FEATURES;
 
   /**

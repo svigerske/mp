@@ -26,6 +26,8 @@ public:
     name_(std::move(nm)){ }
   /// Get sense
   obj::Type obj_sense() const { return sense_; }
+  /// Set sense
+  void set_sense(obj::Type s) { sense_ = s; }
   /// Get lin terms, const
   const LinTerms& GetLinTerms() const { return lt_; }
   /// Get lin terms

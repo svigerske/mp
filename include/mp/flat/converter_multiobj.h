@@ -108,8 +108,11 @@ protected:
     ///////////////// Read / set default suffixes ///////////////////
     std::vector<double> objpr = MPD( ReadDblSuffix( {"objpriority", suf::OBJ} ) );
     objpr.resize(obj_orig.size(), 0.0);               // blend objectives by default
-    std::vector<double> objwgt = MPD( ReadDblSuffix( {"objweight", suf::OBJ} ) );
-    objwgt.resize(obj_orig.size(), 1.0);
+    std::vector<double> objwgt = MPD( GetMOWeightsLegacy() );
+    if (objwgt.empty()) {
+      objwgt.resize(obj_orig.size(), 1.0);            // Default "intuitive" weights
+      FlipDiffSenseSigns(objwgt);                     // We handle "legacy" format below
+    }
     std::vector<double> objtola = MPD( ReadDblSuffix( {"objabstol", suf::OBJ} ) );
     objtola.resize(obj_orig.size(), 0.0);
     std::vector<double> objtolr = MPD( ReadDblSuffix( {"objreltol", suf::OBJ} ) );
@@ -124,6 +127,7 @@ protected:
     for (const auto& pr_level: pr_map) {
       const auto& i0_vec = pr_level.second;
       obj_new_.push_back(obj_orig.at(i0_vec.front()));
+      obj_new_.back().set_sense(obj_orig.front().obj_sense());      // "Legacy" obj:multi:weight
       obj_new_.back().GetLinTerms() *= objwgt.at(i0_vec.front());   // Use weight
       obj_new_.back().GetQPTerms() *= objwgt.at(i0_vec.front());
       obj_new_tola_.push_back(objtola.at(i0_vec.front()));
@@ -210,6 +214,21 @@ protected:
     MPD( SetObjectiveTo( MPD(GetModelAPI()), 0, obj_new_[i_current_obj_]) );
   }
 
+  ArrayRef<double> GetMOWeightsLegacy() {
+    std::vector<double> objw = MPD( ReadDblSuffix( {"objweight", suf::OBJ} ) );
+    if (objw.size() && 2==MPD( GetEnv() ).multiobj_weight()) {   // user wants "intuitive"
+      FlipDiffSenseSigns(objw);            // Backend / Emulator want "legacy"
+    }
+    return objw;
+  }
+
+  /// Convert between the options of obj:multi:weight
+  void FlipDiffSenseSigns(std::vector<double>& objw) {
+    const auto& obj = MPD( get_objectives() );
+    for (auto i=obj.size(); --i; )             // forall i>1
+      if (obj[i].obj_sense() != obj.front().obj_sense())
+        objw[i] = -objw[i];
+  }
 
 private:
   MOManagerStatus status_ {MOManagerStatus::NOT_SET};
