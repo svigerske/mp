@@ -27,6 +27,8 @@ void CbcmpModelAPI::AddVariables(const VarArrayDef& v) {
 
 void CbcmpModelAPI::SetLinearObjective( int iobj, const LinearObjective& lo ) {
   if (iobj<1) {
+    for (auto i=NumVars(); i--; )
+      Cbc_setObjCoeff(lp(), i, 0.0);
     for (int i = 0; i < lo.num_terms(); i++)
       Cbc_setObjCoeff(lp(), lo.vars()[i], lo.coefs()[i]);
     Cbc_setObjSense(lp(), lo.obj_sense()== obj::MAX ? -1 : 1);

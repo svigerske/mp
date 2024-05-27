@@ -330,7 +330,7 @@ Running Gurobi with option ``feasrelax 1``, we trick MP
 After the solver log we see a warning of type "Tolerance violations".
 There is an absolute violation of 3 and relative violation of 1 in the objective value.
 Linear constraint `C2` has its absolute and relative violations reported.
-Lines markes with a `*` report :ref:`Realistic violations <realistic-viols>`.
+Lines marked with a `*` report :ref:`Realistic violations <realistic-viols>`.
 
 To check the violations, we can recompute objective value and constraint slacks,
 as follows:
@@ -426,7 +426,8 @@ Consider the following example.
 .. code-block:: ampl
 
     var x >=0, <=100;
-    maximize Total: if x<=5 and x>=5.00000000001 then 10;
+    maximize Total:
+       if x<=5 and x>=5.00000000001 then 10;
 
 Most solvers apply a constraint feasibility tolerance of the order :math:`10^{-6}`.
 
