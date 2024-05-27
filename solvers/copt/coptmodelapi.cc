@@ -17,6 +17,9 @@ void CoptModelAPI::SetLinearObjective( int iobj, const LinearObjective& lo ) {
   if (iobj<1) {
     COPT_CCALL(COPT_SetObjSense(lp(), 
                     obj::Type::MAX==lo.obj_sense() ? COPT_MAXIMIZE : COPT_MINIMIZE) );
+    double zero_out = 0.0;
+    for (int i=NumVars(); i--; )
+      COPT_CCALL(COPT_SetColObj(lp(), 1, &i, &zero_out));
     COPT_CCALL(COPT_SetColObj(lp(), lo.num_terms(),
                            lo.vars().data(), lo.coefs().data()) );
   } else {
