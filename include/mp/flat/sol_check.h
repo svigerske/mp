@@ -270,9 +270,9 @@ public:
     if (cvmap.size()) {
       for (const auto& cva: cvmap) {
         Gen1Viol(cva.second.at(0), wrt, !alg_log,
-                 0==cva.first.compare(0, 4, ":lin")
+                 0==cva.first.compare(0, 4, "_lin")
                  ? "algebraic con(s)"
-                 : 0==cva.first.compare(0, 5, ":quad")
+                 : 0==cva.first.compare(0, 5, "_quad")
                    ? "quadratic con(s)"
                  : "expr '"
                  + std::string(cva.first) + "'");
