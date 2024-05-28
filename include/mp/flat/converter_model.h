@@ -392,12 +392,12 @@ protected:
     this->LogConstraintGroups(backend);
   }
 
-  FlatModelInfo* GetModelInfoWrt() const { return pfmi_.get(); }
-
 
 public:
   /// Model info
   const FlatModelInfo* GetModelInfo() const  { return pfmi_.get(); }
+  /// Model info, writable
+  FlatModelInfo* GetModelInfoWrt() const { return pfmi_.get(); }
 
   /// Set given objective
   template <class Backend>

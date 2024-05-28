@@ -83,7 +83,7 @@ public:
   /// Necessary to be called.
   /// @note Can be called before or after unpostsolved solution.
   /// Should contain at least valid solve status.
-  void ProcessMOIterationPostsolvedSolution(const Solution& sol, int solst) {
+  void ProcessMOIterationPostsolvedSolution(const Solution& , int solst) {
     assert(sol::Status::NOT_SET != solst);
     assert(IsMOActive());
     assert(MOManagerStatus::FINISHED != status_);
@@ -176,12 +176,14 @@ protected:
           "MULTI-OBJECTIVE MODE: objective {} (out of {}) ...\n"
           "==============================================================================\n\n"
           , i_current_obj_+1, obj_new_.size());
-    MPD( GetModelAPI() ).InitProblemModificationPhase(
-        MPD( GetModelInfo() ));
-    ReplaceCurrentObj();
     if (i_current_obj_)
       RestrictLastObjVal();
-    MPD( GetModelAPI() ).FinishProblemModificationPhase();
+    MPD( FillConstraintCounters( MPD( GetModelAPI() ), *MPD( GetModelInfoWrt() ) ) );   // @todo a hack.
+    MPD( GetModelAPI() ).InitProblemModificationPhase(   // For adding the new constraint. @todo a hack.
+        MPD( GetModelInfo() ));                          // Ideally Model would notice changes and notify
+    ReplaceCurrentObj();                  // After allowing model modification (needed by SCIP.)
+    MPD( AddUnbridgedConstraintsToBackend( MPD( GetModelAPI() ), nullptr) );
+    MPD( GetModelAPI() ).FinishProblemModificationPhase();            // ModelAPI automatically.
     return true;
   }
 
@@ -194,18 +196,18 @@ protected:
     lim += diff * (obj::MAX==obj_last.obj_sense() ? -1.0 : 1.0);
     if (obj_last.GetQPTerms().size()) {
       if (obj::MAX == obj_last.obj_sense())
-        MPD( GetModelAPI() ).AddConstraint(
-            QuadConGE{ { obj_last.GetLinTerms(), obj_last.GetQPTerms() }, objval_last_ } );
+        MPD( AddConstraint(
+            QuadConGE{ { obj_last.GetLinTerms(), obj_last.GetQPTerms() }, objval_last_ } ) );
       else
-        MPD( GetModelAPI() ).AddConstraint(
-            QuadConLE{ { obj_last.GetLinTerms(), obj_last.GetQPTerms() }, objval_last_ } );
+        MPD( AddConstraint(
+            QuadConLE{ { obj_last.GetLinTerms(), obj_last.GetQPTerms() }, objval_last_ } ) );
     } else {
       if (obj::MAX == obj_last.obj_sense())
-        MPD( GetModelAPI() ).AddConstraint(
-            LinConGE{ { obj_last.GetLinTerms() }, objval_last_ } );
+        MPD( AddConstraint(
+            LinConGE{ { obj_last.GetLinTerms() }, objval_last_ } ) );
       else
-        MPD( GetModelAPI() ).AddConstraint(
-            LinConLE{ { obj_last.GetLinTerms() }, objval_last_ } );
+        MPD( AddConstraint(
+            LinConLE{ { obj_last.GetLinTerms() }, objval_last_ } ) );
     }
   }
 

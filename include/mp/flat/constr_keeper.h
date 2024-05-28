@@ -493,21 +493,20 @@ protected:
   /// Export all constraints if desired.
   void AddAllUnbridged(BasicFlatModelAPI& be,
                        const std::vector<std::string>* pvnam) {
-    int con_index=0;
     auto con_group = GetConstraintGroup(be);
-    for (const auto& cont: cons_) {
-      bool adding = !cont.IsBridged();
+    for ( ; i_2add_next_ < cons_.size(); ++i_2add_next_) {
+      const auto& cont = cons_[i_2add_next_];
+      bool adding = !cont.IsBridged();            // includes 'unused'
       if (adding) {
         static_cast<Backend&>(be).AddConstraint(cont.GetCon());
-        GetConverter().GetCopyLink().
+        GetConverter().GetCopyLink().             // Linking to the "final" nodes
             AddEntry({
-                       GetValueNode().Select(con_index),
+                       GetValueNode().Select(i_2add_next_),
                        GetConverter().GetValuePresolver().GetTargetNodes().
                          GetConValues()(con_group).Add()
                      });
       }
-      ExportConStatus(con_index, cont, pvnam, adding);
-      ++con_index;                      // increment index
+      ExportConStatus(i_2add_next_, cont, pvnam, adding);
     }
   }
 
@@ -517,7 +516,9 @@ private:
   std::deque<Container> cons_;
   int i_cvt_last_ = -1;               // Last converted constraint.
   int n_bridged_or_unused_ = 0;       // Number of converted items,
-                                      // they won't go to Backend
+                                      // they won't go to Backend.
+  int i_2add_next_ = 0;               // Next constraint to consider
+                                      // for adding to Backend.
   const std::string desc_ {
     std::string("ConstraintKeeper< ") +
         Converter::GetTypeName() + ", " +

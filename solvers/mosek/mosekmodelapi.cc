@@ -6,12 +6,13 @@
 namespace mp {
 
 void MosekModelAPI::InitProblemModificationPhase(const FlatModelInfo* info) {
-	/// Preallocate algebraic constraints.
+  /// Preallocate algebraic constraints.
 	/// MOSEK 10 seems to handle all algebraic constraints as 1 group.
 	/// CG_Algebraic, etc. are the constraint group indexes
   /// provided in ACCEPT_CONSTRAINT macros.
-  MOSEK_CCALL(MSK_appendcons(lp(),
-														 info->GetNumberOfConstraintsOfGroup(CG_Algebraic)));
+  auto n_alg_all = info->GetNumberOfConstraintsOfGroup(CG_Algebraic);
+  if (n_alg_cons_ < n_alg_all)
+    MOSEK_CCALL(MSK_appendcons(lp(), n_alg_all - n_alg_cons_));
 }
 std::string& myreplace(std::string& s, const std::string& from, const std::string& to)
 {
@@ -61,6 +62,8 @@ void MosekModelAPI::SetLinearObjective( int iobj, const LinearObjective& lo ) {
   if (iobj < 1) {
     MOSEK_CCALL(MSK_putobjsense(lp(),
       obj::Type::MAX == lo.obj_sense() ? MSK_OBJECTIVE_SENSE_MAXIMIZE : MSK_OBJECTIVE_SENSE_MINIMIZE));
+    for (auto i=NumVars(); i--; )
+      MOSEK_CCALL(MSK_putcj(lp(), i, 0.0));
     for (int i = 0; i < lo.num_terms(); i++) {
       MOSEK_CCALL(MSK_putcj(lp(), lo.vars()[i], lo.coefs()[i]));
     }

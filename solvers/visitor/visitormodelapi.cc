@@ -8,7 +8,7 @@ void VisitorModelAPI::InitProblemModificationPhase(
   // Allocate storage if needed:
   // auto n_linear_cons =
   //   flat_model_info->GetNumberOfConstraintsOfGroup(CG_LINEAR);
-  // preallocate_linear_cons( n_linear_cons );
+  // reallocate_linear_cons( n_linear_cons );
 }
 
 void VisitorModelAPI::AddVariables(const VarArrayDef& v) {

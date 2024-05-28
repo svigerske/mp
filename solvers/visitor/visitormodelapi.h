@@ -23,11 +23,11 @@ public:
   /// If any driver options added from here
   void InitCustomOptions() { }
 
-  /// Called before problem input.
-  /// Model info can be used to preallocate memory.
+  /// Called before problem modification.
+  /// @param fmi: current problem information.
   /// @note this is called before each phase of model modification
   ///   which can happen during iterative solving.
-  void InitProblemModificationPhase(const FlatModelInfo*);
+  void InitProblemModificationPhase(const FlatModelInfo* fmi);
   /// After
   void FinishProblemModificationPhase();
 

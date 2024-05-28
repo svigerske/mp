@@ -23,8 +23,9 @@ public:
   /// Class name
   static const char* GetTypeName() { return "MosekModelAPI"; }
 
-  /// Called before problem input
-  void InitProblemModificationPhase(const FlatModelInfo*);
+  /// Called before problem modification.
+  /// @param fmi: current problem information
+  void InitProblemModificationPhase(const FlatModelInfo* fmi);
   /// After
   void FinishProblemModificationPhase();
 
