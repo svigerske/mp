@@ -268,11 +268,16 @@ protected:
 
   /// Our solving procedure.
   virtual void RunSolveIterations() {
-    while (GetMM().PrepareSolveIteration()) {
+    auto get_stt = [this]() {          // to be called before GetSolution()
+      auto sr = GetSolveResult();
+      SetStatus( sr );
+      return (sol::Status)sr.first;
+    };
+    auto get_sol = [this]() {
+      return GetSolution();
+    };
+    while (GetMM().PrepareSolveIteration(get_stt, get_sol)) {
       Solve();
-      SetStatus( GetSolveResult() );      // before GetSolution()
-      sol_last_ = GetSolution();          // @todo don't need it in the last iteration
-      GetMM().ProcessIterationSolution(sol_last_, status_.first);
     }
   }
 
@@ -656,7 +661,6 @@ private:
   std::pair<int, std::string> status_ { sol::NOT_SET, "status not set" };
   int kIntermSol_ = 0;   // last written intermed solution index
   std::pair<double, double> objIntermSol_ { -1e100, 1e100 };
-  Solution sol_last_;
 
   ///////////////////////// STORING SOLVER MESSAGES //////////////////////
 private:

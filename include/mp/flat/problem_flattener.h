@@ -127,12 +127,10 @@ public:
   }
 
   /// Need and successfully prepared the next solve iteration?
-  bool PrepareSolveIteration() override
-  { return GetFlatCvt().PrepareNextSolveIteration(); }
-
-  /// Process solve iteration solution
-  void ProcessIterationSolution(const Solution& sol, int status) override
-  { GetFlatCvt().ProcessSolveIterationSolution(sol, status); }
+  bool PrepareSolveIteration(
+      std::function<sol::Status(void)> get_stt, std::function<Solution(void)> get_sol)
+      override
+  { return GetFlatCvt().PrepareNextSolveIteration(get_stt, get_sol); }
 
   /// Objective weights
   ArrayRef<double> GetObjWeightsAdapted() override

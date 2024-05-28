@@ -49,22 +49,45 @@ public:
   /// Prepare next multiobj iteration?
   /// @note Call this before a MO iteration.
   /// @return true iff the model is ready for the next iteration.
-  bool PrepareMOIteration() {
+  bool PrepareMOIteration(
+      std::function<sol::Status(void)> get_stt, std::function<Solution(void)> get_sol) {
     switch (status_) {
     case MOManagerStatus::NOT_SET:
-      MP_RAISE("FlatConverter: MultiobjManager not started");
+      MP_RAISE("FlatConverter: MultiobjManager not set up");
     case MOManagerStatus::NOT_ACTIVE:
       MP_RAISE("FlatConverter: MultiobjManager not running");
     case MOManagerStatus::RUNNING:
-      return DoPrepareNextMultiobjSolve();
+      return DoPrepareNextMultiobjSolve(get_stt, get_sol);
     case MOManagerStatus::FINISHED:
       return false;
     }
     return false;
   }
 
+  /// Obtain and process a postsolved solution of the current iteration.
+  /// Can implicitly call ProcessMOIterationUnpostsolvedSolution().
+  /// @return (whether we should continue, solve_result).
+  std::pair<bool, sol::Status> ProcessMOIterationPostsolvedSolution(
+      std::function<sol::Status(void)> get_stt, std::function<Solution(void)> get_sol) {
+    auto solst = get_stt();
+    assert(sol::Status::NOT_SET != solst);
+    assert(IsMOActive());
+    assert(MOManagerStatus::FINISHED != status_);
+    if ((sol::IsProblemSolvedOrFeasible((sol::Status)solst)
+        // || sol::IsProblemMaybeSolved(solst)    // Use this?
+         )  && !sol::IsProblemUnbounded((sol::Status)solst)  // Don't want unbounded
+        ) {                                                  // (but LIMIT can have this undiscovered)
+      get_sol();    // This implicitly calls ProcessMOIterationUnpostsolvedSolution().
+      return { true, solst };
+      // We ignore the solution here - but having it provided
+      // guarantees that the postsolve has been run.
+    }
+    status_ = MOManagerStatus::FINISHED;
+    return { false, solst };
+  }
+
   /// Process an unpostsolved solution of the current iteration.
-  /// Necessary to be called.
+  /// This is called from solution postsolve initiated by solution getter.
   /// @note Can be called before or after the postsolved solution.
   void ProcessMOIterationUnpostsolvedSolution(pre::ModelValuesDbl& sol) {
     if (IsMOActive()) {
@@ -77,24 +100,6 @@ public:
       for (int i=0; i<(int)objs.size(); ++i)
         objs[i] = ComputeValue(MPCD(get_obj(i)), sol.GetVarValues()());
     }
-  }
-
-  /// Process a postsolved solution of the current iteration.
-  /// Necessary to be called.
-  /// @note Can be called before or after unpostsolved solution.
-  /// Should contain at least valid solve status.
-  void ProcessMOIterationPostsolvedSolution(const Solution& , int solst) {
-    assert(sol::Status::NOT_SET != solst);
-    assert(IsMOActive());
-    assert(MOManagerStatus::FINISHED != status_);
-    if ((sol::IsProblemSolvedOrFeasible((sol::Status)solst)
-        // || sol::IsProblemMaybeSolved(solst)    // Use this?
-         ) && !sol::IsProblemUnbounded((sol::Status)solst))
-    {}  // continue
-    else
-      status_ = MOManagerStatus::FINISHED;
-    // We ignore the solution here - but having it provided
-    // guarantees that the postsolve has been run.
   }
 
 
@@ -161,7 +166,8 @@ protected:
   }
 
   /// Do prepare next solve
-  bool DoPrepareNextMultiobjSolve() {
+  bool DoPrepareNextMultiobjSolve(
+      std::function<sol::Status(void)> get_stt, std::function<Solution(void)> get_sol) {
     if (++i_current_obj_ >= obj_new_.size()) {
       status_ = MOManagerStatus::FINISHED;
       MPD( GetEnv() ).Print(
@@ -176,8 +182,20 @@ protected:
           "MULTI-OBJECTIVE MODE: objective {} (out of {}) ...\n"
           "==============================================================================\n\n"
           , i_current_obj_+1, obj_new_.size());
-    if (i_current_obj_)
+    if (i_current_obj_) {
+      auto proc_sol = ProcessMOIterationPostsolvedSolution(get_stt, get_sol);
+      if (!proc_sol.first) {
+        if (MPD( GetEnv() ).verbose_mode())
+          MPD( GetEnv() ).Print(
+              "\n"
+              "MULTI-OBJECTIVE MODE: objective {} (out of {}):\n"
+              "    ABORTING due to the previous iteration's solve result ({}).\n"
+              "==============================================================================\n\n"
+              , i_current_obj_+1, obj_new_.size(), proc_sol.second);
+        return false;
+      }
       RestrictLastObjVal();
+    }
     MPD( FillConstraintCounters( MPD( GetModelAPI() ), *MPD( GetModelInfoWrt() ) ) );   // @todo a hack.
     MPD( GetModelAPI() ).InitProblemModificationPhase(   // For adding the new constraint. @todo a hack.
         MPD( GetModelInfo() ));                          // Ideally Model would notice changes and notify

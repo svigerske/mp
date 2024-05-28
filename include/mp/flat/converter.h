@@ -231,19 +231,14 @@ public:
   /// This should be used in particular with MO emulation.
   /// @return true if the next solve should be executed
   /// and its results passed via ProcessSolveIterationSolution().
-  bool PrepareNextSolveIteration() {
+  bool PrepareNextSolveIteration(
+      std::function<sol::Status(void)> get_stt, std::function<Solution(void)> get_sol) {
     if (MPCD( IsMOActive() ))
-      return MPD( PrepareMOIteration() );
+      return MPD( PrepareMOIteration(get_stt, get_sol) );
     return !(n_solve_iter_++);
   }
 
-  /// Process solve iteration solution.
-  void ProcessSolveIterationSolution(const Solution& sol, int status) {
-    if (MPCD( IsMOActive() ))
-      MPD( ProcessMOIterationPostsolvedSolution(sol, status) );
-  }
-
-  /// Objective weights
+  /// Objective weights, adapted according to obj:multi:weight
   ArrayRef<double> GetObjWeightsAdapted() { return MPD( GetMOWeightsLegacy() ); }
 
 

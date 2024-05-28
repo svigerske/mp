@@ -287,12 +287,10 @@ protected:
   }
 
   /// Need and successfully prepared the next solve iteration?
-  bool PrepareSolveIteration() override
-  { return GetCvt().PrepareSolveIteration(); }
-
-  /// Process solve iteration solution
-  void ProcessIterationSolution(const Solution& sol, int status) override
-  { GetCvt().ProcessIterationSolution(sol, status); }
+  bool PrepareSolveIteration(
+      std::function<sol::Status(void)> get_stt, std::function<Solution(void)> get_sol)
+      override
+  { return GetCvt().PrepareSolveIteration(get_stt, get_sol); }
 
   /// Objective weights
   ArrayRef<double> GetObjWeightsAdapted() override

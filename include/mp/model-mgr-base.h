@@ -71,10 +71,11 @@ public:
                               double) = 0;
 
   /// Need and successfully prepared the next solve iteration?
-  virtual bool PrepareSolveIteration() = 0;
-
-  /// Process solve iteration solution
-  virtual void ProcessIterationSolution(const Solution& , int status) = 0;
+  /// @param get_stt: solution status getter.
+  ///   If called, then before get_sol.
+  /// @param get_sol: solution getter (for postsolved solution.)
+  virtual bool PrepareSolveIteration(
+      std::function<sol::Status(void)> get_stt, std::function<Solution(void)> get_sol) = 0;
 
   /// Objective weights in the 'legacy' format of the obj:multi:weight option
   virtual ArrayRef<double> GetObjWeightsAdapted() = 0;
