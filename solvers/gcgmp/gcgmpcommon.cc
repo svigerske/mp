@@ -9,13 +9,12 @@ SCIP_DECL_PROBDELORIG(probdataDelOrigNl)
   int i;
 
   assert((*probdata)->vars != NULL || (*probdata)->nvars == 0);
-  assert((*probdata)->linconss != NULL || (*probdata)->nlinconss == 0);
+  assert((*probdata)->linconss.size() || (*probdata)->nlinconss == 0);
 
   for( i = 0; i < (*probdata)->nlinconss; ++i )
   {
     SCIP_CALL( SCIPreleaseCons(scip, &(*probdata)->linconss[i]) );
   }
-  SCIPfreeBlockMemoryArray(scip, &(*probdata)->linconss, (*probdata)->nlinconss);
 
   for( i = 0; i < (*probdata)->nvars; ++i )
   {

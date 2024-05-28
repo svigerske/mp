@@ -5,9 +5,10 @@ namespace mp {
 void ScipModelAPI::InitProblemModificationPhase(const FlatModelInfo* flat_model_info) {
   // Allocate storage if needed:
   int n_linear_cons = flat_model_info->GetNumberOfConstraintsOfGroup(CG_Linear);
+  if (getPROBDATA()->nlinconss)
+    SCIP_CCALL( SCIPfreeTransform(getSCIP()) );                  // allow model update
   getPROBDATA()->nlinconss = n_linear_cons;
-  getPROBDATA()->i = 0;
-  SCIP_CCALL( SCIPallocBlockMemoryArray(getSCIP(), &getPROBDATA()->linconss, getPROBDATA()->nlinconss) );
+  getPROBDATA()->linconss.resize(n_linear_cons);
 }
 
 void ScipModelAPI::AddVariables(const VarArrayDef& v) {
@@ -42,6 +43,9 @@ void ScipModelAPI::SetLinearObjective( int iobj, const LinearObjective& lo ) {
     SCIP_CCALL( SCIPsetObjsense(getSCIP(), 
                     obj::Type::MAX==lo.obj_sense() ? SCIP_OBJSENSE_MAXIMIZE : SCIP_OBJSENSE_MINIMIZE) );
     SCIP_VAR** vars = getPROBDATA()->vars;
+    for (int i = 0; i < getPROBDATA()->nvars; i++) {
+      SCIP_CCALL( SCIPchgVarObj(getSCIP(), vars[i], 0.0) );          // zero out
+    }
     for (int i = 0; i < lo.num_terms(); i++) {
       SCIP_CCALL( SCIPchgVarObj(getSCIP(), vars[lo.vars()[i]], lo.coefs()[i]) );
     }

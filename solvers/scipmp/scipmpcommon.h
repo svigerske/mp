@@ -1,6 +1,7 @@
 #ifndef SCIPCOMMON_H
 #define SCIPCOMMON_H
 
+#include <vector>
 #include <string>
 
 #include "mp/backend-to-model-api.h"
@@ -16,9 +17,9 @@ struct SCIP_ProbData
    SCIP_VAR**            vars;               /**< variables in the order given by AMPL */
    int                   nvars;              /**< number of variables */
 
-   SCIP_CONS**           linconss;           /**< linear constraints in the order given by AMPL */
-   int                   i;                  /**< shows free slot of linear constraints */
-   int                   nlinconss;          /**< number of linear constraints */
+   std::vector<SCIP_CONS*>  linconss;        /**< linear constraints in the order given by AMPL */
+   int                   i = 0;              /**< shows free slot of linear constraints */
+   int                   nlinconss = 0;      /**< number of linear constraints */
 };
 
 namespace mp {
