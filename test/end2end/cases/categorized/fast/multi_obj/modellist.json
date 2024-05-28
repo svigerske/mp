@@ -60,6 +60,20 @@
     }
   },
   {
+    "name" : "dietobj_1000 multiobj=1 obj_pr_2",
+    "Comment": "Modify obj priorities and weights via suffixes in dietobj_pr_2",
+    "tags" : ["linear", "continuous", "multiobj"],
+    "files" : ["dietobj_1000.mod", "dietobj.dat", "dietobj_pr_2.inc"],
+    "options": { "ANYSOLVER_options": "multiobj=1" },
+    "values": {
+      "total_cost[\"A&P\"]": 923.4173333333333,
+      "total_cost[\"JEWEL\"]": 925.5577777777779,
+      "total_cost[\"VONS\"]": 918.4284444444445,
+      "total_number": 32.84444444444445,
+      "_sobj[4]": 32.84444444444445
+    }
+  },
+  {
     "name" : "dietobj multiobj=1 obj:2:priority=10",
     "Comment": "Modify obj priority via an option",
     "tags" : ["linear", "continuous", "multiobj", "obj_priority"],
