@@ -2,6 +2,15 @@ Summary of recent updates to the AMPL MP Library
 ================================================
 
 
+## 20240529
+- *Multi-objective emulator*
+	- All flat MP solvers support multi-objective mode (obj:multi=1),
+		either natively, or via emulation.
+	- Suffixes .objpriority, .objweight, .objabstol, .objreltol.
+	- [BREAKING] Default intuitive handling of .objweight,
+		see option obj:multi:weight, even when natively supported.
+
+
 ## 20240429
 - *Options `report_times` and `timing`*.
   - Options `timing` and `report_times` now have the same effect:

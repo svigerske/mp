@@ -2,6 +2,15 @@ Summary of recent updates to gurobi for AMPL
 ============================================
 
 
+## 20240529
+- *Multi-objective emulator*
+	- All flat MP solvers support multi-objective mode (obj:multi=1),
+		either natively, or via emulation.
+	- Suffixes .objpriority, .objweight, .objabstol, .objreltol.
+	- [BREAKING] Default intuitive handling of .objweight,
+		see option obj:multi:weight, even when natively supported.
+
+
 ## 20240518
 - Updated to Gurobi libraries 11.0.2, which include many 
   bug fixes.
