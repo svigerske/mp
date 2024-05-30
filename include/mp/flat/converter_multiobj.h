@@ -111,7 +111,7 @@ protected:
       // instead of current manual postsolving in ValuePresolver::PostsolveSolution().
     const auto& obj_orig = MPD( get_objectives() );   // no linking
     ///////////////// Read / set default suffixes ///////////////////
-    std::vector<double> objpr = MPD( ReadDblSuffix( {"objpriority", suf::OBJ} ) );
+    std::vector<int> objpr = MPD( ReadIntSuffix( {"objpriority", suf::OBJ} ) );  // int only
     objpr.resize(obj_orig.size(), 0.0);               // blend objectives by default
     std::vector<double> objwgt = MPD( GetMOWeightsLegacy() );
     if (objwgt.empty()) {
@@ -122,7 +122,7 @@ protected:
     objtola.resize(obj_orig.size(), 0.0);
     std::vector<double> objtolr = MPD( ReadDblSuffix( {"objreltol", suf::OBJ} ) );
     objtolr.resize(obj_orig.size(), 0.0);
-    std::map<double, std::vector<int>, std::greater<double> > pr_map;      // Decreasing order
+    std::map<int, std::vector<int>, std::greater<int> > pr_map;      // Decreasing order
     for (int i=0; i<objpr.size(); ++i)
       pr_map[objpr[i]].push_back(i);
     obj_new_ = {};         ////////////////// Aggregate new objectives ///////////////////
