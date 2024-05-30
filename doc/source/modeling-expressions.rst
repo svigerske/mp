@@ -508,7 +508,8 @@ Conic optimization
 **************************************
 
 Some solvers can handle conic constraints with tailored algorithms:
-Mosek, Gurobi, COPT. Note that general non-linear solvers accept them too,
+Mosek, Gurobi, COPT, SCIP, CPLEX, Xpress.
+Note that general non-linear solvers accept them too,
 but might not provide any specialized methods.
 See `conic examples <https://colab.ampl.com/tags/conic.html>`_
 at Google Colab.
@@ -544,10 +545,10 @@ complaining::
     The problem contains both conic and nonlinear constraints.
 
 
-In this case, setting :ref:`option <solver-options>` ``cvt:socp=0`` results in second-order conic
-constraints being passed to the solver as quadratics, even if
-the solver has native SOCP API. This gives the solver a chance to recognize
-SOCP forms in preprocessing.
+In this case, change the model to use standard SOCP forms,
+or consider playing with
+the :ref:`options <solver-options>` ``cvt:socp`` and ``cvt:socp2qp``.
+
 
 Exponential cones
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
