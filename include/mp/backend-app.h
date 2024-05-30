@@ -89,7 +89,7 @@ int BackendApp::Run(char **argv) {
     // if the solution handler is available.
     GetBackend().ReportError(
           er.exit_code()>=0 ? er.exit_code() : sol::FAILURE,
-          std::string(GetBackend().long_name()) + ":  "
+          std::string(GetBackend().long_name()) + ": "
           + er.what());
   } catch (const std::exception& ex) {
     // For std::exception, which can be thrown by anything,

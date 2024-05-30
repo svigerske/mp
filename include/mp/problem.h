@@ -1212,8 +1212,18 @@ public:
   }
 
   /// Read integer suffix
-  ArrayRef<int> ReadIntSuffix(const SuffixDef<int>& sufdef)
-  { return ReadSuffix_OneTypeOnly(sufdef); }
+  ArrayRef<int> ReadIntSuffix(const SuffixDef<int>& sufdef) {
+    auto suf_int = ReadSuffix_OneTypeOnly(sufdef);
+    if (!suf_int) {
+      auto suf_dbl = ReadSuffix_OneTypeOnly(sufdef.to_type<double>());
+      MP_ASSERT_ALWAYS(!suf_dbl,
+                       fmt::format("Expected integer suffix .{}, kind {},\n"
+                                   "but fractional values provided",
+                                   sufdef.name(), sufdef.kind()));
+      return {};
+    }
+    return suf_int;
+  }
 
   /// Read double suffix.
   /// If absent but an integer suffix with the same name exists,
