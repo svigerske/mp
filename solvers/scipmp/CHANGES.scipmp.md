@@ -1,6 +1,9 @@
 Summary of recent updates to SCIP for AMPL
 ==========================================
 
+## 20240531
+- Updated to SCIP 9.0.1
+
 
 ## 20240529
 - *Multi-objective emulator*

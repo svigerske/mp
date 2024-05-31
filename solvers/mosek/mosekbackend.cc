@@ -427,6 +427,20 @@ static const mp::OptionValueInfo alg_values_mip_presolve_use[] = {
   { "2", "Automatic (default)", 2}
 };
 
+
+static const mp::OptionValueInfo values_mip_var_selection_types[] = {
+  { "0", "Automatic (default)", 0},
+  { "1", "Pseudocost variable selection", 1},
+  { "2", "Strong branching selection", 2}
+};
+
+static const mp::OptionValueInfo values_mip_presolve_dual_ray[] = {
+  { "-1", "Automatic (default)", -1},
+  { "0", "Disabled", 0},
+  { "1", "Low amount of analyis", 1},
+  { "2", "Higher amount of analysis", 2}
+};
+
 void MosekBackend::InitCustomOptions() {
 
   set_option_header(
@@ -472,15 +486,34 @@ void MosekBackend::InitCustomOptions() {
     "\n"
     "Parameter descriptions: docs.mosek.com/latest/cmdtools/param-groups.html.",
     storedOptions_.paramRead_);
+
   AddStoredOption("tech:optionnativewrite optionnativewrite tech:param:write param:write",
     "Name of Mosek parameter file (surrounded by 'single' or \"double\" quotes if the "
     "name contains blanks) to be written.",
     storedOptions_.paramWrite_);
 
+
+  AddSolverOption("tech:seed seed",
+    "Random number seed (default 42), used for randomization in the mixed-integer optimizer, "
+    "may influence the solution path.",
+    MSK_IPAR_MIO_SEED, 0, INT_MAX);
+
+
   AddSolverOption("mip:presolve presolve",
     "MIP presolve:\n"
                   "\n.. value-table::\n",
     MSK_IPAR_PRESOLVE_USE, alg_values_mip_presolve_use, 2);
+
+  AddSolverOption("pre:dualray_analysis dualrayanalysis",
+    "Controls the amount of symmetry detection employed by the mixed-integer optimizer "
+    "in presolve:\n"
+    "\n.. value-table::\n",
+    MSK_IPAR_MIO_DUAL_RAY_ANALYSIS_LEVEL, values_mip_presolve_dual_ray, -1);
+
+  AddSolverOption("mip:varselection varselection",
+    "Controls the variable selection strategy employed by the mixed-integer optimizer:\n"
+    "\n.. value-table::\n",
+    MSK_IPAR_MIO_VAR_SELECTION, values_mip_var_selection_types, 2);
 
   AddSolverOption("mip:inttol inttol",
     "MIP integrality tolerance.",
@@ -502,10 +535,12 @@ void MosekBackend::InitCustomOptions() {
     "0*/1: Whether to write mosek log lines to stdout.",
     MSK_IPAR_LOG, 0, 1);
 
-  /////////////////////// Custom solve results /////////////////////////
-//  AddSolveResults({
-//                    { sol::NUMERIC, "failure: numeric issue, no feasible solution" }
-//                  });
+  AddSolverOption("lim:sol sollimit solutionlimit",
+    "Limit the number of feasible MIP solutions found, causing early "
+    "termination if exceeded; default -1 (no limit).",
+    MSK_IPAR_MIO_MAX_NUM_SOLUTIONS, 0, INT_MAX);
+
+
 }
 
 double MosekBackend::MIPGap() {

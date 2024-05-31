@@ -2,6 +2,12 @@ Summary of recent updates to MOSEK for AMPL
 ===========================================
 
 
+## 20240531
+- Updated to MOSEK 10.2, which provides many bugfixes.
+- Added options `mip:varselection`, `pre:dualray_analysis` and 
+  `lim:sol`.
+
+
 ## 20240529
 - *Multi-objective emulator*
 	- All flat MP solvers support multi-objective mode (obj:multi=1),

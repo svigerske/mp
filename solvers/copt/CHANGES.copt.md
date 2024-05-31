@@ -1,6 +1,9 @@
 Summary of recent updates to COPT for AMPL
 ==========================================
 
+## 20240531
+- Updated to Copt 7.1.3, which provides many bugfixes.
+
 
 ## 20240529
 - *Multi-objective emulator*
