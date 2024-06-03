@@ -210,6 +210,12 @@ public:
     QuadTerms::add(qlt.GetQPTerms());
   }
 
+  /// Multiply by const
+  void operator*=(double n) {
+    GetLinTerms() *= n;
+    GetQPTerms() *= n;
+  }
+
   /// Value at given variable vector
   template <class VarInfo>
   long double ComputeValue(const VarInfo& x) const {

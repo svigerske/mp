@@ -497,6 +497,25 @@ protected:
     return AssignResult2Args( std::move(fc) );
   }
 
+  /// Specialize for Div:
+  /// For constant divisor, return linear expression.
+  /// Why we need this: AMPL 20240331 does not preprocess this.
+  template <class ExprArray=std::initializer_list<Expr> >
+  EExpr VisitDivExpression(ExprArray ea) {
+    auto dividend = Convert2EExpr(*ea.begin());
+    auto it = ea.begin();
+    auto divisor = Convert2EExpr(*(++it));
+    if (divisor.is_constant()) {
+      if (!divisor.constant_term())
+        MP_RAISE("Division by 0 in the model.");
+      dividend *= (1.0 / divisor.constant_term());
+      return dividend;
+    }
+    DivConstraint fc
+        {{ Convert2Var(std::move(dividend)), Convert2Var(std::move(divisor)) }};
+    return AssignResult2Args( std::move(fc) );
+  }
+
   template <class ExprArray>
   void Exprs2Vars(const ExprArray& ea, std::vector<int>& result) {
     assert(result.empty());
@@ -666,7 +685,7 @@ public:          // need to be public due to CRTP
   }
 
   EExpr VisitDiv(BinaryExpr e) {
-    return VisitFunctionalExpression<DivConstraint>(
+    return VisitDivExpression(
           { e.lhs(), e.rhs() });
   }
 

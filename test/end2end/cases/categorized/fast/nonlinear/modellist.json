@@ -1,5 +1,10 @@
 [
   {
+    "name" : "div_by_const",
+    "tags" : ["linear"],
+    "objective": 11.33333333333333
+  },
+  {
     "name" : "expA_1",
     "tags" : ["nonlinear"],
     "values": {
