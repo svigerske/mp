@@ -2,6 +2,11 @@ Summary of recent updates to GCG for AMPL
 =========================================
 
 
+## 20240604
+- Presolve division by constant, resulting in fewer constraints
+- Fix no-solution case in multi-objective emulator
+
+
 ## 20240529
 - *Multi-objective emulator*
 	- All flat MP solvers support multi-objective mode (obj:multi=1),

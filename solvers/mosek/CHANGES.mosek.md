@@ -2,6 +2,11 @@ Summary of recent updates to MOSEK for AMPL
 ===========================================
 
 
+## 20240604
+- Presolve division by constant, resulting in fewer constraints
+- Fix no-solution case in multi-objective emulator
+
+
 ## 20240531
 - Updated to MOSEK 10.2, which provides many bugfixes.
 - Added options `mip:varselection`, `pre:dualray_analysis` and 

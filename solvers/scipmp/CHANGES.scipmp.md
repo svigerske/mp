@@ -1,6 +1,12 @@
 Summary of recent updates to SCIP for AMPL
 ==========================================
 
+
+## 20240604
+- Presolve division by constant, resulting in fewer constraints
+- Fix no-solution case in multi-objective emulator
+
+
 ## 20240531
 - Updated to SCIP 9.0.1
 
