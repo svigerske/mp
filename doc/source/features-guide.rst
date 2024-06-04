@@ -883,9 +883,10 @@ Multiple objectives
 Many real world problems have multiple objectives; often this scenario is tackled by blending all the objectives
 by linear combination when formulating the model, or by minimizing each unwanted objective deviations from a pre-specified
 goal.
-Many solvers can facilitate the formulation; the available functionalities are solver-specific; at MP level
-they accessible via the main option ``obj:multi``. Consult the solver documentation for the functionalities available
-on your solver.
+Many solvers can facilitate the formulation; the available functionalities are solver-specific. For other solvers,
+MP :ref:`emulates the multi-objective capability <multiple-objectives>`. Consult the ``obj:multi``
+:ref:`option <solver-options>` documentation
+for the functionalities available on your solver.
 
 .. list-table::
    :header-rows: 0

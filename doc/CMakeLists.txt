@@ -30,6 +30,7 @@ add_prefix(mp_docs ${DOC_BASEDIR}/
     model-guide.rst
     modeling-overview.rst
     modeling-expressions.rst
+    modeling-mo.rst
     modeling-efficiency.rst
     modeling-numerics.rst
     modeling-tools.rst
