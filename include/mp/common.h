@@ -300,6 +300,10 @@ enum Status {
   INTERRUPTED = SPECIFIC
 };
 
+/// Status string ("solved", ...).
+/// Major status only.
+const char* GetStatusName(sol::Status stt);
+
 /** Following the taxonomy of the enum sol::Status, returns true if
       we have an optimal solution or a feasible solution for a
       satisfaction problem */

@@ -20,7 +20,9 @@
  Authors: Victor Zverovich, Gleb Belov
  */
 
+#include <map>
 #include <cctype>
+#include <climits>
 #include <cstdarg>
 #include <cstdio>
 #include <cstdlib>
@@ -236,6 +238,27 @@ void RSTFormatter::HandleDirective(const char *type) {
 }  // namespace
 
 namespace mp {
+
+namespace sol {
+
+const char* GetStatusName(sol::Status stt) {
+  static const std::map<int, const char*> stt_map {
+      { INT_MIN, "wrong_status_code" },
+      { NOT_SET, "not_set" },
+      { UNKNOWN, "unknown" },
+      { SOLVED, "solved" },
+      { UNCERTAIN, "solved?" },
+      { INFEASIBLE, "infeasible" },
+      { UNBOUNDED, "unbounded" },
+      { LIMIT, "limit" },
+      { FAILURE, "failure" }
+  };
+  auto it = stt_map.lower_bound(stt);
+  assert(stt_map.end() != it);
+  return it->second;
+}
+
+}
 
 namespace internal {
 

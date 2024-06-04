@@ -474,7 +474,7 @@ protected:
   /// to AMPL via SOL file
   virtual void ReportSolution2AMPL() {
     double obj_value = std::numeric_limits<double>::quiet_NaN();
-    auto sol = GetSolution();             // even if just dual
+    auto sol = GetSolution();             // even if just dual or infeasible
     fmt::MemoryWriter writer;
     writer.write("{}: {}", MP_DISPATCH( long_name() ), SolveStatus());
     if (IsProblemSolvedOrFeasible()) {

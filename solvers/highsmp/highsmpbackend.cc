@@ -346,6 +346,9 @@ std::pair<int, std::string> HighsBackend::GetSolveResult() {
   auto obj = Highs_getObjectiveValue(lp());
   auto inf = Highs_getInfinity(lp());
   bool hasSol = (-inf < obj && obj < inf);
+  int primal_solution_status;
+  Highs_getIntInfoValue(lp(),
+                        "primal_solution_status", &primal_solution_status);
   switch (optstatus) {
   case kHighsModelStatusOptimal:
     return { sol::SOLVED, "optimal solution" };
@@ -359,6 +362,8 @@ std::pair<int, std::string> HighsBackend::GetSolveResult() {
     return { sol::LIMIT_INF_UNB, "unbounded or infeasible" };
   case kHighsModelStatusModelError:
   case kHighsModelStatusLoadError:
+    if (kHighsSolutionStatusInfeasible == primal_solution_status)   // HiGHS 7
+      return { sol::INFEASIBLE, "infeasible problem" };
     return { sol::FAILURE, "solver error" };
   case kHighsModelStatusPresolveError:
   case kHighsModelStatusSolveError:

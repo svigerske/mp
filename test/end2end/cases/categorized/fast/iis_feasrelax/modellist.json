@@ -1,5 +1,18 @@
 [
   {
+    "name": "airtrainee_infeas multiobj=1",
+    "files": ["airtrainee_base.mod",
+              "airtrainee_seniority_reverse_PBS.mod",
+              "airtrainee_infeas_200.dat"],
+    "tags": [ "linear", "multiobj"],
+    "options": {
+      "ANYSOLVER_options": "multiobj=1"
+    },
+    "values": {
+      "solve_result": "infeasible"
+    }
+  },
+  {
     "name": "infeas_int_01 iisfind=1",
     "tags": [ "linear", "iis"],
     "options": {

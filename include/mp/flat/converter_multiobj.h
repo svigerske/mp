@@ -92,13 +92,16 @@ public:
   void ProcessMOIterationUnpostsolvedSolution(pre::ModelValuesDbl& sol) {
     if (IsMOActive()) {
       auto& objs = sol.GetObjValues()();
-      assert(1 == objs.size());
-      objval_last_ = objs.front();           // 0. save emulated obj value
+      if (objs.size())
+        objval_last_ = objs.front();           // 0. save emulated obj value
       // @todo 1. check if the solver correctly reports the current emulated obj
       // 2. Let's recompute the original objectives
-      objs.resize( MPCD(num_objs()) );
-      for (int i=0; i<(int)objs.size(); ++i)
-        objs[i] = ComputeValue(MPCD(get_obj(i)), sol.GetVarValues()());
+      const auto& xx = sol.GetVarValues()();
+      if (xx.size()) {                         // This can be invoked w/o solution
+        objs.resize( MPCD(num_objs()) );
+        for (int i=0; i<(int)objs.size(); ++i)
+          objs[i] = ComputeValue(MPCD(get_obj(i)), xx);
+      }
     }
   }
 
@@ -187,11 +190,9 @@ protected:
       if (!proc_sol.first) {
         if (MPD( GetEnv() ).verbose_mode())
           MPD( GetEnv() ).Print(
-              "\n"
-              "MULTI-OBJECTIVE MODE: objective {} (out of {}):\n"
-              "    ABORTING due to the previous iteration's solve result ({}).\n"
+              "   ... ABORTING: previous iteration's solve result: {} (code {}.)\n"
               "==============================================================================\n\n"
-              , i_current_obj_+1, obj_new_.size(), proc_sol.second);
+              , sol::GetStatusName(proc_sol.second), proc_sol.second);
         return false;
       }
       RestrictLastObjVal();
