@@ -4,6 +4,10 @@
 Multiple objectives
 ----------------------------------
 
+.. image:: images/berg-tal.svg
+  :width: 200
+  :align: right
+
 To consider multiple objectives in an AMPL model, use
 :ref:`solver option <solver-options>` ``obj:multi``.
 Otherwise, only the 1st objective is considered
@@ -18,7 +22,7 @@ Otherwise, only the 1st objective is considered
 
 
 See the
-:ref:`Multi-objective AMPL Colab notebooks <https://colab.ampl.com/tags/multiple-objectives.html>`
+`Multi-objective AMPL Colab notebooks <https://colab.ampl.com/tags/multiple-objectives.html>`_
 for examples.
 
 
@@ -44,3 +48,4 @@ as described in the ``obj:multi`` option description.
         S[i] * x[i, t]
       suffix objpriority (2-e)*S_range + 1 + S[i] - min {j in I} S[j];
 
+Suffixes ``.objabstol`` and ``.objreltol`` allow for objective degradation.
