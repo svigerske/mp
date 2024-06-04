@@ -13,6 +13,10 @@ To consider multiple objectives in an AMPL model, use
 Otherwise, only the 1st objective is considered
 (or any objective specified by ``obj:no``.)
 
+See the
+`Multi-objective AMPL Colab notebooks <https://colab.ampl.com/tags/multiple-objectives.html>`_
+for examples.
+
 .. code-block:: ampl
 
     minimize total_cost {s in STORE}:
@@ -20,10 +24,6 @@ Otherwise, only the 1st objective is considered
 
     minimize total_number:  sum {j in FOOD} Buy[j];
 
-
-See the
-`Multi-objective AMPL Colab notebooks <https://colab.ampl.com/tags/multiple-objectives.html>`_
-for examples.
 
 
 Blended objectives
