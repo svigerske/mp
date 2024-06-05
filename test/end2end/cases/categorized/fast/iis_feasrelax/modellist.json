@@ -5,6 +5,7 @@
               "airtrainee_seniority_reverse_PBS.mod",
               "airtrainee_infeas_200.dat"],
     "tags": [ "linear", "multiobj"],
+    "comment" : "Check correct reporting of 'infeas' in MO Emulator (if applied)",
     "options": {
       "ANYSOLVER_options": "multiobj=1"
     },

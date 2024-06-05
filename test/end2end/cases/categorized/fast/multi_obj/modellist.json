@@ -122,10 +122,10 @@
   {
     "name" : "obj_suf_01__objpr_frac multiobj=1",
     "tags" : ["linear", "continuous", "multiobj"],
-    "TODO" : "Need multiobj=1 and 'failure' but this fails in AMPLPY",
-    "options": { "ANYSOLVER_options": "multiobj=0" },
+    "comment" : "Check failure on fractional suffix expected as int",
+    "options": { "ANYSOLVER_options": "multiobj=1" },
     "values": {
-      "solve_result": "solved"
+      "solve_result": "failure"
     }
   },
   {
