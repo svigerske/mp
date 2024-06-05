@@ -250,12 +250,17 @@ class AMPLRunner(object):
      return self._outputHandler.get_output()
     
     def runAndEvaluate(self, model: Model, logFile : str):
+      try:
         self._run(model, logFile)
         self._evaluateRun(model)
         # Todo: check bug in the API (or in amplpy) by which old objectives are 
         # reported after reset. Terminating AMPL each time takes care of the problem
         # but it's hardly efficient
         # self._terminateAMPL()
+      except Exception as exc:
+        self._amplInitialized = False                 # To reinitialize next run
+        raise
+
 
     def _run(self, model: Model,  logFile : str = None):
       self._logFile = logFile
@@ -298,7 +303,7 @@ class AMPLRunner(object):
       solve_result = None
       if not model.isScript():
           if self.isBenchmark:
-            print("Solving... ", end="")
+            print("Solving... ", end="", flush=True)
           t.tick()
           self._ampl.solve()
           solve_result = self._ampl.get_value("solve_result")

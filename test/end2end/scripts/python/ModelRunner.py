@@ -26,9 +26,10 @@ class ModelRunner(object):
         """Run the models in this instance. If exporter != None, it exports the results as it goes"""
         self._models = modelList
         n = 0
-        nFailed = 0
-        nSkipped = 0
-        
+        nFailedSolver = [0 for r in self.getRunners()]
+        nFailedScriptOrAMPL = [0 for r in self.getRunners()]
+        nSkipped = [0 for r in self.getRunners()]
+
         # Set to true for junit to add the solver output to the test result
         keep_output=False
         try:
@@ -54,11 +55,10 @@ class ModelRunner(object):
                 cr = self._amplRunners
                 msg = "{}. Solving with AMPL: '{}'".format(n, m.getName())
             print("{0: <80}".format(msg), end="", flush=True)
-            t = TimeMe()
-            failedSome = False
-            skippedSome = False
-            with t:
-                for (i,r) in enumerate(cr):
+            for (i,r) in enumerate(cr):
+                t = TimeMe()
+                with t:
+                  try:
                     r.isBenchmark = len(cr) > 1
                     self._runs[i].append({})
                     if isinstance(r, AMPLRunner):
@@ -70,33 +70,38 @@ class ModelRunner(object):
                         self._runs[i][-1]["outmsg"] = "Skipped, unsupported tags"
                         self._runs[i][-1]["solver"] = ss
                         if r.isBenchmark:
-                            print("\n\t\tSkipped due to unsupported tags", flush=True)
+                            print("\n\t\t{0: <20}: Skipped due to unsupported tags".
+                              format(ss.getName()), flush=True)
                         else:
                             print("Skipped due to unsupported tags", flush=True)
-                            skippedSome = True
-                        continue
-                    if keepLogs:
-                        r.runAndEvaluate(m, logFile=ModelRunner.getLogFileName(m, ss))
+                        nSkipped[i] += 1
                     else:
+                      if keepLogs:
+                        r.runAndEvaluate(m, logFile=ModelRunner.getLogFileName(m, ss))
+                      else:
                         r.runAndEvaluate(m, logFile=None)
                     
-                    stats = r.getSolutionStats()
-                    EFM ="eval_fail_msg"
-                    EM ="errormsg"
-                    if EFM in stats:
+                      stats = r.getSolutionStats()
+                      EFM ="eval_fail_msg"
+                      EM ="errormsg"
+                      if EFM in stats:
                         if EM in stats:
                             stats[EFM]= stats[EM]
-                    if keep_output:
+                      if keep_output:
                          stats["output"]=r.get_output()
-                    self._runs[i][-1] = stats
-                    if exporter:
+                      self._runs[i][-1] = stats
+                      if exporter:
                         if not exporter.printStatus(m, stats):
-                            failedSome = True
-            nFailed += failedSome
-            nSkipped += skippedSome
+                            nFailedSolver[i] += 1
+                  except Exception as exc:
+                    print("   EXCEPTION: ", exc)
+                    nFailedScriptOrAMPL[i] += 1
+                print("  (%.4fs, %d failed solver, %d failed AMPL(PY)/script, %d skipped)" %
+                  (t.interval, nFailedSolver[i], nFailedScriptOrAMPL[i], nSkipped[i]),
+                  end="", flush=True)
             if exporter:
                 self.export(exporter)
-            print("  (%.4fs, %d failed, %d skipped)" % (t.interval, nFailed, nSkipped))
+            print("")
         exporter.export()
 
     def export(self, exporter):
