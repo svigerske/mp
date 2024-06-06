@@ -1096,7 +1096,7 @@ void GurobiBackend::DoGurobiTune() {
         "Surprize return from GRBwriteparams({})", tfn));
   }
   AddToSolverMessage(
-        fmt::format("Tuning: wrote {} parameter files, best file: '{}'", n_results, tfn));
+        fmt::format("Tuning: wrote {} parameter files, best file: '{}'\n", n_results, tfn));
 }
 
 void GurobiBackend::ReportGurobiPool() {
@@ -1130,7 +1130,7 @@ void GurobiBackend::ConsiderGurobiFixedModel() {
   auto msg = DoGurobiFixedModel();
   if (!msg.empty()) {
     AddToSolverMessage( msg +
-                        " failed in DoGurobiFixedModel()." );
+                        " failed in DoGurobiFixedModel().\n" );
     GRBfreemodel(model_fixed_);
     model_fixed_ = model();
   }
@@ -1187,7 +1187,7 @@ std::string GurobiBackend::DoGurobiFixedModel() {
   if (!GRBgetdblattr(model_fixed_, GRB_DBL_ATTR_ITERCOUNT, &f)) {
     if (f)
       AddToSolverMessage( fmt::format(
-            "Fixed MIP for mip:basis: {} simplex iteration{}",
+            "Fixed MIP for mip:basis: {} simplex iteration{}\n",
             f, "s"[f == 1.]) );
   }
   return {};
