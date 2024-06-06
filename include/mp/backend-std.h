@@ -667,6 +667,8 @@ private:
   std::string solver_msg_extra_;
 
 protected:
+  /// Add '\n' in the end if needed,
+  /// it is not added automatically.
   void AddToSolverMessage(const std::string& msg)
   { solver_msg_extra_ += msg; }
 

@@ -94,6 +94,8 @@ class ModelRunner(object):
                         if not exporter.printStatus(m, stats):
                             nFailedSolver[i] += 1
                   except Exception as exc:
+                    self._runs[i][-1]["outmsg"] = "AMPL(PY)/script failure"
+                    self._runs[i][-1]["solver"] = ss
                     print("   EXCEPTION: ", exc)
                     nFailedScriptOrAMPL[i] += 1
                 print("  (%.4fs, %d failed solver, %d failed AMPL(PY)/script, %d skipped)" %

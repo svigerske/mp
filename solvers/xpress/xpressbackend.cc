@@ -117,7 +117,9 @@ ArrayRef<double> XpressmpBackend::PrimalSolution() {
     int solst;
     // After XPRSoptimize():
   error = XPRSgetsolution(lp(), &solst, x.data(), 0, num_vars-1);
-  if (error)
+  if (error
+      || XPRS_SOLSTATUS_NOTFOUND==solst
+          || XPRS_SOLSTATUS_INFEASIBLE==solst)    // @todo keep up2date
     x.clear();
   return x;
 }
@@ -256,21 +258,17 @@ void XpressmpBackend::ConsiderXpressFixedModel() {
   if (!IsMIP())
     return;
 
-  // Create fixed model
-  XPRSprob mdl;
-  if (XPRScreateprob(&mdl)) return;
-  if (XPRScopyprob(mdl, lp(), "FixedModel")) return;
-  if (XPRScopycontrols(mdl, lp())) return;
-  XPRSsetintcontrol(mdl, XPRS_PRESOLVE, 0);
-  if (XPRSfixmipentities(mdl, 1)) return;
-  model_fixed_ = mdl;
+  // For XPRESS we just fix the main model.
+  //  XPRSsetintcontrol(mdl, XPRS_PRESOLVE, 0);
+  if (XPRSfixmipentities(model_fixed_, 1)) return;
+
+  if (outlev_)
+    Print("\n\n     ======= Solving the fixed MIP =======\n\n");
 
   auto msg = DoXpressFixedModel();
   if (!msg.empty()) {
     AddToSolverMessage(msg +
-      " failed in DoXpressFixedModel().");
-    XPRSdestroyprob(model_fixed_);
-    model_fixed_ = lp();
+      " failed in DoXpressFixedModel().\n");
   }
 }
 std::string XpressmpBackend::DoXpressFixedModel()
@@ -301,7 +299,7 @@ std::string XpressmpBackend::DoXpressFixedModel()
   if (!XPRSgetintattrib(model_fixed_, XPRS_SIMPLEXITER, &f)) {
     if (f)
       AddToSolverMessage(fmt::format(
-        "Fixed MIP for mip:basis: {} simplex iteration{}",
+        "Fixed MIP for mip:basis: {} simplex iteration{}\n",
         f, "s"[f == 1.]));
   }
   return {};
@@ -507,7 +505,8 @@ std::string XpressmpBackend::DoXpressFixedModel()
     std::vector<double> objs(n,
       std::numeric_limits<double>::quiet_NaN());
     for (int i = 0; i < n; i++)
-      XPRESSMP_CCALL(XPRScalcobjn(lp(), i, NULL, &objs[i]));
+      if (XPRScalcobjn(lp(), i, NULL, &objs[i]))
+        return {};
     return objs;
   }
   
