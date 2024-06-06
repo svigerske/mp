@@ -2,6 +2,12 @@ Summary of recent updates to Xpress for AMPL
 ============================================
 
 
+## 20240606
+- Fix mip:basis (post-solving as fixed MIP),
+	although fix + resolve from AMPL can be faster.
+- Fix reporting infeasibility with obj:multi=1.
+
+
 ## 20240604
 - Presolve division by constant, resulting in fewer constraints
 - Fix no-solution case in multi-objective emulator

@@ -117,7 +117,9 @@ ArrayRef<double> XpressmpBackend::PrimalSolution() {
     int solst;
     // After XPRSoptimize():
   error = XPRSgetsolution(lp(), &solst, x.data(), 0, num_vars-1);
-  if (error)
+  if (error
+      || XPRS_SOLSTATUS_NOTFOUND==solst
+          || XPRS_SOLSTATUS_INFEASIBLE==solst)    // @todo keep up2date
     x.clear();
   return x;
 }
@@ -503,7 +505,8 @@ std::string XpressmpBackend::DoXpressFixedModel()
     std::vector<double> objs(n,
       std::numeric_limits<double>::quiet_NaN());
     for (int i = 0; i < n; i++)
-      XPRESSMP_CCALL(XPRScalcobjn(lp(), i, NULL, &objs[i]));
+      if (XPRScalcobjn(lp(), i, NULL, &objs[i]))
+        return {};
     return objs;
   }
   
