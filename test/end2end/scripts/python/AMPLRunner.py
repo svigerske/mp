@@ -114,6 +114,8 @@ class AMPLRunner(object):
         if self._solver:
           self._setSolverInAMPL(model)
         self._amplInitialized = True
+        if self._printOutput:
+           self._ampl.eval("option version;")
    
     def _terminateAMPL(self):
       self._ampl.close()
