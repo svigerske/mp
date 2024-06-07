@@ -11,6 +11,11 @@ var VAL_U_F2 {s in NS} binary;
 subject to Contrainte_64 {s in NS}:
    VAL_U_F2[s] = 1  ==>  U_F2[s] >= 0.0001  else  U_F2[s] = 0;
 
+s.t. CLin01:
+   sum {s in NS} VAL_U_F2[s] + 2 * sum {s in NS} U_F2[s] == 15;
+
+maximize Obj:
+   sum {s in NS} VAL_U_F2[s] + sum {s in NS} U_F2[s];
 
 data;
 

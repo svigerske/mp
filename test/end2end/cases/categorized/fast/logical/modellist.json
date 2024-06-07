@@ -107,8 +107,12 @@
   {
     "name" : "impl_else_01",
     "tags" : ["logical"],
+    "objective": 9,
+    "options": {
+      "ANYSOLVER_options": "cvt:bigM=1e4"
+    },
     "values": {
-      "if (forall {s in NS} (VAL_U_F2[s] = 1  ==>  U_F2[s] >= 0.0001  else  U_F2[s] = 0)) then 1": 1
+      "if (forall {s in NS} (VAL_U_F2[s] >= 0.5  ==>  U_F2[s] >= 0.00009  else  U_F2[s] < 1e-6)) then 1": 1
     }
   },
   {
