@@ -1,9 +1,7 @@
 # expcones_01__plain.mod
 # From https://docs.mosek.com/latest/capi/tutorial-ceo-shared.html
 
-var x {1..3};
-
-s.t. Nonneg {i in 1..2}: x[i] >= 0;
+var x {i in 1..3} >= if i<3 then 0 else -Infinity;
 
 minimize Obj:
    x[1] + x[2];
