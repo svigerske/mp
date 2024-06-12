@@ -1063,12 +1063,12 @@ void GurobiBackend::AddGurobiMessage() {
           fmt::format("{} simplex iteration{}\n", si, suffix));
   si = BarrierIterations();
   suffix = si == 1 ? "" : "s";
-  if (si)
+  if (si>0)
     AddToSolverMessage(
       fmt::format("{} barrier iteration{}\n", si, suffix));
   si = NodeCount();
   suffix = si == 1 ? "" : "s";
-  if (si)
+  if (si>0)
     AddToSolverMessage(
       fmt::format("{} branching node{}\n", si, suffix));
 }
