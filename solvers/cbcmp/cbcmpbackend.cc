@@ -619,13 +619,13 @@ void CbcmpBackend::InitCustomOptions() {
   // GetCBCParamsList();
 
   set_option_header(
-      "CBCMP Optimizer Options for AMPL\n"
+      "CBC Optimizer Options for AMPL\n"
       "--------------------------------------------\n"
       "\n"
       "To set these options, assign a string specifying their values to the "
-      "AMPL option ``cbcmp_options``. For example::\n"
+      "AMPL option ``cbc_options``. For example::\n"
       "\n"
-      "  ampl: option cbcmp_options 'mipgap=1e-6';\n");
+      "  ampl: option cbc_options 'presolve=more';\n");
 
 
   AddStoredOption("tech:outlev outlev",
