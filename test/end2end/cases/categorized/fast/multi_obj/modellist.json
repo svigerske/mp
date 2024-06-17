@@ -88,6 +88,19 @@
     }
   },
   {
+    "name" : "dietQobj_1000 multiobj=2",
+    "tags" : ["quadratic", "quadratic_obj", "multiobj"],
+    "files" : ["dietqobj_1000.mod", "dietobj.dat"],
+    "options": { "ANYSOLVER_options": "multiobj=2" },
+    "values": {
+      "total_cost[\"A&P\"]": 920.6492623659187,
+      "total_cost[\"JEWEL\"]": 914.6919717993438,
+      "total_cost[\"VONS\"]": 914.081415223036,
+      "total_number": 44.80888220421118,
+      "_sobj[4]": 44.80888220421118
+    }
+  },
+  {
     "name" : "dietobj multiobj=1 obj:2:priority=10",
     "Comment": "Modify obj priority via an option",
     "tags" : ["linear", "continuous", "multiobj", "obj_priority"],
