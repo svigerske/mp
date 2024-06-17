@@ -2,6 +2,13 @@ Summary of recent updates to GCG for AMPL
 =========================================
 
 
+## 20240617
+- *Multi-objective emulator*
+	- obj:multi=2 forces emulation, even if MO natively supported.
+	- Fixed a bug in the objective degradation suffixes
+		.objasbtol, .objreltol.
+
+
 ## 20240604
 - Presolve division by constant, resulting in fewer constraints
 - Fix no-solution case in multi-objective emulator

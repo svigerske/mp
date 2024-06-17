@@ -2,6 +2,13 @@ Summary of recent updates to Xpress for AMPL
 ============================================
 
 
+## 20240617
+- *Multi-objective emulator*
+	- obj:multi=2 forces emulation, even if MO natively supported.
+	- Fixed a bug in the objective degradation suffixes
+		.objasbtol, .objreltol.
+
+
 ## 20240606
 - Fix mip:basis (post-solving as fixed MIP),
 	although fix + resolve from AMPL can be faster.
