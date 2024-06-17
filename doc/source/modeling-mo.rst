@@ -8,7 +8,8 @@ Multiple objectives
   :width: 200
   :align: right
 
-To consider multiple objectives in an AMPL model, use
+To consider multiple objectives in an AMPL model,
+either natively supported by the solver, or emulated, use
 :ref:`solver option <solver-options>` ``obj:multi``.
 Otherwise, only the 1st objective is considered
 (or any objective specified by ``obj:no``.)
@@ -49,3 +50,5 @@ as described in the ``obj:multi`` option description.
       suffix objpriority (2-e)*S_range + 1 + S[i] - min {j in I} S[j];
 
 Suffixes ``.objabstol`` and ``.objreltol`` allow for objective degradation.
+However their exact meaning can vary for a solver's native multi-objective
+mode (``obj:multi=1``), in particular for LPs. Consult the solver documentation.

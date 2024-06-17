@@ -240,7 +240,7 @@ solver but are emulated by MP).
 +------------------------------+-------+--------+---------+--------+---------+------+------+--------+-------+
 | Feature                      | Copt_ | CPLEX_ | Gurobi_ | Mosek_ | Xpress_ | CBC_ | GCG_ | HiGHS_ | SCIP_ |
 +==============================+=======+========+=========+========+=========+======+======+========+=======+
-| :ref:`writeprob`             | |y|   | |y|    | |y|     | |y|    | |y|     | |y|  | |n|  | |y|    | |n|   |
+| :ref:`writeprob`             | |y|   | |y|    | |y|     | |y|    | |y|     | |y|  | |y|  | |y|    | |y|   |
 +------------------------------+-------+--------+---------+--------+---------+------+------+--------+-------+
 | Solution Export              | |n|   | |y|    | |y|     | |n|    | |y|     | |n|  | |n|  | |y|    | |n|   |
 +------------------------------+-------+--------+---------+--------+---------+------+------+--------+-------+
@@ -974,7 +974,8 @@ for the functionalities available on your solver.
      - Values:
 
        * **0** - No (default)
-       * **1** - Yes
+       * **1** - Yes, natively supported if available, otherwise emulated
+       * **2** - Yes, emulated
    * - **Example**
      - Use :ref:`multiObjectiveDiet`
 

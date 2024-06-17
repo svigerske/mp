@@ -2102,10 +2102,7 @@ void GurobiBackend::InitCustomOptions() {
   /// std feature MULTIOBJ is set.
   /// Change the help text
   AddToOptionDescription("obj:multi",
-                           "Degradation suffixes .objabstol, .objreltol are handled "
-                           "differently for LP, see Gurobi documentation.\n\n"
-                           "The objectives must all be linear.\n\n"
-                           "Objective-specific "
+                           "For Gurobi's native handling (obj:multi=1), objective-specific "
                            "tolerances and method values may be assigned via "
                            "keywords of the form obj_n_<name>, such as obj_1_method for the "
                            "first objective.");

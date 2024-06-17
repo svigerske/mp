@@ -16,11 +16,13 @@ subj to c5_keep_z: y >= z;
 
 suffix objpriority IN;
 suffix objreltol IN;
+suffix objabstol IN;               # For XPRESS, all 0
 
 let xobj.objpriority := 10;
 let yobj.objpriority := 1;
 
 let xobj.objreltol:= 0.25/3;
+let xobj.objabstol := 1e-10;       # To have the suffix 
 
 # Need mip:gap=0 due to the way tolerances are applied:
 # https://www.gurobi.com/documentation/current/refman/working_with_multiple_obje.html.

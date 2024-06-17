@@ -83,8 +83,9 @@ public:
   ACCEPT_CONSTRAINT(PLConstraint, Recommended, CG_General)
   void AddConstraint(const PLConstraint& cc);
 
-  private:
+private:
   obj::Type main_obj_sense_;
+  std::vector<int> obj_ind_save_;                   // to zero out last objective
 
   protected:
   /// First objective's sense

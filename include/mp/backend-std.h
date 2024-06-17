@@ -294,7 +294,7 @@ protected:
 
   /// Standard extras
   virtual void InputStdExtras() {
-    if (multiobj() && multiobj_has_native()) {
+    if (multiobj()==1 && multiobj_has_native()) {   // multiobj native
       if (auto suf = ReadSuffix(suf_objpriority))
         ObjPriorities( suf );
       if (auto suf = GetMM().GetObjWeightsAdapted())

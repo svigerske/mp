@@ -174,6 +174,10 @@ public:
 
   void AddGlobalConstraint(NLParams& params);
   void AddGlobalConstraint(int resultVar, int argumentVar, int functionId);
+
+
+private:
+  std::vector<int> obj_ind_save_, qobj_ind1_save_, qobj_ind2_save_;
 };
 
 } // namespace mp

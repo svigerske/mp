@@ -311,9 +311,11 @@ public:
   void notify_end_opts() { opts_read_=true; }
 
   /// Returns true if multiobjective optimization is enabled.
+  /// In particular, 1 if enabled and preferred native handling,
+  /// or 2 if forcing emulation.
   /// Both multiobj and objno are used in NLReader to select
   /// the objective(s), solvers should not use these options.
-  bool multiobj() const { return multiobj_ && objno_<0; }
+  int multiobj() const { return (objno_<0) ? multiobj_ : 0; }
 
   /// Whether the solver natively supports multiobj
   bool multiobj_has_native() const { return multiobj_has_native_; }
@@ -612,7 +614,7 @@ private:
   Stats stats_;
 
 
-  bool multiobj_ {false};
+  int multiobj_ {0};
   bool multiobj_has_native_ {false};
   int multiobj_weight_ {2};
 

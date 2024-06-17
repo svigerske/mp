@@ -667,11 +667,16 @@ void BasicSolver::InitMetaInfoAndOptions(
     "0*/1: whether to assist testing & debugging, e.g., "
     "by outputting auxiliary information.")));
 
+  static const mp::OptionValueInfo values_multiobj_[] = {
+      { "0", "Single objective, see option obj:no (default)", 0},
+      { "1", "Multi-objective, solver's native handling if available", 1},
+      { "2", "Multi-objective, force emulation", 2}
+  };
   if ((flags & MULTIPLE_OBJ) != 0) {
-    AddOption(OptionPtr(new BoolOption(multiobj_, "obj:multi multiobj",
-      "0*/1:  Whether to use multi-objective optimization.\n"
-                                       "\n"
-                                       "When obj:multi = 1 and several objectives are present, suffixes "
+    AddStoredOption("obj:multi multiobj",
+      "Whether to use multi-objective optimization:\n"
+                    "\n.. value-table::\n\n"
+                                       "When obj:multi>0 and several objectives are present, suffixes "
                                        ".objpriority, .objweight, .objreltol, and .objabstol on the "
                                        "objectives are relevant.  Objectives with greater .objpriority "
                                        "values (integer values) have higher priority.  Objectives with "
@@ -681,7 +686,12 @@ void BasicSolver::InitMetaInfoAndOptions(
                                        "Objectives "
                                        "with positive .objabstol or .objreltol are allowed to be "
                                        "degraded by lower priority objectives by amounts not exceeding "
-                                       "the .objabstol (absolute) and .objreltol (relative) limits. ")));
+                                       "the .objabstol (absolute) and .objreltol (relative) limits.\n"
+                    "\n"
+                    "Note that with solver's native handling (when obj:multi=1 and supported), "
+                    "some solvers might have special rules for the tolerances, especially for LP, "
+                    "and not allow quadratic objectives. See the solver documentation.",
+                    multiobj_, values_multiobj_);
 
     static const mp::OptionValueInfo values_multiobjweight_[] = {
         { "1", "relative to the sense of the 1st objective", 1},

@@ -135,6 +135,9 @@ private:
   /// The sense of the main objective
   obj::Type main_obj_sense_;
 
+  /// To zero out last objective
+  std::vector<int> obj_ind_save_;
+
   /// These options are stored in the class as variables
   /// for direct access
   struct Options {

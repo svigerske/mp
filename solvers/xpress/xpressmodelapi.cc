@@ -72,8 +72,13 @@ void XpressmpModelAPI::SetLinearObjective( int iobj, const LinearObjective& lo )
   if (iobj<1) {
     if (lo.obj_sense() == obj::Type::MAX)
       XPRESSMP_CCALL(XPRSchgobjsense(lp(), XPRS_OBJ_MAXIMIZE));
+    if (obj_ind_save_.size()) {
+      std::vector<double> obj_coef_0(obj_ind_save_.size(), 0.0);
+      XPRESSMP_CCALL(XPRSchgobj(lp(), obj_ind_save_.size(),
+                                obj_ind_save_.data(), obj_coef_0.data()));
+    }
     XPRESSMP_CCALL(XPRSchgobj(lp(), lo.num_terms(), lo.vars().data(), lo.coefs().data()));
-    
+    obj_ind_save_ = lo.vars();
   } else {
     // All objectives must have the same sense, so we will have to automatically 
     // set a conflicting objective's weight to -1 
@@ -85,17 +90,26 @@ void XpressmpModelAPI::SetLinearObjective( int iobj, const LinearObjective& lo )
 
 void XpressmpModelAPI::SetQuadraticObjective(int iobj, const QuadraticObjective& qo) {
   if (1 > iobj) {
-    fmt::format("Setting first quadratic objective\n");
+    // fmt::format("Setting first quadratic objective\n");
     SetLinearObjective(iobj, qo);                         // add the linear part
     const auto& qt = qo.GetQPTerms();
     std::vector<double> coeffs(qt.coefs());
     for (std::size_t i = 0; i < qt.size(); i++)
       if (qt.pvars1()[i] == qt.pvars2()[i]) coeffs[i] *= 2;
 
-    fmt::format("Quadratic part is made of {} terms\n", qt.size());
+    if (qobj_ind1_save_.size()) {
+      assert(qobj_ind1_save_.size()==qobj_ind2_save_.size());
+      std::vector<double> qobj_coef_0(qobj_ind1_save_.size(), 0.0);
+      XPRESSMP_CCALL(XPRSchgmqobj(lp(), qobj_ind1_save_.size(),
+                                  qobj_ind1_save_.data(), qobj_ind2_save_.data(),
+                                  qobj_coef_0.data()));
+    }
+    // fmt::format("Quadratic part is made of {} terms\n", qt.size());
     XPRESSMP_CCALL(XPRSchgmqobj(lp(), qt.size(),
       (int*)qt.pvars1(), (int*)qt.pvars2(),
       (double*)coeffs.data()));
+    qobj_ind1_save_ = qt.vars1();
+    qobj_ind2_save_ = qt.vars2();
   }
   else {
     throw std::runtime_error("Multiple quadratic objectives not supported");

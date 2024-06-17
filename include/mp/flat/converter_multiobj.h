@@ -28,8 +28,9 @@ protected:
   /// @note This should be called first.
   void ConsiderEmulatingMultiobj() {
     status_ = MOManagerStatus::NOT_ACTIVE;
-    if (MPCD(num_objs())>1       // have multiple objectives
-        && MPCD(GetEnv()).multiobj_has_native()==false)
+    if (MPCD(num_objs())>1                                  // have multiple objectives
+        && (MPCD(GetEnv()).multiobj_has_native()==false
+            || MPCD(GetEnv()).multiobj()>1))                // force emulation
       SetupMultiobjEmulation();
     // Anything todo otherwise?
   }
