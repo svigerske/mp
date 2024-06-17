@@ -116,6 +116,10 @@ class Model(object):
         self._name = overrideName if overrideName else filename.stem
         self._description = description
 
+    def hasSolvers(self):
+        return (self._description is not None) and \
+            ("solvers" in self._description)
+
     def getSolvers(self):
         return self._description["solvers"]
 
