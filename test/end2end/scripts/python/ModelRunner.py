@@ -29,7 +29,8 @@ class ModelRunner(object):
         nFailedSolver = [0 for r in self.getRunners()]
         nFailedScriptOrAMPL = [0 for r in self.getRunners()]
         nSkipped = [0 for r in self.getRunners()]
-
+        EFM ="eval_fail_msg"
+        EM ="errormsg"
         # Set to true for junit to add the solver output to the test result
         keep_output=False
         try:
@@ -82,8 +83,7 @@ class ModelRunner(object):
                         r.runAndEvaluate(m, logFile=None)
                     
                       stats = r.getSolutionStats()
-                      EFM ="eval_fail_msg"
-                      EM ="errormsg"
+                      
                       if EFM in stats:
                         if EM in stats:
                             stats[EFM]= stats[EM]
@@ -96,6 +96,7 @@ class ModelRunner(object):
                   except Exception as exc:
                     self._runs[i][-1]["outmsg"] = "AMPL(PY)/script failure"
                     self._runs[i][-1]["solver"] = ss
+                    self._runs[i][-1][EFM]=str(exc)
                     print("   EXCEPTION: ", exc)
                     nFailedScriptOrAMPL[i] += 1
                 print("  (%.4fs, %d failed solver, %d failed AMPL(PY)/script, %d skipped)" %

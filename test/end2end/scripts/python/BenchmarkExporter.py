@@ -7,6 +7,7 @@ import Solver
 class BenchmarkExporter(Exporter):
 
     def __init__(self, fileName=""):
+        super().__init__()
         self._fileName=fileName
         self.solvers={}
         self.workbook = openpyxl.Workbook()
@@ -57,10 +58,12 @@ class BenchmarkExporter(Exporter):
   
     def getStyle(self, r):
         try:
-            if "solved" in r[-1]["timelimit"]:
-                return None
-            elif "limit" in r[-1]["timelimit"]:
-                return self.style_neutral
+            res = r[-1]["parsed_result"]
+            if res == "OK":
+                if "solved" in r[-1]["timelimit"]:
+                    return None
+                elif "limit" in r[-1]["timelimit"]:
+                    return self.style_neutral
             else:
                 return self.style_bad
         except: 
@@ -80,10 +83,15 @@ class BenchmarkExporter(Exporter):
 
         for runner, r in zip(mr.getRunners(), mr.getRuns()):
             style=self.getStyle(r)
+
+            rr = r[-1]["parsed_result"]
+            if rr=="OK":
+                rr = self._getDictMemberOrMissingStr(r[-1], "timelimit")
             res.extend([
               self._getDictMemberOrMissingStr(r[-1], "objective"),
               self._getDictMemberOrMissingStr(r[-1], "solutionTime"),
-              self._getDictMemberOrMissingStr(r[-1], "timelimit")])
+              rr
+              ])
             styles.extend([style for _ in range(3)])
             if runner.support_times():
                 if "times" in r[-1]:
@@ -91,6 +99,8 @@ class BenchmarkExporter(Exporter):
                 else:
                     res.append(0)
                 styles.append(style)
+
+           
         for r in mr.getRuns():
              res.append(
                 self._getDictMemberOrMissingStr(r[-1], "outmsg"))
@@ -101,6 +111,8 @@ class BenchmarkExporter(Exporter):
                                  value=header_text)
             if styles[col_num-1] is not None:
                 cell.style=styles[col_num-1]
+
+
                 
     def _getDictMemberOrMissingStr(self, dct, key):
         try:
@@ -124,6 +136,10 @@ class BenchmarkExporter(Exporter):
             if "Skipped" in lastRun["outmsg"]:
                 self.addToDict(sname, "failed", 1)
                 return
+            
+            if "script failure" in lastRun["outmsg"]:
+                self.addToDict(sname, "failed_ampl", 1)
+                return
             outcome=lastRun["timelimit"]
             self.addToDict(sname, "time_all", lastRun["solutionTime"]) 
            
@@ -134,27 +150,41 @@ class BenchmarkExporter(Exporter):
                    self.addToDict(sname, "solved", 1)
                    self.addToDict(sname, "time_solved", lastRun["solutionTime"]) 
                 elif "limit" in outcome:
-                    if math.isclose(exp_obj,lastRun["objective"], rel_tol=0.001):
-                        self.addToDict(sname, "timelimit_correct", 1)
-                    else:
+                    try:
+                        if  math.isclose(exp_obj,lastRun["objective"], rel_tol=0.001):
+                            self.addToDict(sname, "timelimit_correct", 1)
+                        else:
+                            self.addToDict(sname, "timelimit", 1)
+                    except:
                         self.addToDict(sname, "timelimit", 1)
                 else:
                     self.addToDict(sname, "failed", 1)
 
-    def initSolverStats(self, runs):
-         for r in runs:
-            lastRun = r[-1]
-            sname=lastRun["solver"]
-            if isinstance(sname, Solver.Solver):
-                sname=sname.getName()
-            self.solvers[sname]={
+    def initialize(self, mr: ModelRunner):
+         runs=mr.getRuns()
+         runners = mr.getRunners()
+         solvers_runs = zip(runners, runs)
+
+         for (runner, solver_run) in solvers_runs:
+            last_run = solver_run[-1]
+            solver=last_run["solver"]
+            if isinstance(solver, Solver.Solver):
+                solvername=solver.getName()
+            else:
+                solvername=solver
+                solver=runner
+            self.solvers[solvername]={
                 "solved" : 0,
                 "failed" : 0,
+                "failed_ampl" : 0,
                 "timelimit" : 0,
                 "timelimit_correct" : 0,
                 "time_solved" : 0,
                 "time_all" : 0
             }
+            if self.collector_:
+                self.collector_.add_solver_def(solvername, solver.get_version())
+             
     def writeSolverStats(self):
         header = ["Solver"]
         header.extend(self.solvers[list(self.solvers.keys())[0]].keys())
@@ -168,15 +198,17 @@ class BenchmarkExporter(Exporter):
                 self.sheet_stats.cell(row=row_num, column=col_num, value=value)
 
 
-    def exportInstanceResults(self, mr: ModelRunner):
+    def _exportInstanceResults(self, mr: ModelRunner):
         i = len( mr.getRuns()[0] )
         if i == 1:
             self.writeHeader(mr) 
-            self.initSolverStats(mr.getRuns())
+            self.initialize(mr)
         self.writeLastResultLine(mr)
         self.collectSolverStats(mr)
         self.writeSolverStats()
         self.workbook.save(self.get_file_name())
+
+                   
 
 
 

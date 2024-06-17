@@ -839,7 +839,7 @@ class MPDirectSolver(AMPLSolver):
             if ModelTags.quadraticnonconvex in stags:
                 stags = stags | {ModelTags.polynomial}
         
-        opts = "report_times=1"
+        opts = "timing=1"
         if otherOptions:
             opts  = f"{opts} {otherOptions}"
         super().__init__(exeName, timeout, nthreads, opts, stags)

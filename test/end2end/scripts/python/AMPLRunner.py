@@ -327,7 +327,7 @@ class AMPLRunner(object):
               setup_time=self._ampl.get_value("Initial.time_setup")
               self.stats["times"]= {
                  "setup" : setup_time,
-                 "solver": solver_time
+                 "solver": solver_time,
                   }
            except:
               pass
