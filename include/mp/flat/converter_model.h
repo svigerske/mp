@@ -338,9 +338,9 @@ public:
 
     mapi.InitProblemModificationPhase(GetModelInfo());
     PushVariablesTo(mapi);
+    PushCustomConstraintsTo(mapi);
     if (!if_skip_pushing_objs())
       PushObjectivesTo(mapi);
-    PushCustomConstraintsTo(mapi);
     mapi.FinishProblemModificationPhase();
   }
 

@@ -88,6 +88,36 @@
     }
   },
   {
+    "name" : "multiobj_abstol_MIP",
+    "tags" : ["linear", "integer", "multiobj"],
+    "options": {
+      "ANYSOLVER_options": "multiobj=1",
+      "gurobi_options": "multiobj=1 mip:gap=0"
+    },
+    "values": {
+      "_sobj[1]": 2.75,
+      "_sobj[2]": 3.5
+    }
+  },
+  {
+    "name" : "multiobj_reltol_MIP",
+    "tags" : ["linear", "integer", "multiobj"],
+    "options": {
+      "ANYSOLVER_options": "multiobj=1",
+      "gurobi_options": "multiobj=1 mip:gap=0"
+    },
+    "values": {
+      "_sobj[1]": 2.75,
+      "_sobj[2]": 3.5
+    }
+  },
+  {
+    "name" : "multiobj_abstol_manual.run",
+    "tags" : ["linear"],
+    "files": ["multiobj_abstol_manual.run"],
+    "objective": 3.5
+  },
+  {
     "name" : "obj_suf_01 multiobj=0",
     "tags" : ["linear", "continuous", "multiobj"],
     "options": { "ANYSOLVER_options": "multiobj=0" },

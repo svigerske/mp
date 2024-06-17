@@ -173,11 +173,12 @@ protected:
       std::function<sol::Status(void)> get_stt, std::function<Solution(void)> get_sol) {
     if (++i_current_obj_ >= obj_new_.size()) {
       status_ = MOManagerStatus::FINISHED;
-      MPD( GetEnv() ).Print(
-          "\n\n"
-          "==============================================================================\n"
-          "MULTI-OBJECTIVE MODE: done.\n\n");
-      return false;                              // all done
+			if (MPD( GetEnv() ).verbose_mode())
+				MPD( GetEnv() ).Print(
+							"\n\n"
+							"==============================================================================\n"
+							"MULTI-OBJECTIVE MODE: done.\n\n");
+			return false;                              // all done
     }
     if (MPD( GetEnv() ).verbose_mode())
       MPD( GetEnv() ).Print(
@@ -216,17 +217,17 @@ protected:
     if (obj_last.GetQPTerms().size()) {
       if (obj::MAX == obj_last.obj_sense())
         MPD( AddConstraint(
-            QuadConGE{ { obj_last.GetLinTerms(), obj_last.GetQPTerms() }, objval_last_ } ) );
+						QuadConGE{ { obj_last.GetLinTerms(), obj_last.GetQPTerms() }, lim } ) );
       else
         MPD( AddConstraint(
-            QuadConLE{ { obj_last.GetLinTerms(), obj_last.GetQPTerms() }, objval_last_ } ) );
+						QuadConLE{ { obj_last.GetLinTerms(), obj_last.GetQPTerms() }, lim } ) );
     } else {
       if (obj::MAX == obj_last.obj_sense())
         MPD( AddConstraint(
-            LinConGE{ { obj_last.GetLinTerms() }, objval_last_ } ) );
+						LinConGE{ { obj_last.GetLinTerms() }, lim } ) );
       else
         MPD( AddConstraint(
-            LinConLE{ { obj_last.GetLinTerms() }, objval_last_ } ) );
+						LinConLE{ { obj_last.GetLinTerms() }, lim } ) );
     }
   }
 

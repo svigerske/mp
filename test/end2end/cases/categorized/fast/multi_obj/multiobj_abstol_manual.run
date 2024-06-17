@@ -1,0 +1,20 @@
+
+var x;
+var y;
+
+maximize xobj: x;
+minimize yobj: y;
+
+subj to c1: y >= x;
+subj to c2: y <= x + 1;
+
+subj to c3: y <= 2*x;
+subj to c4: y >= 2*x - 2;
+
+option solver gurobi;
+solve xobj;
+# display x, y;
+
+subj to tol: x >= x.val - 0.25;
+solve yobj;
+# display x, y;
