@@ -276,7 +276,9 @@ protected:
     auto get_sol = [this]() {
       return GetSolution();
     };
+    int i=0;
     while (GetMM().PrepareSolveIteration(get_stt, get_sol)) {
+      // ExportModel({"/tmp/model" + std::to_string(++i) + ".lp"});
       Solve();
     }
   }

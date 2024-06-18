@@ -101,6 +101,32 @@
     }
   },
   {
+    "name" : "dietQobj_1000 multiobj=2 obj_pr_2",
+    "tags" : ["quadraticnonconvex", "quadratic_obj", "multiobj"],
+    "files" : ["dietqobj_1000.mod", "dietobj.dat", "dietobj_pr_2.inc"],
+    "options": { "ANYSOLVER_options": "multiobj=2" },
+    "values": {
+      "total_cost[\"A&P\"]": 936.6309187422044,
+      "total_cost[\"JEWEL\"]": 959.3824742719657,
+      "total_cost[\"VONS\"]": 935.065924552458,
+      "total_number": 40,
+      "_sobj[4]": 40
+    }
+  },
+  {
+    "name" : "dietQobj_1000_2 multiobj=2 obj_pr_3",
+    "tags" : ["quadratic", "quadratic_obj", "multiobj"],
+    "files" : ["dietqobj_1000_2.mod", "dietobj.dat", "dietobj_pr_3.inc"],
+    "options": { "ANYSOLVER_options": "multiobj=2" },
+    "values": {
+      "total_cost[\"A&P\"]": 915.7758062677805,
+      "total_cost[\"JEWEL\"]": 936.0958377754476,
+      "total_cost[\"VONS\"]": 924.2202858257223,
+      "total_number": 17.793036329321545,
+      "_sobj[4]": 17.793036329321545
+    }
+  },
+  {
     "name" : "dietobj multiobj=1 obj:2:priority=10",
     "Comment": "Modify obj priority via an option",
     "tags" : ["linear", "continuous", "multiobj", "obj_priority"],

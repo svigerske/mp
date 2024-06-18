@@ -11,6 +11,7 @@ class ModelTags(enum.Enum):
     quadratic = 2             # obj and con
     quadratic_obj = 2.5
     quadraticnonconvex = 3
+    quadratic_obj_nonconvex = 3.5
     socp = 4
     socp_hard_to_recognize = 4.1  ## For solvers recognizing from quadratics
     expcones = 4.4

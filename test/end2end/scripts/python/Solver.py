@@ -941,7 +941,7 @@ class CPLEXDirectSolver(MPDirectSolver):
                  ModelTags.continuous, ModelTags.integer, ModelTags.binary,
                  ModelTags.sos,
                  
-                 ModelTags.quadratic, ModelTags.quadratic_obj, ModelTags.quadraticnonconvex,
+                 ModelTags.quadratic, ModelTags.quadratic_obj, ModelTags.quadratic_obj_nonconvex,
                  ModelTags.plinear,
                  
                  ModelTags.socp,      ## MP transforms cones to quadratics
