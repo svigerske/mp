@@ -305,6 +305,7 @@ to suppress it a redirection is needed::
   option solver_msg 0;
   solve > NUL;
 
+*Related option*: `tech:timing`.
 
 .. list-table::
    :header-rows: 0

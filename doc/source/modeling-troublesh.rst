@@ -34,7 +34,7 @@ MP offers ways to :ref:`explore automatic reformulations<explore-reformulations>
 If you decide to contact AMPL or solver support, please provide a (possibly reduced)
 version of your model reproducing the issue. Please also provide
 the AMPL solver version by running ``highs -v``
-or solver logs obtained with options ``version outlev=1``.
+or solver logs obtained with options ``version outlev=1 timing=2``.
 If you cannot reduce the model and don't
 want to show it, give us just the NL file produced by
 
