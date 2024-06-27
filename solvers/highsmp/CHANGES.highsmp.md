@@ -1,6 +1,9 @@
 Summary of recent updates to HiGHS for AMPL
 ===========================================
 
+## 20240627
+- Updated to HiGHS 1.7.1
+
 
 ## 20240617
 - *Multi-objective emulator*
