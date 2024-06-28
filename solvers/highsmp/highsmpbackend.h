@@ -81,6 +81,12 @@ public:
   ALLOW_STD_FEATURE(RETURN_BEST_DUAL_BOUND, true)
   double BestDualBound() override;
 
+  /**
+  * Obtain inf/unbounded rays
+  **/
+  ALLOW_STD_FEATURE(RAYS, true)
+    ArrayRef<double> Ray() override;
+  ArrayRef<double> DRay() override;
 
   /////////////////////////// Model attributes /////////////////////////
   bool IsQCP() const override;

@@ -1,8 +1,10 @@
 Summary of recent updates to HiGHS for AMPL
 ===========================================
 
+
 ## 20240627
 - Updated to HiGHS 1.7.1
+- Added calculation of primal and dual rays. See keyword `alg:rays`
 
 
 ## 20240617

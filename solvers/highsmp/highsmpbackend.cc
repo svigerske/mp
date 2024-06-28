@@ -325,6 +325,42 @@ void HighsBackend::VarConStatii(ArrayRef<int> vst, ArrayRef<int> cst) {
   HIGHS_CCALL(Highs_setBasis(lp(), stt.data(), cstt.data()));
 }
 
+ArrayRef<double> HighsBackend::Ray() {
+  HighsInt has_ray;
+  std::vector<double> uray_pres(NumVars());
+  auto res = Highs_getPrimalRay(lp(), &has_ray, uray_pres.data());
+  if (res)
+    fmt::print("Error while getting primal ray");
+  if (res || (!has_ray))
+  {
+    uray_pres.clear();
+    return uray_pres;
+  }
+  auto mv = GetValuePresolver().PostsolveSolution({ uray_pres });
+  auto uray = mv.GetVarValues()();
+  return uray;
+}
+
+ArrayRef<double> HighsBackend::DRay() {
+  HighsInt has_ray;
+  std::vector<double> dray_pres(NumLinCons());
+  auto res = Highs_getDualRay(lp(), &has_ray, dray_pres.data());
+  if (res)
+    fmt::print("Error while getting dual ray");
+  if (res || (!has_ray))
+  {
+    dray_pres.clear();
+    return dray_pres;
+  }
+  auto vm = GetValuePresolver().PostsolveSolution({
+                                               {},
+                                               {{{CG_Linear, std::move(dray_pres)}}}
+    });
+  return vm.GetConValues().MoveOut();        // need the vector itself
+}
+
+
+
 void HighsBackend::AddHIGHSMessages() {
   auto ni = SimplexIterations();
   if (true)
