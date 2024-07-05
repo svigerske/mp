@@ -470,11 +470,14 @@ Quadratic and power operators
 - *expr1* ^ *expr2*
     *expr-valued:* *expr1* raised to the *expr2* power, for the special cases where
     either *expr1* or *expr2* is a constant. For *expr2* positive integer, the operator
-    is decomposed into quadratic constraints if the solver supports them,
-    otherwise passed to the solver natively or approximated by a piecewise-linear function.
+    is passed to the solver natively if supported, otherwise
+    decomposed into quadratic constraints if the solver supports them,
+    otherwise approximated by a piecewise-linear function. See :ref:`nonlinear-functions`
+    for details.
 
 For quadratic expressions of the form *linear \* linear* and *linear^2*, the operands
 are multiplied out so that coefficients of individual quadratic terms can be extracted.
+For example, $(x-2)(y+3)$ is multiplied out as $xy-2y+3x-6$.
 If the solver natively handles quadratic terms, then the quadratic coefficients are
 passed to the solver, which decides whether and how to handle them. Otherwise, quadratic
 terms are linearized where possible, such as where one of the operands is a binary variable,
@@ -486,12 +489,13 @@ For convex MIQP solvers,
 to apply linearization of quadratic expressions (it is the default for linear solvers only),
 use options ``cvt:quadobj=0``, ``cvt:quadcon=0``.
 
-Other expressions involving these operators are converted, where possible, to simpler
+Other expressions involving these operators are converted, where needed and possible, to simpler
 quadratic expressions and equality constraints through the use of auxiliary variables;
 then the resulting quadratic expressions and equality constraints are handled in ways
 previously described. For example:
 
-- ``(x-1)^3`` is converted to ``(x-1) * y`` with the added constraint ``y = (x-1)^2``.
+- ``(x-1)^3``, unless natively supported, is converted to ``(x-1) * y`` with
+  the added constraint ``y = (x-1)^2``.
 - ``x * max {j in 1..n} y[j]`` is converted to ``x * z`` with the added constraint
   ``z = max {j in 1..n} y[j]``.
 - ``x / sum {j in 1..n} y[j]`` is converted to ``z`` with the added constraints
@@ -601,8 +605,10 @@ Supported functions
 - *expr1* ^ *expr2*
     *expr-valued:* *expr1* raised to the *expr2* power, for the special cases where
     either *expr1* or *expr2* is a constant. For *expr2* positive integer, the operator
-    is decomposed into quadratic constraints if the solver supports them,
-    otherwise passed to the solver natively or approximated by a piecewise-linear function.
+    is passed to the solver natively if supported, otherwise
+    decomposed into quadratic constraints if the solver supports them,
+    otherwise approximated by a piecewise-linear function. To avoid using native handling
+    of the ^ operator, set option `acc:pow=0`.
 
 Piecewise-linear approximation
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
