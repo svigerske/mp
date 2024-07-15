@@ -287,6 +287,10 @@ protected:
   /// Default map conversions. Currently empty
   void ConvertMaps() { }
 
+  /// Acceptance level for all constr/expr,
+  /// if provided (>=0)
+  int AcceptanceLevelCommon() const { return options_.accAll_; }
+
   /// Option to actually use expressions if available
   bool IfWantNLOutput() const { return options_.accExpr_; }
 
@@ -429,10 +433,18 @@ public: // for ConstraintKeeper
   void Convert(const LinearFunctionalConstraint& ldc) {
     MPD( AddConstraint(ldc.to_linear_constraint()) );
   }
+  /// Say we can (for acc:_all=0)
+  bool IfHasCvt_impl(const LinearFunctionalConstraint* ) {
+    return true;
+  }
 
   /// If backend does not like QFC, we redefine it
   void Convert(const QuadraticFunctionalConstraint& qdc) {
     qdc.AddQuadraticConstraint(*(Impl*)this);
+  }
+  /// Say we can
+  bool IfHasCvt_impl(const QuadraticFunctionalConstraint* ) {
+    return true;
   }
 
 
@@ -998,6 +1010,7 @@ private:
     int passSOCP2QC_ = 0;
     int passExpCones_ = 0;
 
+    int accAll_ = -1;
     int accExpr_ = static_cast<
         std::underlying_type_t<ExpressionAcceptanceLevel> >
                    (ModelAPI::ExpressionInterfaceAcceptanceLevel())
@@ -1155,6 +1168,16 @@ private:
                        socp2qc_mode_text_.c_str(),
                        options_.passSOCP2QC_, socp2qc_values_);
     options_.passSOCP2QC_ = DefaultSOCP2QCMode();
+
+    GetEnv().AddStoredOption("acc:_all",
+                             "Solver acceptance level for all "
+                             "constraints and expressions. "
+                             "Value meaning: as described in the specific "
+                             "acc:... options.\n"
+                             "\n"
+                             "Can be useful to disable all reformulations (acc:_all=2), "
+                             "or force linearization (acc:_all=0.)",
+                             options_.accAll_, 0, 4);
 
     if constexpr (IfAcceptingNLOutput())
       GetEnv().AddStoredOption("acc:_expr",
@@ -1473,6 +1496,11 @@ protected:
       UnaryEncodingConstraint, "acc:uenc")
   /// Dummy conversion for UEncConstr
   void Convert(const UnaryEncodingConstraint& ) { }
+  /// Say we can (for acc:_all=0)
+  bool IfHasCvt_impl(const UnaryEncodingConstraint* ) {
+    return true;
+  }
+
 
 
 	protected:

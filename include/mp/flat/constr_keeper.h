@@ -168,6 +168,10 @@ public:
         ExpressionInterfaceAcceptanceLevel();
   }
 
+  /// @return acc:_all
+  int AccLevelCommon() const override
+  { return GetConverter().AcceptanceLevelCommon(); }
+
   /// Constraint type_info
   const std::type_info& GetTypeInfo() const override
   { return typeid(ConstraintType); }
@@ -269,19 +273,27 @@ protected:
     const auto acceptanceLevel =
         GetChosenAcceptanceLevel();
     if (ConstraintAcceptanceLevel::NotAccepted == acceptanceLevel) {
-      for ( ; ++i!=(int)cons_.size(); )
-        if (!cons_[i].IsBridged())
-          ConvertConstraint(cons_[i], i);
+      if (!IfConverterConverts(GetConverter())) {
+        i = (int)cons_.size();
+      } else {
+        for ( ; ++i!=(int)cons_.size(); )
+          if (!cons_[i].IsBridged())
+            ConvertConstraint(cons_[i], i);
+      }
     }
     else if (ConstraintAcceptanceLevel::AcceptedButNotRecommended == acceptanceLevel) {
-      for (; ++i != (int)cons_.size(); ) {
-        if (!cons_[i].IsBridged()) {
-          try {       // Try to convert all but allow failure
-            ConvertConstraint(cons_[i], i);
-          } catch (const ConstraintConversionGracefulFailure& ) {
-            /// nothing
-          } catch (const ConstraintConversionFailure& ccf) {
-            GetConverter().AddWarning( ccf.key(), ccf.message() );
+      if (!IfConverterConverts(GetConverter())) {
+        i = (int)cons_.size();
+      } else {
+        for (; ++i != (int)cons_.size(); ) {
+          if (!cons_[i].IsBridged()) {
+            try {       // Try to convert all but allow failure
+              ConvertConstraint(cons_[i], i);
+            } catch (const ConstraintConversionGracefulFailure& ) {
+              /// nothing
+            } catch (const ConstraintConversionFailure& ccf) {
+              GetConverter().AddWarning( ccf.key(), ccf.message() );
+            }
           }
         }
       }

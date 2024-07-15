@@ -62,8 +62,11 @@ public:
   /// This is "combined" for constraint or expression
   ConstraintAcceptanceLevel GetChosenAcceptanceLevel() const {
     if (acceptance_level_<0) {      // not initialized
+      int al = AccLevelCommon();
+      if (al<0)                     // acc:_all not provided
+        al = acc_level_item_;
       std::array<int, 5> alv = {0, 1, 2, 1, 2};
-      acceptance_level_ = alv.at(acc_level_item_);
+      acceptance_level_ = alv.at(al);
     }
     return ConstraintAcceptanceLevel(acceptance_level_);
   }
@@ -71,8 +74,11 @@ public:
   /// Query (user-chosen) expression acceptance level.
   ExpressionAcceptanceLevel GetChosenAcceptanceLevelEXPR() const {
     if (acc_level_expr_<0) {      // not initialized
+      int al = AccLevelCommon();
+      if (al<0)                   // acc:_all not provided
+        al = acc_level_item_;
       std::array<int, 5> alv = {0, 0, 0, 1, 2};
-      acc_level_expr_ = alv.at(acc_level_item_);
+      acc_level_expr_ = alv.at(al);
     }
     return ExpressionAcceptanceLevel(acc_level_expr_);
   }
@@ -96,6 +102,9 @@ public:
   /// Acceptance level of the overall expression interface in the ModelAPI
   virtual ExpressionAcceptanceLevel GetModelAPIAcceptance_EXPR_INTF(
       const BasicFlatModelAPI& ba) const = 0;
+
+  /// @return acc:_all
+  virtual int AccLevelCommon() const = 0;
 
   /// Constraint type_info
   virtual const std::type_info& GetTypeInfo() const =0;

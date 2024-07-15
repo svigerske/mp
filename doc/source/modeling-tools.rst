@@ -4,16 +4,23 @@
 Tools & details
 ---------------------------
 
-This section highlight some tools aiding modeling and solving.
+This section highlights some tools aiding modeling and solving.
 
 
 .. _supported-constraints:
 
-Supported constraints
-***********************************
+Supported constraints and reformulations
+************************************************
+
+Sometimes it is handy to disable all automatic reformulations.
+For that, declare all contraints as natively accepted by the solver:
+``acc:_all=2`` (alternatively, disable specific
+reformulations, e.g., ``acc:alldiff=2``.)
+Vice versa, to force full linearization, set ``acc:_all=0``.
 
 To find out which constraints are natively supported by the solver,
 or, more generally, understood by MP,
+and to control which are reformulated,
 there are two ways.
 
 Method 1: acceptance options

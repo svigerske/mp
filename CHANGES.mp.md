@@ -2,6 +2,12 @@ Summary of recent updates to the AMPL MP Library
 ================================================
 
 
+## unreleased
+- Option *acc:_all*
+	- Useful to disable all reformulations (acc:_all=2),
+		or force linearization (acc:_all=0.)
+
+
 ## 20240617
 - *Multi-objective emulator*
 	- obj:multi=2 forces emulation, even if MO natively supported.

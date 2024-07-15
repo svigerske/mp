@@ -6,6 +6,27 @@
     "objective" : 6
   },
   {
+    "name" : "assign1 [if, alldiff] acc:_all=0",
+    "files": ["assign1.mod", "assign.dat"],
+    "tags" : ["logical"],
+    "options": {
+      "ANYSOLVER_options": "acc:_all=0"
+    },
+    "objective" : 6
+  },
+  {
+    "name" : "assign1 [if, alldiff] acc:_all=2",
+    "files": ["assign1.mod", "assign.dat"],
+    "tags" : ["logical"],
+    "options": {
+      "ANYSOLVER_options": "acc:_all=2"
+    },
+    "comment": "We don't hope any solver natively supports all flats... Or, some CP solver?",
+    "values": {
+      "solve_result": "failure"
+    }
+  },
+  {
     "name": "flowshp1 [or]",
     "files": [ "flowshp1.mod", "flowshp.dat" ],
     "tags": [ "logical" ],
