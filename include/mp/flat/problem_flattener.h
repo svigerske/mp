@@ -10,6 +10,7 @@
 #include "mp/converter-base.h"
 #include "mp/expr-visitor.h"
 #include "mp/flat/eexpr.h"
+#include "mp/flat/prepro_prod.h"
 #include "mp/flat/constr_std.h"
 #include "mp/flat/obj_std.h"
 #include "mp/valcvt.h"
@@ -460,7 +461,7 @@ protected:
   }
 
 
-protected:
+public:
   //////////////////////////////////// VISITOR ADAPTERS /////////////////////////////////////////
 
   /// Convert an expression to an EExpr
@@ -486,6 +487,7 @@ protected:
     return Convert2VarAsAffineExpr(std::move(ee));
   }
 
+public:
   /// Generic functional expression array visitor.
   /// Assumes the arguments should be converted to variables.
   /// Can produce a new result variable/expression and
@@ -679,6 +681,10 @@ public:          // need to be public due to CRTP
   }
 
   EExpr VisitMul(BinaryExpr e) {
+    if (prepro_products()) {
+      PreproProd<Impl> preprod(*(Impl*)this);
+      return preprod.FlattenProduct(e);
+    }
     auto el = Convert2EExpr(e.lhs());
     auto er = Convert2EExpr(e.rhs());
     return QuadratizeOrLinearize( el, er );
@@ -933,7 +939,7 @@ public:          // need to be public due to CRTP
   }
 
 
-protected:         // More utilities
+public:         // More utilities
   void ConvertSOSConstraints() {
     if (sos()) {
       auto sosno = GetModel().
@@ -1179,13 +1185,15 @@ private:
   struct Options {
     int sos_ = 1;
     int sos2_ = 1;
+    int prepro_products_ = 1+2+4;
   };
   Options options_;
 
 
-protected:
+public:
   int sos() const { return options_.sos_; }
   int sos2_ampl_pl() const { return options_.sos2_; }
+  int prepro_products() const { return options_.prepro_products_; }
 
   /// Distinguish between constraints and objectives.
   /// What about common expressions?
@@ -1220,6 +1228,19 @@ private:
         "piecewise-linear terms, using suffixes .sos and .sosref "
         "provided by AMPL.",
         options_.sos2_, 0, 1);
+    GetEnv().AddOption("cvt:prod cvt:pre:prod",
+                       "Product preprocessing flags. "
+                       "Sum of a subset of the following bits:\n"
+                       "\n"
+                       "| 1 - Quadratize higher-order products in the "
+                       "      following order: integer terms first, "
+                       "      then real-valued ones; in each group, "
+                       "      smaller-range terms first.\n"
+                       "| 2 - Logicalize products of 2 binary terms.\n"
+                       "| 4 - Logicalize products of >=3 binary terms.\n"
+                       "\n"
+                       "Default: 1+2+4. Bits 2 or 4 imply bit 1.",
+                       options_.prepro_products_, 0, 1023);
   }
 
 
