@@ -1185,7 +1185,7 @@ private:
   struct Options {
     int sos_ = 1;
     int sos2_ = 1;
-    int prepro_products_ = 1+2+4;
+    int prepro_products_ = 1+4;
   };
   Options options_;
 
@@ -1239,7 +1239,7 @@ private:
                        "| 2 - Logicalize products of 2 binary terms.\n"
                        "| 4 - Logicalize products of >=3 binary terms.\n"
                        "\n"
-                       "Default: 1+2+4. Bits 2 or 4 imply bit 1.",
+                       "Default: 1+4. Bits 2 or 4 imply bit 1.",
                        options_.prepro_products_, 0, 1023);
   }
 

@@ -98,7 +98,8 @@
       "cplex_options": "qp:target=3",
       "copt_options": "cvt:quadcon=0",
       "comment_copt": "non convex constraint, linearise. But Gurobi convexifies it?"
-    }  },
+    }
+  },
   {
     "name" : "prod_bin_var_02_obj",
     "objective" : 1,
@@ -122,6 +123,32 @@
     },
     "values": {
       "if abs(Prod01+8.5)<0.01 then 1 else 0": 1
+    }
+  },
+  {
+    "name" : "prod_bin_03",
+    "objective" : 2,
+    "tags" : ["linear"]
+  },
+  {
+    "name" : "prod_bin_03 cvt:prod=0",
+    "objective" : 2,
+    "tags" : ["quadratic", "quadraticnonconvex"],
+    "options": {
+      "mp_options": "cvt:prod=0"
+    }
+  },
+  {
+    "name" : "prod_bin_04",
+    "objective" : -1,
+    "tags" : ["linear"]
+  },
+  {
+    "name" : "prod_bin_04 cvt:prod=0",
+    "objective" : -1,
+    "tags" : ["quadratic", "quadraticnonconvex"],
+    "options": {
+      "mp_options": "cvt:prod=0"
     }
   }
 ]

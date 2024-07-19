@@ -62,8 +62,7 @@ public:
 protected:
   /// Quadratize / logicalize (sub)products
   FlatExpr CombineFactors() {
-    if (terms_flt_.size() >= 3)
-      SortTerms();
+    SortTerms();
     return CombineOrderedFactors();
   }
 
