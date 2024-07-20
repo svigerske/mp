@@ -1236,10 +1236,17 @@ private:
                        "      following order: integer terms first, "
                        "      then real-valued ones; in each group, "
                        "      smaller-range terms first.\n"
-                       "| 2 - Logicalize products of 2 binary terms.\n"
+                       "| 2 - Logicalize products of 2 binary terms. Logicalizing "
+                       "      means that the product is converted to a conjunction. "
+                       "      If the solver does not support it natively (see acc:and), "
+                       "      the conjunction is linearized.\n"
                        "| 4 - Logicalize products of >=3 binary terms.\n"
                        "\n"
-                       "Default: 1+4. Bits 2 or 4 imply bit 1.",
+                       "Default: 1+4. That is, 2-term binary products which are not "
+                       "part of a higher-order binary product, are not logicalized "
+                       "by default.\n"
+                       "\n"
+                       "Bits 2 or 4 imply bit 1.",
                        options_.prepro_products_, 0, 1023);
   }
 

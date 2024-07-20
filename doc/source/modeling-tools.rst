@@ -267,7 +267,7 @@ Consider the disjunction constraint
 With ``y=6.0000000001`` and ``z=9.9999999999``, and assuming the solver's
 feasibility tolerance is at a typical value (such as :math:`10^{-6}`),
 most Mathematical Programming solvers consider the disjunction satisfied.
-And, from a practical viewpoint, it is (given finite-precision
+And, from a practical viewpoint, it might be (given finite-precision
 computations).
 
 Our :ref:`Realistic checking mode <realistic-viols>` does exactly this:
@@ -285,8 +285,15 @@ In contrast, AMPL reports the constraint violated:
 
 That is, when expressions ``y<=6`` and ``z>=10`` are re-evaluated
 and their results substituted into ``C``, ``C`` holds false.
+To check validity of a group of logical constraints in AMPL,
+use a statement such as this:
 
-The role of the :ref:`Idealistic mode <idealistic-viols>`
+.. code-block:: ampl
+
+    display {i in 1.._nlogcons: !_logcon[i].val} (_logconname[i]);
+
+
+In contrast, the role of the :ref:`Idealistic mode <idealistic-viols>`
 is to warn the user about the fact,
 that even if the solver has a correct solution up to its tolerances
 (which is examined by the "realistic" mode),
@@ -339,6 +346,21 @@ There is an absolute violation of 3 and relative violation of 1 in the objective
 Linear constraint `C2` has its absolute and relative violations reported.
 Lines marked with a `*` report :ref:`Realistic violations <realistic-viols>`.
 
+If the relative violation is missing, the respective constraint has
+right-hand side 0:
+
+.. code-block:: ampl
+
+    WARNING:  "Tolerance violations"
+      Type                         MaxAbs [Name]   MaxRel [Name]
+    * algebraic con(s)             9E-03           -
+    *: Using the solver's aux variable values.
+    Documentation: mp.ampl.com/modeling-tools.html#automatic-solution-check.
+
+
+For such constraints, the significance of the violation
+depends on the left-hand side coefficients and variable values.
+
 To check the violations, we can recompute objective value and constraint slacks,
 as follows:
 
@@ -349,6 +371,15 @@ as follows:
     y = 1
     TotalSum = -2
     C2.slack = -1
+
+
+To check validity of a group of algebraic constraints in AMPL,
+use a statement such as this:
+
+.. code-block:: ampl
+
+    display {i in 1.._ncons: _con[i].slack < -1e-3} (_conname[i], _con[i].slack);
+
 
 
 .. _constr-list:
@@ -390,6 +421,7 @@ that the solver's reported solution violates checking tolerances.
     *: Using the solver's aux variable values.
     Documentation: mp.ampl.com/modeling-tools.html#automatic-solution-check.
 
+Lines marked with a `*` report the "realistic" violations.
 Such warning can appear when solving the following example with Gurobi 11
 which uses piecewise-linear approximation by default:
 
