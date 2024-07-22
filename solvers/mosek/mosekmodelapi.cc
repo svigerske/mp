@@ -76,9 +76,9 @@ void MosekModelAPI::SetLinearObjective( int iobj, const LinearObjective& lo ) {
 /// Add QP terms to objective
 void AddObjQuadraticPart(MSKtask_t lp,
                          const QuadTerms& qt) {
-  auto coefs = qt.coefs();
-  auto vars1 = qt.vars1();
-  auto vars2 = qt.vars2();
+  std::vector<double> coefs = qt.coefs();
+  std::vector<int> vars1 = qt.vars1();
+  std::vector<int> vars2 = qt.vars2();
   for (auto i=coefs.size(); i--; ) {
     if (vars1[i]==vars2[i])
       coefs[i] *= 2;                 // MOSEK represents lower submatrix
@@ -161,9 +161,9 @@ void MosekModelAPI::AddConstraint(const LinConGE& lc)
 void AddConQuadraticPart(MSKtask_t lp,
                          int i_con,
                          const QuadTerms& qt) {
-  auto coefs = qt.coefs();
-  auto vars1 = qt.vars1();
-  auto vars2 = qt.vars2();
+  std::vector<double> coefs = qt.coefs();
+  std::vector<int> vars1 = qt.vars1();
+  std::vector<int> vars2 = qt.vars2();
   for (auto i=coefs.size(); i--; ) {
     if (vars1[i]==vars2[i])
       coefs[i] *= 2;                 // MOSEK represents lower submatrix

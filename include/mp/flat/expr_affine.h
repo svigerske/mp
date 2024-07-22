@@ -10,6 +10,7 @@
 #include <cassert>
 
 #include "mp/arrayref.h"
+#include "mp/utils-vec.h"
 #include "mp/flat/expr_algebraic.h"
 
 namespace mp {
@@ -24,8 +25,8 @@ public:
   LinTerms() = default;
 
   /// Construct from 2 vectors
-  LinTerms(std::vector<double> c, std::vector<int> v) noexcept
-    : coefs_(std::move(c)), vars_(std::move(v))
+  LinTerms(const std::vector<double>& c, const std::vector<int>& v)
+      : coefs_(c.begin(), c.end()), vars_(v.begin(), v.end())
   { assert(check()); }
 
   /// Construct from 2 std::array's
@@ -49,9 +50,9 @@ public:
   /// var[i]
   int var(size_t i) const { assert(i<size()); return vars_[i]; }
   /// const vec& coefs()
-  const std::vector<double>& coefs() const { return coefs_; }
+  ArrayRef<double> coefs() const { return {coefs_.data(), coefs_.size()}; }
   /// const vec& vars()
-  const std::vector<int>& vars() const { return vars_; }
+  ArrayRef<int> vars() const { return {vars_.data(), vars_.size()}; }
   /// Ptr to coefs
   const double* pcoefs() const { return coefs_.data(); }
   /// Ptr to vars
@@ -152,8 +153,8 @@ public:
 
 
 private:
-  std::vector<double> coefs_;
-  std::vector<int> vars_;
+  SmallVec<double, 3> coefs_;
+  SmallVec<int, 6> vars_;
 };
 
 /// Specialize

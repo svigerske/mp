@@ -1077,7 +1077,8 @@ public:         // More utilities
     const auto& ellt = el.GetLinTerms();
     const auto& erlt = er.GetLinTerms();
     if (1 == ellt.size() && 1 == erlt.size() &&   // a variable in el and er
-        0.0 == er.constant_term() && 0.0 == el.constant_term()) {
+        0.0 == er.constant_term() && 0.0 == el.constant_term() &&
+        el.GetQPTerms().empty() && er.GetQPTerms().empty()) {
       auto coef = ellt.coef(0) * erlt.coef(0);
       auto qc_res = GetFlatCvt().AssignResultVar2Args(
             QuadraticFunctionalConstraint{ { {      // = x*y+0

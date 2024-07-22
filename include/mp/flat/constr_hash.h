@@ -5,6 +5,7 @@
 #include <array>
 #include <vector>
 
+#include "mp/arrayref.h"
 #include "mp/utils-hash-stream.h"
 #include "mp/flat/constr_std.h"
 #include "mp/flat/expr_affine.h"
@@ -59,6 +60,20 @@ struct hash< std::vector<Element, Allocator> >
 {
   size_t operator()(
       const std::vector<Element, Allocator>& x) const
+  {
+    return mp::HashStreamer::HashArray(0, x);
+  }
+};
+
+
+/// Specialize std::hash<> for mp::ArrayRef<>
+///
+/// Might assume std::hash<> specialized for elements
+template <class Element>
+struct hash< mp::ArrayRef<Element> >
+{
+  size_t operator()(
+      const mp::ArrayRef<Element>& x) const
   {
     return mp::HashStreamer::HashArray(0, x);
   }

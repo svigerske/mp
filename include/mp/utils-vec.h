@@ -1,8 +1,23 @@
 #ifndef UTILSVEC_H
 #define UTILSVEC_H
 
+// #include "../../thirdparty/martinus/svector/svector.h"
+#include "../../thirdparty/gharveymn/small_vector/small_vector.hpp"
+
 
 namespace mp {
+
+/// Typedef small vector
+// template <class T, size_t N>
+// using SmallVec = ankerl::svector<T, N>;
+
+/// Typedef small vector
+template <class T, size_t N>
+using SmallVec = gch::small_vector<T, N>;
+
+/// Typedef small vector, default size of 64 bytes
+template <class T>
+using SmallVecDefSz = gch::small_vector<T>;
 
 /// Grow vector capacity by a factor if needed.
 /// @return reference to the element at \a i.

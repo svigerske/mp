@@ -17,9 +17,10 @@ public:
   QuadTerms() = default;
 
   /// Construct from 3 vectors
-  QuadTerms(std::vector<double> c,
-           std::vector<int> v1, std::vector<int> v2) noexcept
-    : coefs_(std::move(c)), vars1_(std::move(v1)), vars2_(std::move(v2))
+  QuadTerms(const std::vector<double>& c,
+           const std::vector<int>& v1, const std::vector<int>& v2) noexcept
+      : coefs_(c.begin(), c.end()),
+      vars1_(v1.begin(), v1.end()), vars2_(v2.begin(), v2.end())
   { assert(check()); }
 
   /// Validate
@@ -44,9 +45,9 @@ public:
   const int* pvars1() const { return vars1_.data(); }
   const int* pvars2() const { return vars2_.data(); }
 
-  const std::vector<double>& coefs() const { return coefs_; }
-  const std::vector<int>& vars1() const { return vars1_; }
-  const std::vector<int>& vars2() const { return vars2_; }
+  ArrayRef<double> coefs() const { return {coefs_.data(), coefs_.size()}; }
+  ArrayRef<int> vars1() const { return {vars1_.data(), vars1_.size()}; }
+  ArrayRef<int> vars2() const { return {vars2_.data(), vars2_.size()}; }
 
   double coef(int i) const { return coefs_[i]; }
   void set_coef(int i, double c) { coefs_[i] = c; }
@@ -126,9 +127,9 @@ public:
 
 
 private:
-  std::vector<double> coefs_;
-  std::vector<int> vars1_;
-  std::vector<int> vars2_;
+  SmallVec<double, 3> coefs_;
+  SmallVec<int, 6> vars1_;
+  SmallVec<int, 6> vars2_;
 };
 
 /// Specialize

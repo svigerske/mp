@@ -28,6 +28,8 @@
 #include <tuple>
 #include <type_traits>
 
+#include "mp/arrayref.h"
+
 namespace mp {
 
 /// A lightweight JSON writer.
@@ -170,6 +172,10 @@ protected:
       typename T = std::decay_t<
           decltype(*begin(std::declval<C>()))> >
   void DoWrite(const C& c) { WriteSequence(c.begin(), c.end()); }
+
+  /// Write ArrayRef
+  template <class T>
+  void DoWrite(const ArrayRef<T>& c) { WriteSequence(c.begin(), c.end()); }
 
   /// https://www.cppstories.com/2022/tuple-iteration-apply/
   template <typename... Arg>

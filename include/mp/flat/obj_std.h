@@ -37,9 +37,9 @@ public:
   /// Validate
   bool check() const { return lt_.check(); }
   /// Coefs vector
-  const std::vector<double>& coefs() const { return lt_.coefs(); }
+  ArrayRef<double> coefs() const { return lt_.coefs(); }
   /// Var vector
-  const std::vector<int>& vars() const { return lt_.vars(); }
+  ArrayRef<int> vars() const { return lt_.vars(); }
   /// Name
   const char* name() const { return name_.c_str(); }
   /// Set name
