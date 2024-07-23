@@ -2,11 +2,11 @@ Summary of recent updates to the AMPL MP Library
 ================================================
 
 
-## unreleased
+## 20240724
 - Option *acc:_all*
 	- Useful to disable all reformulations (acc:_all=2),
 		or force linearization (acc:_all=0.)
-- Significantly speed up parsing of quadratic expressions
+- Faster input of quadratic expressions.
 
 
 ## 20240617

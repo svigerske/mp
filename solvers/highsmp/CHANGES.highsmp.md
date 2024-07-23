@@ -2,9 +2,17 @@ Summary of recent updates to HiGHS for AMPL
 ===========================================
 
 
+## 20240724
+- Option *acc:_all*
+	- Useful to disable all reformulations (acc:_all=2),
+		or force linearization (acc:_all=0.)
+- Faster input of quadratic expressions.
+
+
 ## 20240627
 - Updated to HiGHS 1.7.1
-- Added calculation of primal and dual rays. See keyword `alg:rays`
+- Added calculation of primal and dual rays.
+	See keyword `alg:rays`.
 
 
 ## 20240617
