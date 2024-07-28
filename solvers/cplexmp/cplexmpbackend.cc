@@ -587,6 +587,7 @@ std::pair<int, std::string> CplexBackend::GetSolveResult() {
   case CPX_STAT_UNBOUNDED:
   case CPXMIP_UNBOUNDED:
   case CPX_STAT_MULTIOBJ_UNBOUNDED:
+    solcount = CPXgetsolnpoolnumsolns(env(), lp());  // Can we use it without CPXpopulate?
     if (solcount>0)
       return { sol::UNBOUNDED_FEAS,
             "unbounded problem, feasible solution returned" };

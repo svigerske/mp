@@ -2,10 +2,18 @@ Summary of recent updates to gurobi for AMPL
 ============================================
 
 
+## 20240728
+- Updated to Gurobi libraries 11.0.3, which include many 
+  bug fixes.
+
+ 
 ## 20240724
 - Option *acc:_all*
 	- Useful to disable all reformulations (acc:_all=2),
-		or force linearization (acc:_all=0.)
+		or force linearization (acc:_all=0).
+- Option *cvt:prod*     
+  - Controls reformulation of binary products into logical 
+    constraints.
 - Faster input of quadratic expressions.
 
 
@@ -17,8 +25,8 @@ Summary of recent updates to gurobi for AMPL
 
 
 ## 20240604
-- Presolve division by constant, resulting in fewer constraints
-- Fix no-solution case in multi-objective emulator
+- Presolve division by constant, resulting in fewer constraints.
+- Fix no-solution case in multi-objective emulator.
 
 
 ## 20240529
