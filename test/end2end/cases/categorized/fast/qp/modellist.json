@@ -82,7 +82,8 @@
     "tags" : ["quadratic_obj"],
     "options": {
       "highs_options": "timelim=3",
-      "comment_highs": "takes too long as of Sept 2022"
+      "comment_highs": "takes too long as of Sept 2022",
+      "scip_options": "timelim=3"
     }
   },
   {

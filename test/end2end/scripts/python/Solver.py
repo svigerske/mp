@@ -1028,6 +1028,8 @@ class SCIPSolver(MPDirectSolver):
     def __init__(self, exeName, timeout=None, nthreads=None, otherOptions=None):
         stags = {ModelTags.continuous, ModelTags.integer, ModelTags.binary, 
                  ModelTags.quadratic,
+                 ModelTags.quadratic_obj,
+                 ModelTags.quadratic_obj_nonconvex,
                  ModelTags.quadraticnonconvex,
                  ModelTags.socp, ModelTags.socp_hard_to_recognize,
                  ModelTags.sos,

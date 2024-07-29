@@ -118,10 +118,6 @@ protected:
     std::vector<int> objpr = MPD( ReadIntSuffix( {"objpriority", suf::OBJ} ) );  // int only
     objpr.resize(obj_orig.size(), 0.0);               // blend objectives by default
     std::vector<double> objwgt = MPD( GetMOWeightsLegacy() );
-    if (objwgt.empty()) {
-      objwgt.resize(obj_orig.size(), 1.0);            // Default "intuitive" weights
-      FlipDiffSenseSigns(objwgt);                     // We handle "legacy" format below
-    }
     std::vector<double> objtola = MPD( ReadDblSuffix( {"objabstol", suf::OBJ} ) );
     objtola.resize(obj_orig.size(), 0.0);
     std::vector<double> objtolr = MPD( ReadDblSuffix( {"objreltol", suf::OBJ} ) );
@@ -237,9 +233,29 @@ protected:
     MPD( SetObjectiveTo( MPD(GetModelAPI()), 0, obj_new_[i_current_obj_]) );
   }
 
+  /// The "intuitive" objective weights
+  /// @return Always a full vector (for all objs)
+  /// @note All these methods assume the obj list is completed
+  ArrayRef<double> GetMOWeights() {
+    std::vector<double> objwgt = MPD( GetMOWeightsLegacy() );
+    const auto& obj_orig = MPD( get_objectives() );   // no linking
+    if (objwgt.empty()) {
+      objwgt.resize(obj_orig.size(), 1.0);            // Default "intuitive" weights
+    } else {
+      FlipDiffSenseSigns(objwgt);                     // We handle "legacy" format below
+    }
+    return objwgt;
+  }
+
+  /// @return Legacy weights (relative to the 1st obj),
+  ///   if .objweight provided, or default
   ArrayRef<double> GetMOWeightsLegacy() {
     std::vector<double> objw = MPD( ReadDblSuffix( {"objweight", suf::OBJ} ) );
-    if (objw.size() && 2==MPD( GetEnv() ).multiobj_weight()) {   // user wants "intuitive"
+    const auto& obj_orig = MPD( get_objectives() );   // no linking
+    if (objw.empty()) {
+      objw.resize(obj_orig.size(), 1.0);            // Default "intuitive" weights
+      FlipDiffSenseSigns(objw);            // Backend / Emulator want "legacy"
+    } else if (2==MPD( GetEnv() ).multiobj_weight()) {   // user gave "intuitive" values
       FlipDiffSenseSigns(objw);            // Backend / Emulator want "legacy"
     }
     return objw;
@@ -248,9 +264,11 @@ protected:
   /// Convert between the options of obj:multi:weight
   void FlipDiffSenseSigns(std::vector<double>& objw) {
     const auto& obj = MPD( get_objectives() );
-    for (auto i=obj.size(); --i; )             // forall i>1
-      if (obj[i].obj_sense() != obj.front().obj_sense())
-        objw[i] = -objw[i];
+    if (obj.size() > 1) {
+      for (auto i=obj.size(); --i; )             // forall i>1
+        if (obj[i].obj_sense() != obj.front().obj_sense())
+          objw[i] = -objw[i];
+    }
   }
 
 private:

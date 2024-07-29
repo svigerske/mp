@@ -174,6 +174,7 @@ protected:
         MPD( ExportObj(i) );
         MP_DISPATCH( Convert( GetModel().obj(i) ) );
       }
+    GetFlatCvt().PropagateObjContexts();      // all now, because of GetMOWeights()
 
     ////////////////////////// Algebraic constraints
     ifFltCon_ = 1;
@@ -340,17 +341,18 @@ protected:
     }
     /// Sort/merge terms, otherwise we lose repeated terms
     /// in Gurobi where we just set 'obj attributes'
-    /// to variables
+    /// to variables.
+    /// Context is propagated after adding all objectives.
     le.sort_terms();
     eexpr.GetQPTerms().sort_terms();
-    /// Propagate context
-    auto ctx = obj::MAX==obj.type() ? Context::CTX_POS : Context::CTX_NEG;
-    GetFlatCvt().PropagateResult2LinTerms(le,
-                                          GetFlatCvt().MinusInfty(),
-                                          GetFlatCvt().Infty(), ctx);
-    GetFlatCvt().PropagateResult2QuadTerms(eexpr.GetQPTerms(),
-                                           GetFlatCvt().MinusInfty(),
-                                           GetFlatCvt().Infty(), ctx);
+    if (!GetFlatCvt().IfPassQuadObj()            // SCIP 10
+        && eexpr.GetQPTerms().size()) {
+      EExpr qpnew;
+      qpnew.GetQPTerms() = std::move(eexpr.GetQPTerms());
+      int qpres = Convert2Var(std::move(qpnew));
+      eexpr.GetQPTerms().clear();                // explicitly remove obj qp terms
+      le.add_term(1.0, qpres);
+    }
     /// Add linear / quadratic obj
     LinearObjective lo { obj.type(),
           std::move(le.coefs()), std::move(le.vars()) };
@@ -1200,7 +1202,10 @@ public:
   /// What about common expressions?
   int IfMultOutQPTerms() const {
     return IfFlatteningAConstraint() ?
-          GetFlatCvt().IfPassQuadCon() : GetFlatCvt().IfPassQuadObj();
+          GetFlatCvt().IfPassQuadCon() :
+               // For objectives, still multiply out
+               // if we move the QP terms into contraints (SCIP)
+               ( GetFlatCvt().IfPassQuadObj() || GetFlatCvt().IfPassQuadCon() );
   }
 
   /// Quadratize Pow2 exactly when we pass QP terms

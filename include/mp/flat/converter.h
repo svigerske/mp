@@ -101,6 +101,23 @@ public:
     }
   }
 
+  /// Propagate objective contexts
+  void PropagateObjContexts() {
+    const auto& objs = MPD( get_objectives() );
+    const auto objwgt = MPD( GetMOWeights() );
+    if (GetEnv().multiobj())               // only in obj:multi mode
+      assert(objs.size() == objwgt.size());
+    for (size_t i=0; i<objs.size(); ++i) {
+      auto isMax = obj::MAX==objs[i].obj_sense();
+      if (GetEnv().multiobj() && objwgt[i]<0.0)   // only in obj:multi
+        isMax = !isMax;
+      auto ctx = isMax ? Context::CTX_POS : Context::CTX_NEG;
+      MPD( PropagateResult2LinTerms(objs[i].GetLinTerms(),
+                          MPD( MinusInfty() ), MPD( Infty() ), ctx) );
+      MPD( PropagateResult2QuadTerms(objs[i].GetQPTerms(),
+                          MPD( MinusInfty() ), MPD( Infty() ), ctx) );
+    }
+  }
 
 public:
   //////////////////////////////////// VISITOR ADAPTERS /////////////////////////////////////////
