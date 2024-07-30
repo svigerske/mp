@@ -905,8 +905,7 @@ SolutionBasis MosekBackend::GetBasis() {
 				{{{ CG_Algebraic, std::move(constt) }}} });
     varstt = mv.GetVarValues()();
     constt = mv.GetConValues()();
-    assert(varstt.size());
-    assert(constt.size());
+    assert(varstt.size());       // not for constraints
   }
   return { std::move(varstt), std::move(constt) };
 }

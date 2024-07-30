@@ -1143,11 +1143,16 @@ private:
 
     GetEnv().AddOption("cvt:quadobj passquadobj",
                        ModelAPIAcceptsQuadObj() ?
-        "0/1*: Multiply out and pass quadratic objective terms to the solver, "
-        "vs. linear approximation."
+        "0/1*: Pass quadratic objective terms to the solver. "
+        "If the solver accepts quadratic constraints, "
+                                                "such a constraint will be created with those, "
+                                                "otherwise linearly approximated."
                        :
-        "0*/1: Multiply out and pass quadratic objective terms to the solver, "
-                         "vs. linear approximation.",
+        "0*/1: Pass quadratic objective terms to the solver, "
+                                                  "If the solver accepts quadratic constraints, "
+                                                  "such a constraint will be created with those, "
+                                                  "otherwise linearly approximated."
+,
         options_.passQuadObj_, 0, 1);
     GetEnv().AddOption("cvt:quadcon passquadcon",
                        "Convenience option. "

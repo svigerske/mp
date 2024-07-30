@@ -2,6 +2,15 @@ Summary of recent updates to the AMPL MP Library
 ================================================
 
 
+## unreleased
+- SCIP (and any solver with linear objective
+	and non-linear constraints): improve reformulation
+	of QP objectives.
+- Fix reformulation of non-linear objective expressions
+	for the multi-objective case (option obj:multi) when
+	negative objective weights are used (obj:multi:weight.)
+
+
 ## 20240724
 - Option *acc:_all*
 	- Useful to disable all reformulations (acc:_all=2),

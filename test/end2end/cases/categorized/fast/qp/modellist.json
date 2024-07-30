@@ -92,6 +92,14 @@
     "tags" : ["quadratic_obj"]
   },
   {
+    "name" : "quad_obj_repeated cvt:quadobj=0",
+    "objective" : 0,
+    "tags" : ["quadratic_obj"],
+    "options": {
+      "ANYSOLVER_options": "cvt:quadobj=0"
+    }
+  },
+  {
     "name" : "prod_bin_var_01",
     "objective" : 5,
     "tags" : ["quadratic", "quadraticnonconvex"],

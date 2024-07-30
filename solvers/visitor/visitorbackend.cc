@@ -645,7 +645,7 @@ SolutionBasis VisitorBackend::GetBasis() {
         {{{ CG_Linear, std::move(constt) }}} });
     varstt = mv.GetVarValues()();
     constt = mv.GetConValues()();
-    assert(varstt.size());
+    assert(varstt.size());         // not for constraints, can be QCP
   }
   return { std::move(varstt), std::move(constt) };
 }

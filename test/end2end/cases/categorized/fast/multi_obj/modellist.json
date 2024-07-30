@@ -248,5 +248,35 @@
     "values": {
       "z": 1
     }
+  },
+  {
+    "name" : "obj_abs_01",
+    "tags" : ["linear", "integer", "multiobj"],
+    "options": {
+      "ANYSOLVER_options": "multiobj=1"
+    },
+    "values": {
+      "_sobj[1]": 13,
+      "_sobj[2]": -17
+    }
+  },
+  {
+    "name" : "obj_abs_02",
+    "tags" : ["linear", "integer", "multiobj"],
+    "options": {
+      "ANYSOLVER_options": "multiobj=1"
+    },
+    "values": {
+      "_sobj[1]": 13,
+      "_sobj[2]": 4.333333333333333333
+    }
+  },
+  {
+    "name" : "obj_abs_02 obj:no=2",
+    "tags" : ["linear", "integer"],
+    "options": {
+      "ANYSOLVER_options": "obj:no=2"
+    },
+    "objective": 4.3333333333333333333
   }
 ]
