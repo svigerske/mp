@@ -364,14 +364,11 @@ double CplexBackend::ObjectiveValue() const {
 }
 
 double CplexBackend::NodeCount() const {
-  return CPXgetnodecnt (env(), lp());
+  return  IsMIP() ? CPXgetnodecnt(env(), lp()) : 0;
 }
 
 double CplexBackend::SimplexIterations() const {
-  if (IsMIP())
-    return CPXgetmipitcnt(env(), lp());
-  else
-    return CPXgetitcnt(env(), lp());
+  return IsMIP() ? CPXgetmipitcnt(env(), lp()) : CPXgetitcnt(env(), lp());
 }
 
 int CplexBackend::BarrierIterations() const {
@@ -566,6 +563,8 @@ std::pair<int, std::string> CplexBackend::GetSolveResult() {
   case CPXMIP_OPTIMAL_POPULATED:
   case CPX_STAT_MULTIOBJ_OPTIMAL:
     return { sol::SOLVED, "optimal solution" };
+  case CPX_STAT_CONFLICT_FEASIBLE:
+    return { sol::SOLVED, "conflict refiner reports the problem as feasible" };
   case CPXMIP_OPTIMAL_TOL:
   case CPXMIP_OPTIMAL_POPULATED_TOL:
     return { sol::SOLVED, "optimal solution within tolerance" };
@@ -579,6 +578,7 @@ std::pair<int, std::string> CplexBackend::GetSolveResult() {
   case CPX_STAT_INFEASIBLE:
   case CPXMIP_INFEASIBLE:
   case CPX_STAT_MULTIOBJ_INFEASIBLE:
+  case CPX_STAT_CONFLICT_MINIMAL:
     return { sol::INFEASIBLE, "infeasible problem" };
   case CPX_STAT_INForUNBD:
   case CPXMIP_INForUNBD:
@@ -604,6 +604,17 @@ std::pair<int, std::string> CplexBackend::GetSolveResult() {
   case CPXMIP_FEASIBLE_RELAXED_QUAD:
   case CPXMIP_FEASIBLE_RELAXED_SUM:
     return { sol::LIMIT_FEAS, "limit, feasible solution" };
+  case CPX_STAT_CONFLICT_ABORT_DETTIME_LIM:
+  case CPX_STAT_CONFLICT_ABORT_TIME_LIM:
+    return { sol::INFEASIBLE_IIS, "non-minimal IIS due to time limit" };
+  case CPX_STAT_CONFLICT_ABORT_MEM_LIM :
+    return { sol::INFEASIBLE_IIS, "non-minimal IIS due to memory limit" };
+  case  CPX_STAT_CONFLICT_ABORT_NODE_LIM:
+    return { sol::INFEASIBLE_IIS, "non-minimal IIS due to node limit" };
+  case CPX_STAT_CONFLICT_ABORT_OBJ_LIM:
+    return { sol::INFEASIBLE_IIS, "non-minimal IIS due to objective limit" };
+  case CPX_STAT_CONFLICT_ABORT_CONTRADICTION:
+    return { sol::INFEASIBLE_IIS, "non-minimal IIS due to contradiction" };
   case CPX_STAT_NUM_BEST:
   case CPX_STAT_OPTIMAL_INFEAS:
   case CPXMIP_OPTIMAL_INFEAS:
@@ -1237,7 +1248,9 @@ void CplexBackend::InitCustomOptions() {
     "Type of solution to compute for a QP problem",
     CPXPARAM_OptimalityTarget, optimalitytarget_values_, 0);
 
-  /// Custom solve results here...
+  AddSolverOption("pre:presolve", "Whether to run presolve",
+    CPX_PARAM_PREIND, 0, 1);
+  /// Custom solve results here'...
   //  AddSolveResults({
   //                    { sol::NUMERIC, "failure: numeric issue, no feasible solution" }
   //                  });
