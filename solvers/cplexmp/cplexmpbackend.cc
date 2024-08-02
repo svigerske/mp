@@ -926,6 +926,14 @@ void CplexBackend::DoCplexFeasRelax() {
     (double*)data_or_null(lbpen), (double*)data_or_null(ubpen)));
 }
 
+
+const mp::OptionValueInfo values_noautoyes_[3] = {
+  {     "-1", "No", -1 },
+  {     "0", "Automatic choice (default)", 0 },
+  {     "1", "Yes.", 1}
+};
+
+
 static const mp::OptionValueInfo lpmethod_values_[] = {
   { "choose", "Automatic (default)", -1},
   { "simplex", "Simplex", 1},
@@ -965,7 +973,11 @@ static const mp::OptionValueInfo outlev_values_[] = {
   { "1", "equivalent to \"bardisplay\"=1, \"display\"=1, \"mipdisplay\"=3", 1},
   { "2", "equivalent to \"bardisplay\"=2, \"display\"=2, \"mipdisplay\"=5", 2}
 };
-
+static const mp::OptionValueInfo auxrootthreads_values_[] = {
+  { "-1", "Do not use additional threads for auxiliary tasks", 0},
+  { "0", "Automatic (default)", 1},
+  { "n < N", "Use n threads for auxiliary root tasks", 2}
+};
 static const mp::OptionValueInfo values_pool_mode[] = {
   { "0", "Just collect solutions during normal solve", 0},
   { "1", "Make some effort at finding additional solutions => poolintensity=2, populate=1" , 1},
@@ -1019,7 +1031,55 @@ static const mp::OptionValueInfo values_solutiontype[] = {
   { "1", "Yes (equivalent to 0)", 1},
   { "2", "No", 2}
 };
+static const mp::OptionValueInfo values_baralg[] = {
+  { "0",  "Default (= 1 for MIP subproblems, else 3)", 0},
+  { "1", "Infeasibility-estimate start", 1},
+  { "2", "Infeasibility-constant start", 2},
+  { "3", "Standard start", 3}
+};
+static const mp::OptionValueInfo values_barmaxcor[] = {
+  { "-1",  "Automatic (default)", -1},
+  { "0", "None", 0},
+  { "n>0", "Maximum number of centering corrections per iteration", 2}
+};
+static const mp::OptionValueInfo values_bardisplay[] = {
+  { "0", "No output", 0},
+  { "1", "Normal setup and iteration information (default)", 1},
+  { "2", "Diagnostic information", 2}
+};
+static const mp::OptionValueInfo values_barstart[] = {
+  { "1", "Assume dual is 0 (default)", 1},
+  { "2", "Estimate dual", 2},
+  { "3", "Average of primal estimate, 0 dual", 3},
+  { "4", "Average of primal and dual estimates", 4}
+};
 
+
+static const mp::OptionValueInfo values_prereformulations[] = {
+  { "0", "None", 0},
+  { "1", "Allow reformulations that interphere with crushing forms", 1},
+  { "2", "Allow reformulations that interphere with uncrushing forms", 2},
+  { "3", "All reformulations (default)", 3}
+};
+
+static const mp::OptionValueInfo values_prescale[] = {
+  {"-1", "No scaling", -1},
+  { "0", "Equilibration (default)", 0},
+  { "1", "More aggressive", 1}
+};
+
+static const mp::OptionValueInfo values_presosenc[] = {
+  {"-1", "No reformulation", -1},
+  { "0", "Automatic (default)", 0},
+  { "1", "Reformulate as linear constraints, with a reformulation "
+         "which is logarithmic in the size of the SOSs.", 1}
+};
+
+static const mp::OptionValueInfo preaggregator_values_[] = {
+  { "-1", "Automatic (default) (1 for LP, infinite for MIP)", 0},
+  { "0", "Do not use any aggregator", 1},
+  { "n > 0", "Apply aggregator n times", 2}
+};
 
 void CplexBackend::setSolutionMethod() {
   int nFlags = bool(storedOptions_.fBarrier_)
@@ -1104,6 +1164,33 @@ void CplexBackend::InitCustomOptions() {
     "primal/dual/barrier/network/sifting flags are specified:\n"
     "\n.. value-table::\n", storedOptions_.algMethod_, values_method);
 
+
+
+  // Cut generation
+  AddSolverOption("cut:aggforcut aggforcut",
+    "Bound on the number of constraints aggregated to generate flow-cover "
+    "and mixed-integer-rounding cuts (default 3).",
+    CPXPARAM_MIP_Limits_AggForCut, 0, CPXINT_MAX);
+
+
+  // MIP related options
+
+  AddSolverOption("mip:backtrack backtrack",
+    "Tolerance (>0, default 0.9999) for when to backtrack during "
+    "branch & bound.  Low values tend to pure best-bound search. "
+    "High values(~1) tend to pure depth-first search. Values less "
+    "than the default are often good when subproblems are expensive.",
+    CPXPARAM_MIP_Strategy_Backtrack, 0.0, 1.0);
+
+
+  AddSolverOption("mip:gapabs mipgapabs absmipgap",
+    "Max. absolute MIP optimality gap (default 1e-6).",
+    CPXPARAM_MIP_Tolerances_AbsMIPGap, 0.0, DBL_MAX);
+
+  AddSolverOption("mip:gap mipgap",
+    "Max. relative MIP optimality gap (default 1e-4).",
+    CPXPARAM_MIP_Tolerances_MIPGap, 1e-9, 1.0);
+
   AddStoredOption("mip:nodemethod nodemethod",
     "Algorithm used to solve relaxed MIP node problems; for MIQP problems "
     "(quadratic objective, linear constraints), settings other than 3 and 5 " 
@@ -1111,9 +1198,44 @@ void CplexBackend::InitCustomOptions() {
 		"constraints), only 0 is permitted.\n"
     "\n.. value-table::\n", storedOptions_.nodeMethod_, values_nodemethod);
 
+  AddSolverOption("bar:baralg baralg",
+    "How to start the barrier algorithm:"
+    "\n\n.. value-table::\n",
+    CPXPARAM_Barrier_Algorithm, values_baralg, 0);
+
   AddStoredOption("bar:crossover crossover mipcrossover",
     "How to transform a barrier solution to a basic one:\n"
    "\n.. value-table::\n", storedOptions_.crossover_, values_barcrossover);
+
+  AddSolverOption("bar:corrections barcorr barmaxcor",
+    "Limit on centering corrections in each iteration of the barrier algorithm:"
+    "\n\n.. value-table::\n",
+    CPXPARAM_Barrier_Limits_Corrections, values_barmaxcor, -1);
+
+  AddSolverOption("bar:display bardisplay",
+    "Specifies how much the barrier algorithm chatters:"
+    "\n\n.. value-table::\n",
+    CPXPARAM_Barrier_Display, values_bardisplay, 1);
+
+  AddSolverOption("bar:growth bargrowth",
+    "Tolerance for detecting unbounded faces in the barrier algorithm: "
+    "higher values make the test for unbounded faces harder to satisfy "
+		"(default 1e12).",
+    CPXPARAM_Barrier_Limits_Growth, 1, CPXINT_MAX);
+
+  AddSolverOption("bar:iterlim bariterlim",
+    "Maximum barrier iterations allowed (default 9223372036800000000).",
+    CPXPARAM_Barrier_Limits_Iteration, 0, CPXINT_MAX);
+
+  AddSolverOption("bar:objrange barobjrange",
+    "Limit on the absolute objective value before the barrier algorithm "
+    "considers the problem unbounded (default 1e20).",
+    CPXPARAM_Barrier_Limits_ObjRange, 0, CPXINT_MAX);
+
+  AddSolverOption("bar:start barstart barstartalg",
+    "Barrier starting-point algorithm:"
+    "\n\n.. value-table::\n",
+    CPXPARAM_Barrier_StartAlg, values_barstart, 1);
 
   AddStoredOption("lp:solutiontype solutiontype",
     "Whether to seek a basic solution when solving an LP:\n"
@@ -1199,7 +1321,12 @@ void CplexBackend::InitCustomOptions() {
     "sol:pool... parameters. Value 1 implied by sol:stub.");
   // end solution pool controls
 
-
+  AddSolverOption("tech:auxrootthreads auxrootthreads",
+    "Controls the number of threads used for auxiliary chores when solving "
+    "the root node of a MIP problem. When N threads are available (possibly "
+    "limited by \"threads\"), auxrootthreads must be less than N.\n"
+    "\n.. value-table::\n",
+    CPXPARAM_MIP_Limits_AuxRootThreads, auxrootthreads_values_, 0);
 
   AddStoredOption("tech:outlev outlev",
     "Whether to write CPLEX log lines (chatter) to stdout,"
@@ -1231,14 +1358,16 @@ void CplexBackend::InitCustomOptions() {
   AddStoredOption("tech:logfile logfile",
     "Log file name.", storedOptions_.logFile_);
 
-  AddSolverOption("mip:gap mipgap",
-      "Relative optimality gap |bestbound-bestinteger|/(1e-10+|bestinteger|).",
-      CPXPARAM_MIP_Tolerances_MIPGap, 0.0, 1.0);
+  AddSolverOption("tech:seed seed",
+    "Seed for random number generator used internally "
+    "by CPLEX.Use \"seed=?\" to see the default, which "
+    "depends on the CPLEX release.",
+    CPX_PARAM_RANDOMSEED, 0, CPXINT_MAX);
 
   AddSolverOption("tech:threads threads",
       "How many threads to use when using the barrier algorithm\n"
       "or solving MIP problems; default 0 ==> automatic choice.",
-      CPXPARAM_Threads, 0, INT_MAX);
+      CPXPARAM_Threads, 0, CPXINT_MAX);
 
   AddSolverOption("lim:time timelim timelimit",
       "limit on solve time (in seconds; default: no limit).",
@@ -1248,8 +1377,72 @@ void CplexBackend::InitCustomOptions() {
     "Type of solution to compute for a QP problem",
     CPXPARAM_OptimalityTarget, optimalitytarget_values_, 0);
 
-  AddSolverOption("pre:presolve", "Whether to run presolve",
-    CPX_PARAM_PREIND, 0, 1);
+  
+  AddSolverOption("pre:aggfill aggfill agglim",
+    "Variables that appear in more than agglim rows (default 10) "
+    "will not be substituted away by the aggregator.",
+    CPXPARAM_Preprocessing_Fill, 0, CPXINT_MAX);
+
+  AddSolverOption("pre:aggregate aggregate",
+    "Whether to make substitutions to reduce the number of "
+		"rows:\n\n.. value-table::\n",
+    CPXPARAM_Preprocessing_Aggregator, preaggregator_values_, -1);
+
+
+  AddSolverOption("pre:presolve", "Whether to use CPLEX's presolve:\n"
+    "\n.. value-table::\n",
+    CPXPARAM_Preprocessing_Presolve, values_01_noyes_1default_, 1);
+
+  AddSolverOption("pre:dual predual",
+    "Whether CPLEX's presolve phase should present the "
+    "CPLEX solution algorithm with the primal(-1) or "
+    "dual(1) problem or (default = 0) should decide"
+    "which automatically.Specifying \"predual=1\" often "
+    "gives better performance than specifying just \"dual\", "
+    "but sometimes \"dual predual=1\" is still better.",
+    CPXPARAM_Preprocessing_Dual, -1, 1);
+
+  AddSolverOption("pre:node presolvenode",
+    "Whether to run presolve at each node of the MIP branch-and-bound:\n"
+    "\n.. value-table::\n",
+    CPXPARAM_MIP_Strategy_PresolveNode, values_noautoyes_, 0);
+
+  AddSolverOption("pre:passes prepasses prepass",
+    "Limit on the number of CPLEX presolve passes:\n"
+    "\n"
+    "| -1 - Automatic choice (default)\n"
+    "| n>=0 - At most n passes.",
+    CPXPARAM_Preprocessing_NumPass, -1, CPXINT_MAX);
+
+  AddSolverOption("pre:reformulations prereformulations",
+    "Kinds of reductions permitted during CPLEX presolve: \n"
+    "\n.. value-table::\n",
+    CPXPARAM_Preprocessing_Reduce, values_prereformulations, 3);
+
+  AddSolverOption("pre:relax prerelax",
+    "Whether to use CPLEX's presolve on the initial LP relaxation of a MIP: \n"
+    "\n.. value-table::\n",
+    CPXPARAM_Preprocessing_Relax, values_autonoyes_, 0);
+
+
+  AddSolverOption("pre:scale scale",
+    "How to scale the problem:\n"
+    "\n.. value-table::\n",
+    CPXPARAM_Read_Scale, values_prescale, 0);
+
+  AddSolverOption("pre:sos1enc presos1enc presos1reform",
+    "Encoding used for SOS1 reformulation:\n"
+    "\n.. value-table::\n",
+    CPXPARAM_Preprocessing_SOS1Reform, values_presosenc, 0);
+
+  AddSolverOption("pre:sos2enc presos2enc presos2reform",
+    "Encoding used for SOS2 reformulation, see pre:sos1enc.",
+    CPXPARAM_Preprocessing_SOS2Reform, -1, 1);
+
+
+
+
+
   /// Custom solve results here'...
   //  AddSolveResults({
   //                    { sol::NUMERIC, "failure: numeric issue, no feasible solution" }
