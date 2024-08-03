@@ -683,12 +683,12 @@ void HighsBackend::InitCustomOptions() {
     "Fraction of time to spend in MIP heuristics (default 0.05).",
     "mip_heuristic_effort", 0.0, 1.0);
 
-  AddSolverOption("mip:relgaptol relgaptol mip_rel_gap",
+  AddSolverOption("mip:gap mipgap mip:relgaptol relgaptol mip_rel_gap",
     "Tolerance on relative gap, | ub - lb|/|ub | , to determine whether optimality has been reached for a MIP instance "
     "(default 1e-04).",
     "mip_rel_gap", 0.0, Infinity());
 
-  AddSolverOption("mip:absgaptol absgaptol mip_abs_gap",
+  AddSolverOption("mip:gapabs mipgapabs mip:absgaptol absgaptol mip_abs_gap",
     "Tolerance on absolute gap of MIP, |ub-lb|, to determine whether optimality has been reached for a MIP instance "
     "(default 1e-06).",
     "mip_abs_gap", 0.0, Infinity());
