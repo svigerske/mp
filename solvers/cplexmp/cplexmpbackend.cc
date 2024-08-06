@@ -398,7 +398,12 @@ void CplexBackend::Solve() {
     else {
       auto type = CPXgetprobtype(env(), lp());
       if ((type == CPXPROB_MIQCP) || (type == CPXPROB_MIQP) || (type == CPXPROB_MILP))
-        CPLEX_CALL(CPXmipopt(env(), lp()));
+      {
+        if (storedOptions_.cpxMethod_ == CPX_ALG_BENDERS)
+          CPLEX_CALL(CPXbendersopt(env(), lp()));
+        else
+          CPLEX_CALL(CPXmipopt(env(), lp()));
+      }
       else if ((type == CPXPROB_QP) || (type == CPXPROB_QCP))
         CPLEX_CALL(CPXqpopt(env(), lp()));
       else
@@ -464,6 +469,17 @@ void CplexBackend::ObjRelTol(ArrayRef<double> val) {
       NULL);
   }
 }
+double CplexBackend::Kappa() {
+  double kappa;
+  int res = CPXgetdblquality(env(), lp(), &kappa, CPX_KAPPA);
+  if (res) {
+    AddToSolverMessage("Basis condition is unavailable.\n");
+    return 0;
+  }
+  else
+    return kappa;
+}
+
 
 ArrayRef<double> CplexBackend::Ray() {
   std::vector<double> ray(NumVars());
@@ -485,7 +501,35 @@ ArrayRef<double> CplexBackend::DRay() {
   return vm.GetConValues().MoveOut();        // need the vector itself
 }
 
-void CplexBackend::WindupCPLEXSolve() { }
+
+const CplexBackend::CutInfo CplexBackend::Cut_Info[] = {
+    { "Boolean-Quadratic-Polytope",			CPX_CUT_BQP },
+    { "Benders",			CPX_CUT_BENDERS },
+    { "cover",			CPX_CUT_COVER },
+    { "GUB-cover",			CPX_CUT_GUBCOVER },
+    { "flow-cover",			CPX_CUT_FLOWCOVER },
+    { "clique",			CPX_CUT_CLIQUE },
+    { "Gomory",			CPX_CUT_FRAC },
+    { "mixed-integer rounding",	CPX_CUT_MIR },
+    { "flow-path",			CPX_CUT_FLOWPATH },
+    { "disjunctive",		CPX_CUT_DISJ },
+    { "implied-bound",		CPX_CUT_IMPLBD },
+    { "zero-half",			CPX_CUT_ZEROHALF },
+    { "multi-commodity flow",	CPX_CUT_MCF },
+    {"lift and project", CPX_CUT_LANDP},
+    {"local implied bound", CPX_CUT_LOCALIMPLBD},
+    {"RLT",  CPX_CUT_RLT},
+    { 0, 0 } };
+
+void CplexBackend::WindupCPLEXSolve() { 
+  if (storedOptions_.cutstats_ && IsMIP())
+  {
+      int j;
+      for (auto CI = Cut_Info; CI->cutname; ++CI)
+        if (!CPXgetnumcuts(env(), lp(), CI->cuttype, &j) && j > 0)
+          AddToSolverMessage(fmt::format("{} {} cut{}\n", j, CI->cutname, j == 1 ? "" : "s"));
+  }
+}
 
 void CplexBackend::ReportResults() {
   ReportCPLEXResults();
@@ -1020,9 +1064,20 @@ static const mp::OptionValueInfo values_nodemethod[] = {
   { "5", "Sifting", 5}
 };
 
+static const mp::OptionValueInfo values_benders_strategy[] = {
+  { "0", "Automatic (default): if suffix benders is present on variables, "
+         "variables that have .benders = 0 go into the master and CPLEX "
+				 "assigns other variables to workers; otherwise integer variables "
+         "go into the master and variables into workers",0},
+  { "1", "Use suffix benders to determine which variables are for the master "
+         "(.benders = 0) and which for workers (.benders = n > 0 ==> worker n", 1},
+  { "2", "Similar to 0, but suffix benders is required", 2},
+  { "3", "Similar to 0, but ignore suffix benders", 3}
+};
+
 static const mp::OptionValueInfo values_barcrossover[] = {
-  {"-1", "No crossover", -1},
-  { "0", "Automatic (default)", 0},
+  {"-1", "Automatic choice (default)", -1},
+  { "0", "None: return an interior solution", 0},
   { "1", "Primal crossover", 1},
   { "2", "Dual crossover", 2}
 };
@@ -1075,12 +1130,55 @@ static const mp::OptionValueInfo values_presosenc[] = {
          "which is logarithmic in the size of the SOSs.", 1}
 };
 
-static const mp::OptionValueInfo preaggregator_values_[] = {
+static const mp::OptionValueInfo values_preaggregator[] = {
   { "-1", "Automatic (default) (1 for LP, infinite for MIP)", 0},
   { "0", "Do not use any aggregator", 1},
   { "n > 0", "Apply aggregator n times", 2}
 };
+static const mp::OptionValueInfo values_precoeffreduce[] = {
+  { "-1", "Automatic (default)", -1},
+  { "0", "No", 0},
+  { "1", "Reduce only integral coefficients", 1},
+  { "2", "Reduce all potential coefficients", 2},
+  { "3", "Reduce aggresively with tiling", 3}
+};
+static const mp::OptionValueInfo values_cutpasses[] = {
+  { "-1", "None", -1},
+  { "0", "Automatic", 0},
+  { "n > 0", "Number of passes to perform", 2}
+};
+static const mp::OptionValueInfo values_cutsfactor[] = {
+  { "<0", "No limit", -2},
+  { "-1", "No limit (default)", -1},
+  { "0 <= n <= 1", "No MIP cuts", 0},
+  { "n > 1", "(n-1)*m, where m is the original number of rows(after presolve)", 2}
+};
+static const mp::OptionValueInfo values_bqpcuts[] = {
+  {"-1", "Disallow", -1},
+  { "0", "Automatic (default)", 0},
+  { "1", "Enable moderate cuts generation", 1},
+  { "2", "Enable aggressive cuts generation.", 2},
+  { "3", "Enable very aggressive cuts generation.", 3 }
+};
 
+static const mp::OptionValueInfo values_cuts2[] = {
+  {"-1", "Disallow", -1},
+  { "0", "Automatic (default)", 0},
+  { "1", "Enable moderate cuts generation", 1},
+  { "2", "Enable aggressive cuts generation", 2}
+};
+static const mp::OptionValueInfo values_branchdir[] = {
+  {"-1", "Explore \"down\" branch first", -1},
+  { "0", "Explore \"most promising\" branch first (default)", 0},
+  { "1", "Explore \"up\" branch first.", 1}
+};
+
+static const mp::OptionValueInfo values_nodeselect[] = {
+  { "0", "Depth-first search", 0},
+  { "1", "Breadth-first search (default)", 1},
+  { "2", "Best-estimate search", 2},
+  { "3", "Alternative best-estimate search", 3 }
+};
 void CplexBackend::setSolutionMethod() {
   int nFlags = bool(storedOptions_.fBarrier_)
     + bool(storedOptions_.fPrimal_)
@@ -1124,14 +1222,58 @@ void CplexBackend::setSolutionMethod() {
 
   if (storedOptions_.cpxMethod_ == CPX_ALG_BARRIER) {
     SetSolverOption(CPX_PARAM_SOLUTIONTYPE, storedOptions_.solutionType_);
-    SetSolverOption(CPX_PARAM_BARCROSSALG, storedOptions_.crossover_);
-    if (storedOptions_.crossover_ == -1) // Emulate vestigial -1 setting  for crossover
+    if (storedOptions_.crossover_ == -1) // translate from MP to cplex
+      SetSolverOption(CPXPARAM_Barrier_Crossover, 0);
+    else if ((storedOptions_.crossover_ >= 1) && (storedOptions_.crossover_ <= 2))
+      SetSolverOption(CPXPARAM_Barrier_Crossover, storedOptions_.crossover_);
+    else if (storedOptions_.crossover_ == 0)
       SetSolverOption(CPX_PARAM_SOLUTIONTYPE, CPX_NONBASIC_SOLN);
+    else AddToSolverMessage("Invalid crossover value specified, see -= output");
+  }
+
+  if (storedOptions_.fBenders_)
+  {
+    storedOptions_.cpxMethod_ = CPX_ALG_BENDERS;
+    ReadBendersSuffix();
   }
 }
 
 ////////////////////////////// OPTIONS /////////////////////////////////
 
+void CplexBackend::FinishOptionParsing() {
+  // Apply to all cuts when not overriden
+  if (storedOptions_.cuts_ != 2) {
+    static int op[] = {
+      CPXPARAM_MIP_Cuts_BQP,
+      CPXPARAM_MIP_Cuts_Cliques,
+      CPXPARAM_MIP_Cuts_Covers,
+      CPXPARAM_MIP_Cuts_Disjunctive,
+      CPXPARAM_MIP_Cuts_FlowCovers,
+      CPXPARAM_MIP_Cuts_Gomory,
+      CPXPARAM_MIP_Cuts_GUBCovers,
+      CPXPARAM_MIP_Cuts_Implied,
+      CPXPARAM_MIP_Cuts_LiftProj,
+      CPXPARAM_MIP_Cuts_LocalImplied,
+      CPXPARAM_MIP_Cuts_MCFCut,
+      CPXPARAM_MIP_Cuts_MIRCut,
+      CPXPARAM_MIP_Cuts_Nodecuts,
+      CPXPARAM_MIP_Cuts_PathCut,
+      CPXPARAM_MIP_Cuts_RLT,
+      CPXPARAM_MIP_Cuts_ZeroHalfCut
+    };
+    int f;
+    int local;
+    for (f = 0; f < sizeof(op) / sizeof(int); f++)
+    {
+      CPXgetintparam(env(), op[f], &local);
+      if(local!=0)
+        CPXsetintparam(env(), op[f], storedOptions_.cuts_);
+    }
+  }
+
+  if (!storedOptions_.cpuMask_.empty())
+    CPLEX_CALL(CPXsetstrparam(env(), CPXPARAM_CPUmask, storedOptions_.cpuMask_.c_str()));
+}
 void CplexBackend::InitCustomOptions() {
 
   set_option_header(
@@ -1164,6 +1306,57 @@ void CplexBackend::InitCustomOptions() {
     "primal/dual/barrier/network/sifting flags are specified:\n"
     "\n.. value-table::\n", storedOptions_.algMethod_, values_method);
 
+  AddStoredOption("alg:barrier barrier baropt",
+    "Solve (MIP root) LPs by barrier method.",
+    storedOptions_.fBarrier_);
+
+  AddStoredOption("alg:primal primal",
+    "Solve (MIP root) LPs by primal simplex method.",
+    storedOptions_.fPrimal_);
+
+  AddStoredOption("alg:dual dual",
+    "Solve (MIP root) LPs by dual simplex method.",
+    storedOptions_.fDual_);
+
+  AddStoredOption("alg:sifting sifting",
+    "Solve (MIP root) LPs by sifting method.",
+    storedOptions_.fSifting_);
+
+  AddStoredOption("alg:network network",
+    "Solve (substructure of) (MIP node) LPs "
+    "by network simplex method.",
+    storedOptions_.fNetwork_);
+
+  AddStoredOption("alg:benders benders bendersopt",
+    "Solve MIP using Benders algorithm. Both integer and continuous "
+    "variables must be present.",
+    storedOptions_.fBenders_);
+  
+
+  AddSolverOption("alg:benders_worker benders_worker",
+    "Designate the algorithm that CPLEX applies to solve the "
+    "subproblems when using Benders decomposition:\n"
+    "\n.. value-table::\n",
+    CPXPARAM_Benders_WorkerAlgorithm,
+    values_nodemethod, 0);
+
+  AddSolverOption("alg:benders_feascuttol benders_feascut_tol",
+    "Tolerance for violations of feasibility cuts in Benders "
+    "algorithm(default 1e-6).",
+    CPXPARAM_Benders_Tolerances_feasibilitycut,
+    1e-9, 1.0);
+
+  AddSolverOption("alg:benders_optcut_tol benders_optcut_tol",
+    "Tolerance for violations of optimality cuts in Benders "
+    "algorithm(default 1e-6).",
+    CPXPARAM_Benders_Tolerances_optimalitycut,
+    1e-9, 1.0);
+
+  AddSolverOption("alg:benders_strategy benders_strategy",
+    "How to decompose the problem for Benders algorithm:\n"
+    "\n.. value-table::\n",
+    CPXPARAM_Benders_Strategy,
+    values_benders_strategy, 0);
 
 
   // Cut generation
@@ -1172,6 +1365,95 @@ void CplexBackend::InitCustomOptions() {
     "and mixed-integer-rounding cuts (default 3).",
     CPXPARAM_MIP_Limits_AggForCut, 0, CPXINT_MAX);
 
+
+  AddSolverOption("cut:bqp bqpcuts",
+    "Whether to enable Boolean Quadric Polytope cut generation for nonconvex QP and "
+    "MIQP problems, choices as for \"cut:cuts\".",
+    CPXPARAM_MIP_Cuts_BQP, values_bqpcuts, 0);
+
+  AddSolverOption("cut:clique cliquecuts",
+    "Whether to use clique cuts in solving MIPs, choices as for \"cut:cuts\".",
+    CPXPARAM_MIP_Cuts_Cliques, values_bqpcuts, 0);
+
+  AddSolverOption("cut:cover covercuts covers",
+    "Whether to use cover cuts in solving MIPs, choices as for \"cut:cuts\".",
+    CPXPARAM_MIP_Cuts_Covers, values_bqpcuts, 0);
+
+  AddSolverOption("cut:disj disjcuts",
+    "Whether to use disjunctive cuts in solving MIPs, choices as for \"cut:cuts\".",
+    CPXPARAM_MIP_Cuts_Disjunctive, values_bqpcuts, 0);
+
+  AddSolverOption("cut:flowcover flowcovercuts flowcuts",
+    "Whether to use flowcover cuts in solving MIPs:\n"
+    "\n.. value-table::\n", 
+    CPXPARAM_MIP_Cuts_FlowCovers, values_cuts2, 0);
+
+
+  AddSolverOption("cut:flowpath flowpathcuts",
+    "Whether to use flow path cuts in solving MIPs, choices as for \"cut:flowcover\".",
+    CPXPARAM_MIP_Cuts_PathCut, values_cuts2, 0);
+
+  AddSolverOption("cut:frac gomory fraccuts",
+    "Whether to use fractional Gomory cuts in solving MIPs, choices as for \"cut:flowcover\".",
+    CPXPARAM_MIP_Cuts_Gomory, values_cuts2, 0);
+
+  AddSolverOption("cut:gubcover gubcover gubcuts",
+    "Whether to use fractional GUB cuts in solving MIPs, choices as for \"cut:flowcover\".",
+    CPXPARAM_MIP_Cuts_GUBCovers, values_cuts2, 0);
+
+  AddSolverOption("cut:implied implied impliedcuts",
+    "Whether to use implied cuts in solving MIPs, choices as for \"cut:flowcover\".",
+    CPXPARAM_MIP_Cuts_Implied, values_cuts2, 0);
+
+  AddSolverOption("cut:liftandproject liftandproject liftandprojectcuts",
+    "Whether to use lift and project cuts in solving MIPs, choices as for \"cut:cuts\".",
+    CPXPARAM_MIP_Cuts_LiftProj, values_bqpcuts, 0);
+
+  AddSolverOption("cut:localimplied localimplied localimpliedcuts",
+    "Whether to use locally valid implied cuts in solving MIPs, choices as for \"cut:cuts\".",
+    CPXPARAM_MIP_Cuts_LocalImplied, values_bqpcuts, 0);
+
+  AddSolverOption("cut:mfc mfccuts",
+    "Whether to use multi-commodity flow (MCF) cuts in solving MIPs, choices as for \"cut:flowcover\".",
+    CPXPARAM_MIP_Cuts_MCFCut, values_cuts2, 0);
+
+  AddSolverOption("cut:mir mircuts",
+    "Whether to use MIP roundind cuts in solving MIPs, choices as for \"cut:flowcover\".",
+    CPXPARAM_MIP_Cuts_MIRCut, values_cuts2, 0);
+
+  AddSolverOption("cut:node nodecuts",
+    "Decides whether or not cutting planes are separated at the nodes of the branch-and-bound tree, "
+    "choices as for \"cut:cuts\".",
+    CPXPARAM_MIP_Cuts_Nodecuts, values_bqpcuts, 0);
+
+  AddSolverOption("cut:rlt rltcuts",
+    "Whether to use the Relaxation Linearization Technique (RLT) to generate cuts in solving MIPs, choices as for \"cut:cuts\".",
+    CPXPARAM_MIP_Cuts_RLT, values_bqpcuts, 0);
+
+  AddSolverOption("cut:zerohalf zerohalfcuts",
+    "Whether to use zero-half cuts in solving MIPs, choices as for \"cut:flowcover\".",
+    CPXPARAM_MIP_Cuts_ZeroHalfCut, values_cuts2, 0);
+
+  AddStoredOption("cut:cuts cuts mipcuts",
+    "Global cut generation control, valid unless overridden "
+    "by individual cut-type controls:\n"
+    "\n.. value-table::\n",
+    storedOptions_.cuts_, values_bqpcuts);
+
+  AddSolverOption("cut:factor cutsfactor cutfactor",
+    " Limit on MIP cuts added:\n"
+    "\n.. value-table::\n",
+    CPXPARAM_MIP_Limits_CutsFactor, values_cutsfactor, 0);
+
+  AddSolverOption("cut:passes cutpasses cutpass",
+    "Maximum number of cutting-plane passes during root-cut generation:\n"
+    "\n.. value-table::\n", 
+    CPXPARAM_MIP_Limits_CutPasses, values_cutpasses, 0);
+
+  AddStoredOption("cut:stats cutstats",
+    " Whether the solve_message report the numbers and kinds of cuts used.\n"
+    "\n.. value-table::\n",
+    storedOptions_.cutstats_, values_01_noyes_0default_);
 
   // MIP related options
 
@@ -1182,6 +1464,10 @@ void CplexBackend::InitCustomOptions() {
     "than the default are often good when subproblems are expensive.",
     CPXPARAM_MIP_Strategy_Backtrack, 0.0, 1.0);
 
+  AddSolverOption("mip:branchdir branchdir branch",
+    "Which child node to explore first when branching:\n"
+    "\n.. value-table::",
+    CPXPARAM_MIP_Strategy_Branch, values_branchdir, 0);
 
   AddSolverOption("mip:gapabs mipgapabs absmipgap",
     "Max. absolute MIP optimality gap (default 1e-6).",
@@ -1191,12 +1477,17 @@ void CplexBackend::InitCustomOptions() {
     "Max. relative MIP optimality gap (default 1e-4).",
     CPXPARAM_MIP_Tolerances_MIPGap, 1e-9, 1.0);
 
-  AddStoredOption("mip:nodemethod nodemethod",
+  AddStoredOption("mip:nodemethod nodemethod mipalg mipalgorithm",
     "Algorithm used to solve relaxed MIP node problems; for MIQP problems "
     "(quadratic objective, linear constraints), settings other than 3 and 5 " 
     "are treated as 0. For MIQCP problems (quadratic objective and "
 		"constraints), only 0 is permitted.\n"
     "\n.. value-table::\n", storedOptions_.nodeMethod_, values_nodemethod);
+
+  AddSolverOption("mip:nodesel nodesel nodeselect",
+    "Strategy for choosing next node while optimizing\n\
+		integer variables:\n\n.. value-table::",
+    CPXPARAM_MIP_Strategy_NodeSelect, values_nodeselect, 0);
 
   AddSolverOption("bar:baralg baralg",
     "How to start the barrier algorithm:"
@@ -1240,28 +1531,6 @@ void CplexBackend::InitCustomOptions() {
   AddStoredOption("lp:solutiontype solutiontype",
     "Whether to seek a basic solution when solving an LP:\n"
     "\n.. value-table::\n", storedOptions_.solutionType_, values_solutiontype);
-
-  AddStoredOption("alg:barrier barrier",
-    "Solve (MIP root) LPs by barrier method.",
-    storedOptions_.fBarrier_);
-
-  AddStoredOption("alg:primal primal",
-    "Solve (MIP root) LPs by primal simplex method.",
-    storedOptions_.fPrimal_);
-
-  AddStoredOption("alg:dual dual",
-    "Solve (MIP root) LPs by dual simplex method.",
-    storedOptions_.fDual_);
-
-  AddStoredOption("alg:sifting sifting",
-    "Solve (MIP root) LPs by sifting method.",
-    storedOptions_.fSifting_);
-
-  AddStoredOption("alg:network network",
-    "Solve (substructure of) (MIP node) LPs "
-    "by network simplex method.",
-    storedOptions_.fNetwork_);
-
 
   // Solution pool controls
   AddSolverOption("sol:poolgap ams_eps poolgap",
@@ -1328,6 +1597,16 @@ void CplexBackend::InitCustomOptions() {
     "\n.. value-table::\n",
     CPXPARAM_MIP_Limits_AuxRootThreads, auxrootthreads_values_, 0);
 
+  
+  AddStoredOption("tech:cpumask cpumask",
+    "Whether and how to bind threads to cores on systems where this is "
+    "possible: off=no CPU binding, auto=automatic binding(default). "
+    "Values other than \"off\" and \"auto\" must be a hexadecimal string."
+    "The lowest order bit is for the first logical CPU. For example, \"a5\" " 
+    "and \"A5\" indicate that CPUs 0, 2, 5, and 7 are available for binding "
+    "to threads, since hex value a5 =2^7+2^5+2^2+2^0.",
+    storedOptions_.cpuMask_);
+
   AddStoredOption("tech:outlev outlev",
     "Whether to write CPLEX log lines (chatter) to stdout,"
     "for granular control see \"tech:lpdisplay\", \"tech:mipdisplay\", \"tech:bardisplay\"."
@@ -1369,6 +1648,10 @@ void CplexBackend::InitCustomOptions() {
       "or solving MIP problems; default 0 ==> automatic choice.",
       CPXPARAM_Threads, 0, CPXINT_MAX);
 
+  AddSolverOption("lim:nodes node nodelim nodelimit",
+    "Maximum MIP nodes to explore (default: 2^31 - 1).",
+    CPX_PARAM_NODELIM, 0, CPXINT_MAX);
+
   AddSolverOption("lim:time timelim timelimit",
       "limit on solve time (in seconds; default: no limit).",
       CPXPARAM_TimeLimit, 0.0, DBL_MAX);
@@ -1386,10 +1669,16 @@ void CplexBackend::InitCustomOptions() {
   AddSolverOption("pre:aggregate aggregate",
     "Whether to make substitutions to reduce the number of "
 		"rows:\n\n.. value-table::\n",
-    CPXPARAM_Preprocessing_Aggregator, preaggregator_values_, -1);
+    CPXPARAM_Preprocessing_Aggregator, values_preaggregator, -1);
+
+  AddSolverOption("pre:coeffreduce coeffreduce",
+    "Whether to use coefficient reduction when "
+    "preprocessing MIPS\n\n.. value-table::\n",
+    CPXPARAM_Preprocessing_CoeffReduce, values_precoeffreduce, -1);
 
 
-  AddSolverOption("pre:presolve", "Whether to use CPLEX's presolve:\n"
+
+  AddSolverOption("pre:solve presolve", "Whether to use CPLEX's presolve:\n"
     "\n.. value-table::\n",
     CPXPARAM_Preprocessing_Presolve, values_01_noyes_1default_, 1);
 
@@ -1476,6 +1765,59 @@ double CplexBackend::CplexGetObjDblParam(const SolverOption& opt) const {
   return it->second;
 }
 
+
+void CplexBackend::ReadBendersSuffix()
+{
+  int strategy = 0;
+  CPXgetintparam(env(), CPXPARAM_Benders_Strategy, &strategy);
+  auto suf_mask = suf::Kind::VAR_BIT;
+  if (auto mv0 = ReadModelSuffixInt({ "benders", suf_mask }))
+  {
+    auto mv = GetValuePresolver().PresolveGenericInt(mv0);
+    auto values = mv.GetVarValues()();
+    int nmaster = 0, nsub = 0;
+    // Count the vars in master and in non-master
+    for (auto v : values)
+      if (v) ++nsub; else ++nmaster;
+    if (!nmaster || !nsub) {
+      AddToSolverMessage(fmt::format("Ignoring .benders because {} variables have .benders = 0.\n",
+        nmaster ? "all" : "no"));
+      storedOptions_.cpxMethod_ = CPX_ALG_MIP;
+      return;
+    }
+
+    // Annotate
+    CPLEX_CALL(CPXnewlongannotation(env(), lp(), CPX_BENDERS_ANNOTATION, 0));
+    int a;
+    CPLEX_CALL(CPXgetlongannotationindex(env(), lp(), CPX_BENDERS_ANNOTATION, &a));
+    
+    // Get subproblem indices
+    std::vector<int> indices(nsub);
+    std::vector<CPXLONG> subproblem(nsub);
+    for (int i = 0, j = 0; i < values.size(); ++i)
+    {
+      if (values[i] > 0)
+      {
+        indices[j] = i;
+        subproblem[j++] = values[i];
+      }
+    }
+    CPLEX_CALL(CPXsetlongannotations(env(), lp(), a, CPX_ANNOTATIONOBJ_COL,
+      nsub, indices.data(), subproblem.data()));
+  }
+  else
+  {
+    if (strategy)
+    {
+      AddToSolverMessage(fmt::format("Ignoring bendersopt because suffix benders not present\n"
+        "and benders_strategy = {}, which requires .benders.\n", strategy));
+      storedOptions_.cpxMethod_ = CPX_ALG_MIP;
+    }
+  }
+    
+   
+
+}
 /// What to do on certain "obj:*:..." option
 static std::tuple<int, CplexBackend::CplexObjParams>
 CplexGetObjParamAction(const CplexBackend::ObjNParamKey& key) {

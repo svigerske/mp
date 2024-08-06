@@ -1,6 +1,12 @@
 Summary of recent updates to CPLEX MP for AMPL
 ==============================================
 
+## TBD
+- Added multiple options
+- Notable changes with ASL driver:
+   - Keyword 'basis_cond' is now 'kappa' and follows the standard MP implementation
+   - Multiobjective optimization follows the MP standard implementation
+
 
 ## 20240801
 - Fix a problem that occured when reporting IIS

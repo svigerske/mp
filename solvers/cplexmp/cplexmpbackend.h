@@ -90,6 +90,12 @@ public:
   void AddMIPStart(ArrayRef<double> x0, ArrayRef<int> s0) override;
 
   /**
+  * Get basis condition value (kappa)
+  **/
+  ALLOW_STD_FEATURE(KAPPA, true)
+  double Kappa() override;
+
+  /**
   * FixModel - duals, basis, and sensitivity for MIP.
   * No API to overload,
   * Impl should check need_fixed_MIP()
@@ -163,7 +169,8 @@ private:
 
 public:  // public for static polymorphism
   void InitCustomOptions() override;
-
+  /// Chance to consider options immediately (for certain stored options)
+  void FinishOptionParsing() override;
 protected:
   void OpenSolver();
   void CloseSolver();
@@ -192,13 +199,24 @@ protected:
   void ReportCPLEXPool();
 
 private:
+
+  void ReadBendersSuffix();
   void setSolutionMethod();
   int original_model_type_ = -1;
   
+  typedef struct
+    CutInfo {
+    const char* cutname;
+    int cuttype;
+  } CutInfo;
+  CutInfo* CI;
+  const static CutInfo Cut_Info[];
+
   /// These options are stored in the class
   struct Options {
     std::string exportFile_;
     std::string logFile_;
+    std::string cpuMask_;
     int outlev_ = 0;;
     int nPoolMode_=2;
     int populate_ = -1;
@@ -215,6 +233,10 @@ private:
     int fDual_ = 0;
     int fNetwork_ = 0;
     int fSifting_ = 0;
+    int fBenders_ = 0;
+
+    int cuts_ = -2;
+    int cutstats_ = 0;
 
   };
   Options storedOptions_;
