@@ -6,6 +6,12 @@ Summary of recent updates to CPLEX MP for AMPL
 - Notable changes with ASL driver:
    - Keyword 'basis_cond' is now 'kappa' and follows the standard MP implementation
    - Multiobjective optimization follows the MP standard implementation
+   - Choosing solution algorithm for the LP problems or the initial MIP subproblem 
+     (formerly `mipstartalg`) now follows the same standard as other MP drivers: 
+     see `alg:method` in the `-=` output
+   - Former option `timing` is now implemented through the corresponding
+     MP feature. To print the number of available cores use
+   - `tech:numcores`.
 
 
 ## 20240801

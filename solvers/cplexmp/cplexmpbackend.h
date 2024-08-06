@@ -217,6 +217,7 @@ private:
     std::string exportFile_;
     std::string logFile_;
     std::string cpuMask_;
+    std::string endBasis_;
     int outlev_ = 0;;
     int nPoolMode_=2;
     int populate_ = -1;
@@ -237,6 +238,8 @@ private:
 
     int cuts_ = -2;
     int cutstats_ = 0;
+
+    int numcores_ = 0;
 
   };
   Options storedOptions_;

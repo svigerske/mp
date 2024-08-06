@@ -543,6 +543,8 @@ void CplexBackend::ReportCPLEXResults() {
     ReportCPLEXPool();
   if (need_fixed_MIP())
     ConsiderCplexFixedModel();
+  if (!storedOptions_.endBasis_.empty())
+    CPLEX_CALL(CPXmbasewrite(env(), lp(), storedOptions_.endBasis_.c_str()));
 }
 void CplexBackend::ReportCPLEXPool() {
   if (!IsMIP())
@@ -1063,6 +1065,16 @@ static const mp::OptionValueInfo values_nodemethod[] = {
   { "4", "Barrier", 4},
   { "5", "Sifting", 5}
 };
+static const mp::OptionValueInfo values_submipstartalg[] = {
+  { "0", "Automatic (default)",0},
+  { "1", "Primal simplex", 1},
+  { "2", "Dual simplex", 2},
+  { "3", "Network simplex", 3},
+  { "4", "Barrier", 4},
+  { "5", "Sifting", 5},
+  { "6", "Concurrent (dual, barrier and primal in opportunistic mode; "
+         "dual and barrier in deterministic mode; 4 is used for MIPQs).", 6}
+};
 
 static const mp::OptionValueInfo values_benders_strategy[] = {
   { "0", "Automatic (default): if suffix benders is present on variables, "
@@ -1179,15 +1191,26 @@ static const mp::OptionValueInfo values_nodeselect[] = {
   { "2", "Best-estimate search", 2},
   { "3", "Alternative best-estimate search", 3 }
 };
+
+static const mp::OptionValueInfo values_varselect[] = {
+  { "-1", "Branch on variable with smallest integer infeasibility", -1},
+  { "0", "Algorithm decides (default)", 0},
+  { "1", "Branch on variable with largest integer infeasibility", 1},
+  { "2", "Branch based on pseudo costs", 2},
+  { "3", "Strong branching", 3 },
+  { "4", "Branch based on pseudo reduced costs", 4}
+};
+
 void CplexBackend::setSolutionMethod() {
   int nFlags = bool(storedOptions_.fBarrier_)
     + bool(storedOptions_.fPrimal_)
     + bool(storedOptions_.fDual_)
+    + bool(storedOptions_.fBenders_)
     + bool(storedOptions_.fNetwork_)
     + bool(storedOptions_.fSifting_);
   if (nFlags>= 2) 
     AddWarning("Ambiguous LP method",
-      "Only one of barrier/primal/dual/network/sifting should be specified.");
+      "Only one of barrier/primal/dual/network/sifting/benders should be specified.");
   if (nFlags >= 1)
   {
     if (storedOptions_.fPrimal_)
@@ -1273,6 +1296,12 @@ void CplexBackend::FinishOptionParsing() {
 
   if (!storedOptions_.cpuMask_.empty())
     CPLEX_CALL(CPXsetstrparam(env(), CPXPARAM_CPUmask, storedOptions_.cpuMask_.c_str()));
+
+  int numcores;
+  if (storedOptions_.numcores_) {
+    CPLEX_CALL(CPXgetnumcores(env(), &storedOptions_.numcores_));
+    AddToSolverMessage(fmt::format("{} logical cores are available.\n", storedOptions_.numcores_));
+  }
 }
 void CplexBackend::InitCustomOptions() {
 
@@ -1300,11 +1329,18 @@ void CplexBackend::InitCustomOptions() {
     "Can only be applied on a multi-objective problem with obj:multi=1",
     &CplexBackend::CplexGetObjDblParam, &CplexBackend::CplexSetObjDblParam);
 
+
+
+
   // Solution method
-  AddStoredOption("alg:method method lpmethod simplex",
-    "Which algorithm to use for non-MIP problems or for the root node of MIP problems, unless"
+  AddStoredOption("alg:method method lpmethod simplex mipstartalg",
+    "Which algorithm to use for non-MIP problems or for the root node of MIP problems, unless "
     "primal/dual/barrier/network/sifting flags are specified:\n"
-    "\n.. value-table::\n", storedOptions_.algMethod_, values_method);
+    "\n.. value-table::\n"
+    "For MIQP problems (quadratic objective, linear constraints), setting 5 "
+    "is treated as 0 and 6 as 4. For MIQCP problems(quadratic objective & "
+    "constraints), all settings are treated as 4.", 
+    storedOptions_.algMethod_, values_method);
 
   AddStoredOption("alg:barrier barrier baropt",
     "Solve (MIP root) LPs by barrier method.",
@@ -1477,17 +1513,47 @@ void CplexBackend::InitCustomOptions() {
     "Max. relative MIP optimality gap (default 1e-4).",
     CPXPARAM_MIP_Tolerances_MIPGap, 1e-9, 1.0);
 
-  AddStoredOption("mip:nodemethod nodemethod mipalg mipalgorithm",
+
+  AddSolverOption("mip:submipalg submipalg",
+    "Choice of algorithm used to solve the subproblems of a subMIP: "
+    "not a subproblem, but an auxiliary MIP that CPLEX sometimes forms "
+    "and solves, e.g., when dealing with a partial MIP start, "
+    "repairing an infeasible MIP start, using the RINS heuristic, "
+    "branching locally or polishing a solution. "
+    "Possible values (only 0 is allowed for MIQCPs):\n"
+    "\n.. value-table::\n",
+    CPXPARAM_MIP_SubMIP_SubAlg, values_nodemethod, 0);
+
+  AddSolverOption("mip:submipscale submipscale",
+    "Rarely used choice of scaling for auxiliary subMIPs "
+    "(described with \"submipalg\"):\n"
+    "\n.. value-table::\n", 
+    CPXPARAM_MIP_SubMIP_Scale, values_prescale, 0);
+
+
+  AddSolverOption("mip:submipstartalg submipstartalg",
+    "Rarely used choice of algorithm for the initial relaxation of a "
+    "subMIP (described with \"submipalg\"):\n"
+    "\n.. value-table::\n",
+    CPXPARAM_MIP_SubMIP_StartAlg, values_submipstartalg, 0);
+
+
+  AddSolverOption("mip:nodemethod nodemethod mipalg mipalgorithm",
     "Algorithm used to solve relaxed MIP node problems; for MIQP problems "
     "(quadratic objective, linear constraints), settings other than 3 and 5 " 
     "are treated as 0. For MIQCP problems (quadratic objective and "
 		"constraints), only 0 is permitted.\n"
-    "\n.. value-table::\n", storedOptions_.nodeMethod_, values_nodemethod);
+    "\n.. value-table::\n", CPXPARAM_MIP_Strategy_SubAlgorithm, values_nodemethod, 0);
 
   AddSolverOption("mip:nodesel nodesel nodeselect",
     "Strategy for choosing next node while optimizing\n\
 		integer variables:\n\n.. value-table::",
     CPXPARAM_MIP_Strategy_NodeSelect, values_nodeselect, 0);
+
+  AddSolverOption("mip:varbranch varbranch varsel varselect" ,
+    "MIP branch variable selection strategy:\n"
+    "\n.. value-table::\n", 
+    CPXPARAM_MIP_Strategy_VariableSelect, values_varselect, 0);
 
   AddSolverOption("bar:baralg baralg",
     "How to start the barrier algorithm:"
@@ -1607,6 +1673,11 @@ void CplexBackend::InitCustomOptions() {
     "to threads, since hex value a5 =2^7+2^5+2^2+2^0.",
     storedOptions_.cpuMask_);
 
+  AddStoredOption("tech:numcores numcores",
+    "Write number of logical cores to stdout:\n"
+    "\n.. value-table::\n",
+    storedOptions_.numcores_, values_01_noyes_0default_);
+
   AddStoredOption("tech:outlev outlev",
     "Whether to write CPLEX log lines (chatter) to stdout,"
     "for granular control see \"tech:lpdisplay\", \"tech:mipdisplay\", \"tech:bardisplay\"."
@@ -1652,7 +1723,12 @@ void CplexBackend::InitCustomOptions() {
     "Maximum MIP nodes to explore (default: 2^31 - 1).",
     CPX_PARAM_NODELIM, 0, CPXINT_MAX);
 
-  AddSolverOption("lim:time timelim timelimit",
+  AddSolverOption("lim:sol sollimit solutionlimit mipsolutions",
+    "Limit the number of feasible MIP solutions found, causing early "
+    "termination if exceeded; default = 2e31-1",
+    CPXPARAM_MIP_Limits_Solutions , 0, 2000000000);
+
+  AddSolverOption("lim:time timelim timelimit time",
       "limit on solve time (in seconds; default: no limit).",
       CPXPARAM_TimeLimit, 0.0, DBL_MAX);
 
@@ -1728,9 +1804,14 @@ void CplexBackend::InitCustomOptions() {
     "Encoding used for SOS2 reformulation, see pre:sos1enc.",
     CPXPARAM_Preprocessing_SOS2Reform, -1, 1);
 
+  
+  AddToOptionDescription("tech:writemodel",
+    "Cplex-specific file name extensions are \".sav\", \".mps\", "
+    "\".lp\", \".rmp\",  \".rew\", \".rlp\"");
 
-
-
+  AddStoredOption("tech:endbasis writebas endbasis",
+    "Write the final basis to the specified file (in BAS format).",
+    storedOptions_.endBasis_);
 
   /// Custom solve results here'...
   //  AddSolveResults({
