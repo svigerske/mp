@@ -9,6 +9,10 @@ class Exporter(object):
     def __init__(self):
         self.collector_=None
         
+
+    def get_last_progress(self) -> list:
+        return None
+    
     def export(self):
         """To be called when finished running models to finalize"""
         if self.collector_: self.collector_.export(
@@ -88,6 +92,7 @@ class Exporter(object):
 
     def assignFile(self, filename: str):
         self._fileName=filename
+        self.__init__(filename)
         
     def add_statistic_collector(self, collector):
         self.collector_=collector

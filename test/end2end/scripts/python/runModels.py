@@ -65,6 +65,9 @@ def runModels(directory, solvers : list,
     runner = ModelRunner(solvers, solverOptions)
 
     m = ModelsDiscovery()
+    
+    found_models = exporter.get_last_progress()
+    
     modelList = m.FindModelsGeneral(directory, recursive=recursive,
                                     modellist=modellist,
                                     preferAMPLModels=preferAMPLModels,
@@ -73,6 +76,11 @@ def runModels(directory, solvers : list,
         print("No models or case descriptions found.")
     else:
         msg = "Running {} test cases with solvers {}".format(len(modelList), solvernames)
+        if found_models is not None:
+            end = "s" if len(found_models)>1 else ""
+            msg +=f"\nContinuing previous run, discarding {len(found_models)} model{end}."
+            modelList = [m for m in modelList if m.getName() not in found_models]
+            msg += "\nActually running {} test cases with solvers {}".format(len(modelList), solvernames)
         if solvers:
             if solvers[0].getNThreads():
                 msg += " using {} threads".format( solvers[0].getNThreads() )

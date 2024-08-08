@@ -1,3 +1,4 @@
+from tkinter import FIRST
 from Exporter import Exporter
 import ModelRunner
 import openpyxl
@@ -6,17 +7,57 @@ import math
 import Solver
 class BenchmarkExporter(Exporter):
 
+    def get_last_progress(self) -> list:
+        if self._fileName is None:
+            return None
+        if not os.path.exists(self.get_file_name()):
+            return None
+        
+        # Load the workbook and select the active sheet
+        workbook = openpyxl.load_workbook(self.get_file_name())
+        sheet = workbook.active
+        first_column_values = [cell.value for cell in sheet['A'][1:]]
+        workbook.close()
+        return first_column_values
+     
+    def _initialize_from_file(self) -> bool:
+        if os.path.exists(self.get_file_name()):
+            print("Report file exists, appending")
+            self.workbook = openpyxl.load_workbook(self.get_file_name())
+            self.sheet_main = self.workbook.get_sheet_by_name("Sheet")
+            self.sheet_stats = self.workbook.get_sheet_by_name("stats")
+                
+            # Iterate through rows to find the first empty row
+            first_column_values = [cell.value for cell in self.sheet_main['A'][1:]]
+            self.current_row=len(first_column_values)
+            if self.current_row >0:
+                self.current_row+=1
+
+            headers = [cell.value for cell in self.sheet_stats[1]]
+        
+            # Iterate through the rows, starting from the second row
+            for row in self.sheet_stats.iter_rows(min_row=2, values_only=True):
+                if row[0] is None:
+                    # Stop if the first cell in the row is empty (end of data)
+                    break
+                solver = row[0]
+                self.solvers[solver] = dict(zip(headers[1:], row[1:]))
+            
+            self.bold_style = "bold_style"
+            return True
+        return False
+            
     def __init__(self, fileName=""):
         super().__init__()
         self._fileName=fileName
         self.solvers={}
-        self.workbook = openpyxl.Workbook()
-        self.sheet_main = self.workbook.active
-        self.sheet_stats = self.workbook.create_sheet("stats")
-
-        self.bold_style = openpyxl.styles.NamedStyle(name="bold_style")
-        self.bold_style.font = openpyxl.styles.Font(bold=True)
-
+        if not self._initialize_from_file():
+            self.workbook = openpyxl.Workbook()
+            self.sheet_main = self.workbook.active
+            self.sheet_stats = self.workbook.create_sheet("stats")
+            self.current_row = 0
+            self.bold_style = openpyxl.styles.NamedStyle(name="bold_style")
+            self.bold_style.font = openpyxl.styles.Font(bold=True)
         self.style_neutral = "Neutral"
         self.style_bad =     "Bad"
 
@@ -173,15 +214,17 @@ class BenchmarkExporter(Exporter):
             else:
                 solvername=solver
                 solver=runner
-            self.solvers[solvername]={
-                "solved" : 0,
-                "failed" : 0,
-                "failed_ampl" : 0,
-                "timelimit" : 0,
-                "timelimit_correct" : 0,
-                "time_solved" : 0,
-                "time_all" : 0
-            }
+            if len(self.solvers)==0:
+                self.solvers[solvername]={
+                    "solved" : 0,
+                    "failed" : 0,
+                    "failed_ampl" : 0,
+                    "timelimit" : 0,
+                    "timelimit_correct" : 0,
+                    "time_solved" : 0,
+                    "time_all" : 0
+                }
+                
             if self.collector_:
                 self.collector_.add_solver_def(solvername, solver.get_version())
              
@@ -197,12 +240,13 @@ class BenchmarkExporter(Exporter):
             for col_num, value in enumerate(properties.values(), 2):
                 self.sheet_stats.cell(row=row_num, column=col_num, value=value)
 
-
     def _exportInstanceResults(self, mr: ModelRunner):
         i = len( mr.getRuns()[0] )
-        if i == 1:
+        
+        if i == 1 and self.current_row==0:
             self.writeHeader(mr) 
-            self.initialize(mr)
+            
+        self.initialize(mr)
         self.writeLastResultLine(mr)
         self.collectSolverStats(mr)
         self.writeSolverStats()
