@@ -1959,17 +1959,23 @@ void GurobiBackend::InitCustomOptions() {
     "\n.. value-table::\n",
     GRB_INT_PAR_IISMETHOD, values_iismethod, -1);
 
+  AddSolverOption("alg:nlpheur nlpheur",
+    "Use NLP heuristic to find feasible solutions to non-convex quadratic models:\n"
+    "\n.. value-table::\n",
+    GRB_INT_PAR_NLPHEUR, values_01_noyes_1default_, 1);
 
   AddSolverOption("mip:improvegap improvegap",
     "Optimality gap below which the MIP solver switches from "
         "trying to improve the best bound to trying to find better "
         "feasible solutions (default 0).",
     GRB_DBL_PAR_IMPROVESTARTGAP, 0.0, DBL_MAX);
+
   AddSolverOption("mip:improvetime improvetime",
     "Execution seconds after which the MIP solver switches from "
         "trying to improve the best bound to trying to find better "
         "feasible solutions (default Infinity).",
     GRB_DBL_PAR_IMPROVESTARTTIME, 0.0, DBL_MAX);
+
   AddSolverOption("mip:impstartnodes impstartnodes",
                   "Number of MIP nodes after which the solution strategy "
                       "will change from improving the best bound to finding better "

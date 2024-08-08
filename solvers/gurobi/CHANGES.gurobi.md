@@ -2,6 +2,11 @@ Summary of recent updates to gurobi for AMPL
 ============================================
 
 
+## 20240808
+- Added option *alg:nlpheur* to control an heuristic for
+  non-convex quadratic models.
+
+
 ## 20240728
 - Updated to Gurobi libraries 11.0.3, which include many 
   bug fixes.
