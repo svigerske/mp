@@ -14,6 +14,7 @@ extern "C" {
 
 namespace {
 
+
 volatile int terminate_flag = 0;
 bool InterruptCplex(void *) {
   terminate_flag = 1;
@@ -34,7 +35,7 @@ namespace mp {
   /// @param e: environment
   /// @param pre: presolver to be returned,
   /// need it to convert solution data
-  /// @return GurobiModelMgr
+  /// @return CplexModelMgr
   std::unique_ptr<BasicModelManager>
     CreateCplexModelMgr(CplexCommon&, Env&, pre::BasicValuePresolver*&);
 
@@ -57,6 +58,7 @@ namespace mp {
     CloseSolver();
   }
 
+
   void CplexBackend::OpenSolver() {
     int status = 0;
     // Typically try the registered function first;
@@ -72,6 +74,8 @@ namespace mp {
       throw std::runtime_error(
         fmt::format("Could not open CPLEX environment.\n{}", msg ? msg : ""));
     }
+
+
     /* Avoid most error messages on screen */
     CPLEX_CALL(CPXsetintparam(env(), CPXPARAM_ScreenOutput, CPX_OFF));
     /* Do not echo the params twice */
@@ -137,9 +141,19 @@ namespace mp {
     return probtype >= (int)CPXPROB_QP;
   }
 
+  bool CplexBackend::HasSolution() {
+    if (hasSolution_ == -1){
+      auto status = GetSolveResult().first;
+      hasSolution_ = (status == sol::LIMIT_FEAS) || (status == sol::SOLVED);
+    }
+    return hasSolution_;
+  }
 
   double  CplexBackend::MIPGap() {
-    getAndReturnDblParam(CPXgetmiprelgap);
+    if (HasSolution()) {
+      getAndReturnDblParam(CPXgetmiprelgap);
+    }
+    else return AMPLInf();
   }
 
   double  CplexBackend::MIPGapAbs() {
@@ -147,6 +161,9 @@ namespace mp {
     if ((type == CPXPROB_LP) ||
       (type == CPXPROB_QP) || (type == CPXPROB_QCP))
       return 0;
+
+    if (!HasSolution())
+      return AMPLInf(); // no solution found
 
     double obj;
     int status = CPXgetobjval(env(), lp(), &obj);
@@ -330,6 +347,9 @@ namespace mp {
   }
 
 ArrayRef<double> CplexBackend::PrimalSolution() {
+  
+  if (!HasSolution())
+    return std::vector<double>();
   int num_vars = NumVars();
   std::vector<double> x(num_vars);
   int error = CPXgetx (env(), lp(), x.data(), 0, num_vars-1);
@@ -343,7 +363,7 @@ pre::ValueMapDbl CplexBackend::DualSolution() {
 }
 
 ArrayRef<double> CplexBackend::DualSolution_LP() {
-  if (IsMIP() && need_fixed_MIP())
+  if (IsMIP() && need_fixed_MIP() && HasSolution())
   {
     int num_cons = NumLinCons();
     std::vector<double> pi(num_cons);
@@ -358,8 +378,8 @@ ArrayRef<double> CplexBackend::DualSolution_LP() {
 
 double CplexBackend::ObjectiveValue() const {
   double objval = -Infinity();
-  CPLEX_CALL(CPXgetobjval(env(), lp(), &objval));
-  
+  if(hasSolution_)
+    CPLEX_CALL(CPXgetobjval(env(), lp(), &objval));
   return objval;
 }
 
@@ -390,8 +410,44 @@ void CplexBackend::SetInterrupter(mp::Interrupter *inter) {
   inter->SetHandler(InterruptCplex, nullptr);
   CPLEX_CALL( CPXsetterminate (env(), &terminate_flag) );
 }
+void CplexBackend::RedirectOutput() {
+  // Redirect output
+  CPXCHANNELptr cpxresults, cpxwarnings, cpxerrors, cpxlog;
 
+  CPLEX_CALL(CPXgetchannels(env(), &cpxresults, &cpxwarnings,
+    &cpxerrors, &cpxlog));
+  
+  auto msgCallback = [](void* context, const char* msg) {
+    CplexBackend* instance = static_cast<CplexBackend*>(context);
+    instance->mymsgfunc(msg, "");
+    };
+  auto warCallback = [](void* context, const char* msg) {
+    CplexBackend* instance = static_cast<CplexBackend*>(context);
+    instance->mymsgfunc(msg, "");
+    };
+  auto errCallback = [](void* context, const char* msg) {
+    CplexBackend* instance = static_cast<CplexBackend*>(context);
+    instance->mymsgfunc(msg, "");
+    };
+  auto logCallback = [](void* context, const char* msg) {
+    CplexBackend* instance = static_cast<CplexBackend*>(context);
+    instance->mymsgfunc(msg, "");
+    };
+  CPXdisconnectchannel(env(), cpxresults);
+  CPXdisconnectchannel(env(), cpxwarnings);
+  CPXdisconnectchannel(env(), cpxerrors);
+  CPXdisconnectchannel(env(), cpxlog);
+
+  CPXaddfuncdest(env(), cpxresults, this, msgCallback);
+  CPXaddfuncdest(env(), cpxerrors, this, errCallback);
+  CPXaddfuncdest(env(), cpxwarnings, this, warCallback);
+  CPXaddfuncdest(env(), cpxlog, this, logCallback);
+
+}
 void CplexBackend::Solve() {
+  
+    RedirectOutput();
+    
     setSolutionMethod();
     if (NumObjs() > 1)
       CPLEX_CALL(CPXmultiobjopt(env(), lp(), NULL));
@@ -418,6 +474,7 @@ void CplexBackend::Solve() {
           DoCplexFeasRelax();
 
     }
+    setSilenceOutput(!verbose_mode());
   WindupCPLEXSolve();
 }
 
@@ -914,12 +971,50 @@ void CplexBackend::ConsiderCplexFixedModel() {
     CPXchgprobtype(env(), lp(), original_model_type_);
   }
 }
+
+
 std::string CplexBackend::DoCplexFixedModel() {
+  typedef int (CPXPUBLIC* Optalg)(CPXCENVptr, cpxlp*);
   int status;
+  Optalg Contopt;
 
   original_model_type_ = CPXgetprobtype(env(), lp());
-  CPLEX_CALL(CPXchgprobtype(env(), lp(), CPXPROB_FIXEDMILP));
-  CPLEX_CALL(CPXlpopt(env(), lp()));
+  int new_model_type = CPXPROB_FIXEDMILP;
+  Contopt = CPXlpopt;
+  switch (original_model_type_) {
+  case CPXPROB_MIQP:
+    new_model_type = CPXPROB_FIXEDMIQP;
+    Contopt = CPXqpopt;
+    break;
+  case CPXPROB_MIQCP: // CPLEX does support changing MIQCPs
+    new_model_type = CPXPROB_MIQCP;
+    break;
+  default:
+    new_model_type = CPXPROB_FIXEDMILP;
+  }
+  if (new_model_type == original_model_type_) // notably MIQCP
+  {
+    // fix variables manually:
+    auto sol = PrimalSolution();
+    std::vector<char> types(NumVars());
+    CPLEX_CALL(CPXgetctype(env(), lp(), types.data(), 0, NumVars()));
+    int nint = CPXgetnumbin(env(), lp()) + CPXgetnumint(env(), lp());
+    std::vector<int> indices(nint);
+    std::vector<double> bound(nint);
+    std::vector<char> type(nint, 'B');
+    std::size_t j = 0;
+    for (auto i = 0; i < types.size(); i++) {
+      if ((types[i] == CPX_BINARY) || (types[i] == CPX_INTEGER))
+      {
+        bound[j] = sol[i];
+        indices[j++] = i;
+      }
+    }
+    CPLEX_CALL(CPXchgbds(env(), lp(), nint, indices.data(), type.data(), bound.data()));
+  }
+  else
+    CPLEX_CALL(CPXchgprobtype(env(), lp(), new_model_type));
+  CPLEX_CALL(Contopt(env(), lp()));
 
   int optimstatus = CPXgetstat(env(), lp());
   if (optimstatus != CPX_STAT_OPTIMAL){

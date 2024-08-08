@@ -18,5 +18,9 @@ Testing
 /test/end2end/.vs
 /test/end2end/env
 /test/end2end/cases/*.lp
+/test/end2end/*.lp
+/test/end2end/*.sol
+/test/end2end/*.xlsx
+/test/end2end/env
 /test/end2end/*.pyproj
 /doc/env

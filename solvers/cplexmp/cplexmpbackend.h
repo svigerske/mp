@@ -6,6 +6,7 @@
 #include "mp/backend-mip.h"
 #include "mp/flat/backend_flat.h"
 #include "cplexmpcommon.h"
+#include <map>
 
 namespace mp {
 
@@ -123,7 +124,7 @@ public:
   /////////////////////////// Model attributes /////////////////////////
   bool IsMIP() const override;
   bool IsQCP() const override;
-
+  
 
 
   //////////////////////////// SOLVING ///////////////////////////////
@@ -200,6 +201,19 @@ protected:
 
 private:
 
+  bool silenceOutput_ = false;
+  void setSilenceOutput(bool doSilence) {
+    silenceOutput_ = doSilence;
+  }
+  void mymsgfunc(const char* msg, const char* level)
+  {
+    if (!silenceOutput_)
+      fmt::print("{} - {}", level, msg);
+  }
+  void RedirectOutput();
+
+  int hasSolution_ = -1;
+  bool HasSolution();
   void ReadBendersSuffix();
   void setSolutionMethod();
   int original_model_type_ = -1;
