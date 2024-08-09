@@ -1,4 +1,3 @@
-from tkinter import FIRST
 from Exporter import Exporter
 import ModelRunner
 import openpyxl
@@ -22,7 +21,6 @@ class BenchmarkExporter(Exporter):
      
     def _initialize_from_file(self) -> bool:
         if os.path.exists(self.get_file_name()):
-            print("Report file exists, appending")
             self.workbook = openpyxl.load_workbook(self.get_file_name())
             self.sheet_main = self.workbook.get_sheet_by_name("Sheet")
             self.sheet_stats = self.workbook.get_sheet_by_name("stats")
@@ -63,7 +61,9 @@ class BenchmarkExporter(Exporter):
 
     def get_file_name(self):
         base_name, _= os.path.splitext(self._fileName)
-        return base_name + '.xlsx'
+        if os.path.isabs(base_name):
+            return base_name + '.xlsx'
+        return os.path.abspath(base_name) + '.xlsx'
 
     def sanifyString(self, s):
         try:
@@ -91,6 +91,8 @@ class BenchmarkExporter(Exporter):
         for col_num, header_text in enumerate(header_list, 1):
             cell=self.sheet_main.cell(row=1, column=col_num, value=header_text)
             cell.style =self.bold_style
+        self.current_row += 1
+
     def getModelsStats(self, run):
         if not "modelStats" in run[-1]:
             return None
@@ -148,12 +150,11 @@ class BenchmarkExporter(Exporter):
              styles.append(self.getStyle(r))
 
         for col_num, header_text in enumerate(res,1):
-            cell=self.sheet_main.cell(row=len( mr.getRuns()[0])+1, column=col_num, 
+            cell=self.sheet_main.cell(row=self.current_row, column=col_num, 
                                  value=header_text)
             if styles[col_num-1] is not None:
                 cell.style=styles[col_num-1]
-
-
+        self.current_row += 1
                 
     def _getDictMemberOrMissingStr(self, dct, key):
         try:

@@ -80,9 +80,15 @@ def runModels(directory, solvers : list,
             end = "s" if len(found_models)>1 else ""
             msg +=f"\nContinuing previous run, discarding {len(found_models)} model{end}."
             modelList = [m for m in modelList if m.getName() not in found_models]
+
+            mnames =  [m.getName() for m in modelList]
+            notfound=[m for m in found_models if m not in mnames]
+            if len(notfound) > 0:
+                print(f"{len(notfound)} models found in previous export and not found in current list.")
+                print(",".join(notfound))
             msg += "\nActually running {} test cases with solvers {}".format(len(modelList), solvernames)
         if solvers:
-            if solvers[0].getNThreads():
+            if solvers[0].getNThreads(g):
                 msg += " using {} threads".format( solvers[0].getNThreads() )
         msg += '.'
         print(msg)
