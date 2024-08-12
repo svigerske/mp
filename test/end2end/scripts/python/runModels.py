@@ -88,7 +88,7 @@ def runModels(directory, solvers : list,
                 print(",".join(notfound))
             msg += "\nActually running {} test cases with solvers {}".format(len(modelList), solvernames)
         if solvers:
-            if solvers[0].getNThreads(g):
+            if solvers[0].getNThreads():
                 msg += " using {} threads".format( solvers[0].getNThreads() )
         msg += '.'
         print(msg)
