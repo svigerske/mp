@@ -132,7 +132,7 @@ public:
   }
 
   /// Convert to use expressions
-  void ConvertWithExpressions(BasicFlatConverter& cvt) override {
+  void ConvertAllWithExpressions(BasicFlatConverter& cvt) override {
     assert(&cvt == &GetConverter());         // Using the same Converter
     DoCvtWithExprs();
   }
@@ -308,14 +308,17 @@ protected:
     return any_converted;
   }
 
+  /// Mark final func cons as expressions if accepted so
   void DoMarkForResultVars() {
-    const auto eal        // expr only
+    const auto eal        // as expr only
         = GetChosenAcceptanceLevelEXPR();
-    for (int i=0; i< (int)cons_.size(); ++i) {
-      const auto& cnt = cons_[i];
-      if (!cnt.IsBridged()) {      // Delegate actual logic to Converter
-        const auto& con = cnt.GetCon();
-        GetConverter().ConsiderMarkingResultVar(con, i, eal);
+    if (ExpressionAcceptanceLevel::NotAccepted!=eal) {    // accepted
+      for (int i=0; i< (int)cons_.size(); ++i) {
+        const auto& cnt = cons_[i];
+        if (!cnt.IsBridged()) {      // Delegate actual logic to Converter
+          const auto& con = cnt.GetCon();
+          GetConverter().ConsiderMarkingResultVar(con, i, eal);
+        }
       }
     }
   }
@@ -332,7 +335,13 @@ protected:
     }
   }
 
-  void DoCvtWithExprs() { }
+  void DoCvtWithExprs() {
+    auto cal = GetChosenAcceptanceLevel();
+    ForEachActive(
+        [this, cal](const auto& con, int i) {
+          return this->GetConverter().ConvertWithExpressions(con, i, cal);
+        });
+  }
 
 	/// Call Converter's RunConversion() and mark as "bridged".
   ///

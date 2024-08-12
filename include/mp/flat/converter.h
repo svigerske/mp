@@ -349,7 +349,7 @@ protected:
   //////////////////////////// CUSTOM CONSTRAINTS CONVERSION ////////////////////////////
   ///
 public: // for ConstraintKeeper
-  /// RunConversion() of a constraint:
+  /// RunConversion() of a constraint in the flat phase:
   /// Assume mixed context if not set.
   template <class Constraint>
   void RunConversion(const Constraint& con, int i, int depth) {
@@ -904,6 +904,19 @@ public:
 
   /////////////////////// AUTO LINKING ////////////////////////////
 
+  /// Make AutoLinker.
+  /// @param con: source constraint
+  /// @param i: \a con's index
+  /// @return An AutoLinkScope object for \a con
+  ///   which is about to be converted.
+  template <class Con>
+  pre::AutoLinkScope<Impl> MakeAutoLinker(const Con& , int i) {
+    return {
+        *(Impl*)this,
+        MPD( template SelectValueNode<Con>(i) )
+    };
+  }
+
   /// Auto link node range \a nr.
   /// The nodes of \a nr will be autolinked with \a auto_link_src_item_.
   /// Means, a link is created automatically, without the
@@ -1414,6 +1427,8 @@ protected:
   /// 2nd parameter: solver options for this constraint,
   /// in case it is accepted by the solver natively and
   /// is convertible by us.
+
+  /// Static algebraic cons
   STORE_CONSTRAINT_TYPE__NO_MAP(LinConRange,
                                 "acc:linrange acc:linrng")
   STORE_CONSTRAINT_TYPE__NO_MAP(LinConLE, "acc:linle")
@@ -1523,9 +1538,12 @@ protected:
     return true;
   }
 
+  ////////////////////// NL Expressions ///////////////////////
+  STORE_CONSTRAINT_TYPE__NO_MAP(
+      NLConstraint, "acc:nlcon acc:nlalgcon")
 
 
-	protected:
+  protected:
   ////////////////////// Default map accessors /////////////////////////
   /// Constraints without map should overload these by empty methods ///
 

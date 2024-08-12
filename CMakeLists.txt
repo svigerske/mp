@@ -400,14 +400,14 @@ add_prefix(MP_FLAT_REDEF_MIP_HEADERS include/mp/flat/redef/MIP/
   piecewise_linear.h
   power_const.h sos2.h)
 
-add_prefix(MP_FLAT_EXPR_HEADERS include/mp/flat/expr/
-  model_api_base.h)
+add_prefix(MP_FLAT_NL_EXPR_HEADERS include/mp/flat/nl_expr/
+  model_api_base.h constr_nl.h)
 
 
 set(MP_ALL_HEADERS ${MP_HEADERS} ${MP_FLAT_HEADERS}
   ${MP_FLAT_REDEF_HEADERS}
   ${MP_FLAT_REDEF_STD_HEADERS} ${MP_FLAT_REDEF_MIP_HEADERS}
-  ${MP_FLAT_EXPR_HEADERS}
+  ${MP_FLAT_NL_EXPR_HEADERS}
 )
 
 

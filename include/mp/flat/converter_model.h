@@ -247,10 +247,21 @@ public:
     AutoExpand(var_result_, v) = false;
   }
 
-  /// Is the variable an explicit result var?
-  bool IsResultVar(int v) {
-    return AutoExpand(var_result_, v);
+  /// Variable has marking?
+  bool VarHasMarking(int v) const {
+    assert(v>=0);
+    return v < (int)var_result_.size();
   }
+
+  /// Is the variable proper - an explicit result var of a flat con,
+  /// or just a primary variable?
+  /// (Otheriwse, it's marked as implicit
+  ///   - the init expr will be an expression)
+  bool IsProperVar(int v) const {
+    assert(VarHasMarking(v));
+    return var_result_[v];
+  }
+
 
   ///////////////////////////// OBJECTIVES ////////////////////////////
 public:
@@ -417,7 +428,8 @@ private:
   VarTypeVec var_type_;
   /// Whether the variable, being the result variable of a functional constraint,
   /// needs to stay a variable (vs being eliminated because the constraint
-  /// is becoming an expression)
+  /// is becoming an expression.)
+  /// Normal variables are marked too.
   std::vector<bool> var_result_;
   ///  Variables' names
   mutable VarNameVec var_names_;

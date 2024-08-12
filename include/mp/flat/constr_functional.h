@@ -291,6 +291,18 @@ public:
 /// Typedef LinExpression
 using QuadExpression = ExprWrapper<QuadraticFunctionalConstraint>;
 
+/// Shortcut to make an LFC from linear body and constant
+inline LinearFunctionalConstraint
+MakeFunctionalConstraint(AffineExpr ae) {
+  return {std::move(ae)};
+}
+
+/// Shortcut to make a QFC from quadr body and constant
+inline QuadraticFunctionalConstraint
+MakeFunctionalConstraint(QuadraticExpr qe) {
+  return {std::move(qe)};
+}
+
 /// Write LFC without name.
 template <class Writer>
 inline void WriteModelItem(Writer& wrt,

@@ -56,7 +56,7 @@ public:
   virtual void MarkArguments(BasicFlatConverter& cvt) = 0;
 
   /// Convert to use expressions
-  virtual void ConvertWithExpressions(BasicFlatConverter& cvt) = 0;
+  virtual void ConvertAllWithExpressions(BasicFlatConverter& cvt) = 0;
 
   /// Query (user-chosen) acceptance level.
   /// This is "combined" for constraint or expression
@@ -88,13 +88,13 @@ public:
       BasicFlatConverter& cvt ) const = 0;
 
   /// ModelAPI's acceptance level for the constraint type.
-  /// This should not be used directly, instead:
+  /// This should not normally be used directly, instead:
   /// GetChosenAcceptanceLevel()
   virtual ConstraintAcceptanceLevel GetModelAPIAcceptance(
       const BasicFlatModelAPI& ) const = 0;
 
   /// ModelAPI's acceptance level for the expression type.
-  /// This should not be used directly, instead:
+  /// This should not normally be used directly, instead:
   /// GetChosenAcceptanceLevelEXPR()
   virtual ExpressionAcceptanceLevel GetModelAPIAcceptanceEXPR(
       const BasicFlatModelAPI& ) const = 0;
@@ -354,9 +354,9 @@ public:
   }
 
   /// Convert to expression-based model
-  void ConvertWithExpressions(BasicFlatConverter& cvt) {
+  void ConvertAllWithExpressions(BasicFlatConverter& cvt) {
     for (auto& ck: con_keepers_)
-      ck.second.ConvertWithExpressions(cvt);
+      ck.second.ConvertAllWithExpressions(cvt);
   }
 
   /// Fill counters of unbridged constraints

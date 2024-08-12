@@ -23,6 +23,7 @@
 #define MODEL_API_BASE_H
 
 #include "mp/flat/model_api_base.h"
+#include "mp/flat/nl_expr/constr_nl.h"
 
 namespace mp {
 

@@ -3,7 +3,7 @@
 
 #include "mp/env.h"
 #include "scipmpcommon.h"
-#include "mp/flat/expr/model_api_base.h"
+#include "mp/flat/nl_expr/model_api_base.h"
 
 namespace mp {
 
@@ -50,7 +50,7 @@ public:
   /// 'AcceptedButNotRecommended' would outline each expression
   /// with an auxiliary variable.
   /// See also per-expression type switches.
-  ACCEPT_EXPRESSION_INTERFACE(Recommended);
+  ACCEPT_EXPRESSION_INTERFACE(NotAccepted);
 
   /// For each suppoted constraint type, add the ACCEPT_CONSTRAINT macro
   /// and the relative AddConstraint function.
