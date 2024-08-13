@@ -876,6 +876,13 @@ public:
 		return var_info_.at(var);
   }
 
+  /// Get func con context.
+  /// Does not check if that's a func con,
+  /// user check for != CTX_NONE
+  Context GetInitExprContext(int var) const {
+    return GetInitExpression(var).GetConstraint().GetContext();
+  }
+
 	/// Get the init expression pointer.
 	/// @return nullptr if no init expr or not this type
 	template <class ConType>
@@ -1538,9 +1545,17 @@ protected:
     return true;
   }
 
-  ////////////////////// NL Expressions ///////////////////////
+  ////////////////////// NL constraints & expressions ///////////////////////
   STORE_CONSTRAINT_TYPE__NO_MAP(
       NLConstraint, "acc:nlcon acc:nlalgcon")
+  STORE_CONSTRAINT_TYPE__NO_MAP(
+      NLLogical, "acc:nllogcon acc:nllogical")
+  STORE_CONSTRAINT_TYPE__NO_MAP(
+      NLEquivalence, "acc:nlequiv")
+  STORE_CONSTRAINT_TYPE__NO_MAP(
+      NLImpl, "acc:nlimpl")
+  STORE_CONSTRAINT_TYPE__NO_MAP(
+      NLRimpl, "acc:nlrimpl")
 
 
   protected:

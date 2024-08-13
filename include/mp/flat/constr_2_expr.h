@@ -101,7 +101,7 @@ public:
       const ConditionalConstraint< AlgebraicConstraint<Body, RhsOrRange> >& con,
       int i,
       ConstraintAcceptanceLevel ) {
-    ConsiderExplicifyingExpression(con);        // this is a func con too
+    ConsiderExplicifyingExpression(con, i);        // this is a func con too
     if (!con.GetConstraint().GetBody().is_variable()) {      // already a variable
       ConvertConditionalConLHS(con, i);
       return true;
@@ -116,8 +116,8 @@ public:
            std::enable_if_t<
                std::is_base_of_v<FunctionalConstraint, FuncCon>, bool > = true >
   bool ConvertWithExpressions(
-      const FuncCon& con, int , ConstraintAcceptanceLevel ) {
-    ConsiderExplicifyingExpression(con);
+      const FuncCon& con, int i, ConstraintAcceptanceLevel ) {
+    ConsiderExplicifyingExpression(con, i);
     return false;                          // leave it active
   }
 
@@ -167,6 +167,26 @@ public:
   /// NLConstraint: just produced.
   bool ConvertWithExpressions(
       const NLConstraint& , int , ConstraintAcceptanceLevel ) {
+    return false;
+  }
+  /// NLLogical: just produced.
+  bool ConvertWithExpressions(
+      const NLLogical& , int , ConstraintAcceptanceLevel ) {
+    return false;
+  }
+  /// NLEquivalence: just produced.
+  bool ConvertWithExpressions(
+      const NLEquivalence& , int , ConstraintAcceptanceLevel ) {
+    return false;
+  }
+  /// NLImpl: just produced.
+  bool ConvertWithExpressions(
+      const NLImpl& , int , ConstraintAcceptanceLevel ) {
+    return false;
+  }
+  /// NLRimpl: just produced.
+  bool ConvertWithExpressions(
+      const NLRimpl& , int , ConstraintAcceptanceLevel ) {
     return false;
   }
 
@@ -332,17 +352,26 @@ protected:
 
   /// Consider explicifying an expression
   template <class FuncCon>
-  void ConsiderExplicifyingExpression(const FuncCon& con) {
+  void ConsiderExplicifyingExpression(const FuncCon& con, int i) {
     if (MPCD( IsProperVar(con.GetResultVar()) ))
-      DoExplicify(con);
+      DoExplicify(con, i);
   }
 
   /// Add expr = var assignment for algebraic expression
   template <class FuncCon,
            std::enable_if_t<
                std::is_base_of_v<NumericFunctionalConstraintTraits, FuncCon>, bool > = true >
-  void DoExplicify(const FuncCon& con) {
-
+  void DoExplicify(const FuncCon& con, int i) {
+    auto alscope = MPD( MakeAutoLinker( con, i ) );       // link from \a con
+    assert(!con.GetContext().IsNone());
+    auto resvar = con.GetResultVar();
+    AlgConRange rng {-INFINITY, 0.0};                     // ctx-: var >= expr(var)
+    if (con.GetContext().IsMixed())
+      rng = {0.0, 0.0};
+    else if (con.GetContext().HasPositive())
+      rng = {0.0, INFINITY};
+    MPD( AddConstraint(                                   // -var + expr (in) rng
+        NLConstraint{ { {-1.0}, {resvar} }, resvar, rng } ) );
   }
 
   /// Add expr = var assignment for logical expression (NLEquivalence, NLImpl, NLRImpl).
@@ -351,9 +380,22 @@ protected:
   template <class FuncCon,
            std::enable_if_t<
                std::is_base_of_v<LogicalFunctionalConstraintTraits, FuncCon>, bool > = true >
-  void DoExplicify(const FuncCon& con) {
-    // If root...
-    // else...
+  void DoExplicify(const FuncCon& con, int i) {
+    auto alscope = MPD( MakeAutoLinker( con, i ) );       // link from \a con
+    auto resvar = con.GetResultVar();
+    if (MPCD( is_fixed(resvar) )                          // "root" context
+        && MPCD( fixed_value(resvar) )) {                 // static logical constraint
+      MPD( AddConstraint(NLLogical(resvar)) );
+    }
+    else {                                                // A (half-)reified function constraint
+      assert(!con.GetContext().IsNone());
+      if (con.GetContext().IsMixed())
+        MPD( AddConstraint(NLEquivalence(resvar)) );
+      else if (con.GetContext().HasPositive())
+        MPD( AddConstraint(NLImpl(resvar)) );
+      else
+        MPD( AddConstraint(NLRimpl(resvar)) );
+    }
   }
 
 

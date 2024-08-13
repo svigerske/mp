@@ -8,6 +8,7 @@
 
 #include "mp/common.h"
 #include "mp/flat/constr_std.h"
+#include "mp/flat/nl_expr/constr_nl.h"
 
 namespace mp {
 
@@ -324,6 +325,17 @@ public:
       }
     }
   }
+
+  /// Do nothing
+  inline void PropagateResult(NLConstraint& , double , double , Context ) { }
+  /// Do nothing
+  inline void PropagateResult(NLLogical& , double , double , Context ) { }
+  /// Do nothing
+  inline void PropagateResult(NLEquivalence& , double , double , Context ) { }
+  /// Do nothing
+  inline void PropagateResult(NLImpl& , double , double , Context ) { }
+  /// Do nothing
+  inline void PropagateResult(NLRimpl& , double , double , Context ) { }
 
 };
 
