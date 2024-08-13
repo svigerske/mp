@@ -14,8 +14,8 @@ class BenchmarkExporter(Exporter):
         
         # Load the workbook and select the active sheet
         workbook = openpyxl.load_workbook(self.get_file_name())
-        sheet = workbook.active
-        first_column_values = [cell.value for cell in sheet['A'][1:]]
+        sheet = workbook.get_sheet_by_name("Sheet")
+        first_column_values = [cell.value for cell in sheet['A'][1:] if cell.value is not None]
         workbook.close()
         return first_column_values
      
@@ -26,10 +26,9 @@ class BenchmarkExporter(Exporter):
             self.sheet_stats = self.workbook.get_sheet_by_name("stats")
                 
             # Iterate through rows to find the first empty row
-            first_column_values = [cell.value for cell in self.sheet_main['A'][1:]]
+            first_column_values = [cell.value for cell in self.sheet_main['A'][1:] if cell.value is not None]
             self.current_row=len(first_column_values)
-            if self.current_row >0:
-                self.current_row+=1
+            self.current_row+=1
 
             headers = [cell.value for cell in self.sheet_stats[1]]
         
@@ -53,7 +52,7 @@ class BenchmarkExporter(Exporter):
             self.workbook = openpyxl.Workbook()
             self.sheet_main = self.workbook.active
             self.sheet_stats = self.workbook.create_sheet("stats")
-            self.current_row = 0
+            self.current_row = 1
             self.bold_style = openpyxl.styles.NamedStyle(name="bold_style")
             self.bold_style.font = openpyxl.styles.Font(bold=True)
         self.style_neutral = "Neutral"
@@ -215,8 +214,7 @@ class BenchmarkExporter(Exporter):
             else:
                 solvername=solver
                 solver=runner
-            if len(self.solvers)==0:
-                self.solvers[solvername]={
+            self.solvers[solvername]={
                     "solved" : 0,
                     "failed" : 0,
                     "failed_ampl" : 0,
@@ -224,7 +222,7 @@ class BenchmarkExporter(Exporter):
                     "timelimit_correct" : 0,
                     "time_solved" : 0,
                     "time_all" : 0
-                }
+            }
                 
             if self.collector_:
                 self.collector_.add_solver_def(solvername, solver.get_version())
@@ -244,10 +242,10 @@ class BenchmarkExporter(Exporter):
     def _exportInstanceResults(self, mr: ModelRunner):
         i = len( mr.getRuns()[0] )
         
-        if i == 1 and self.current_row==0:
+        if i == 1 and self.current_row==1:
             self.writeHeader(mr) 
+            self.initialize(mr)
             
-        self.initialize(mr)
         self.writeLastResultLine(mr)
         self.collectSolverStats(mr)
         self.writeSolverStats()
