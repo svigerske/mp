@@ -39,7 +39,7 @@ public:
   bool HasExpr() const { return expr_>=0; }
 
   /// Expression index.
-  /// @note ModelAPI should call self.HasExpression
+  /// @note ModelAPI should call self.HasExpression()
   ///   and self.GetExpression()
   ///   to obtain the expression term.
   int ExprIndex() const { assert(HasExpr()); return expr_; }

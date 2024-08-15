@@ -35,6 +35,9 @@ public:
   /// Get context of contraint \a i
   virtual Context GetContext(int i) const = 0;
 
+  /// Set context of contraint \a i
+  virtual void SetContext(int i, Context ctx) = 0;
+
   /// Propagate expression result of constraint \a i top-down
   virtual void PropagateResult(BasicFlatConverter& cvt,
                                int i,

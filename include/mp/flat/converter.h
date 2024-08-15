@@ -103,14 +103,16 @@ public:
 
   /// Propagate objective contexts
   void PropagateObjContexts() {
-    const auto& objs = MPD( get_objectives() );
+    auto& objs = MPD( get_objectives() );
     const auto objwgt = MPD( GetMOWeights() );
     if (GetEnv().multiobj())               // only in obj:multi mode
       assert(objs.size() == objwgt.size());
     for (size_t i=0; i<objs.size(); ++i) {
       auto isMax = obj::MAX==objs[i].obj_sense();
-      if (GetEnv().multiobj() && objwgt[i]<0.0)   // only in obj:multi
+      if (GetEnv().multiobj() && objwgt[i]<0.0) {  // only in obj:multi
         isMax = !isMax;
+        objs[i].set_sense_true(isMax ? obj::MAX : obj::MIN);
+      }
       auto ctx = isMax ? Context::CTX_POS : Context::CTX_NEG;
       MPD( PropagateResult2LinTerms(objs[i].GetLinTerms(),
                           MPD( MinusInfty() ), MPD( Infty() ), ctx) );
@@ -880,7 +882,14 @@ public:
   /// Does not check if that's a func con,
   /// user check for != CTX_NONE
   Context GetInitExprContext(int var) const {
-    return GetInitExpression(var).GetConstraint().GetContext();
+    auto ie = GetInitExpression(var);
+    return ie.GetCK()->GetContext(ie.GetIndex());
+  }
+
+  /// Set func expr context
+  void SetInitExprContext(int var, Context ctx) {
+    auto ie = GetInitExpression(var);
+    ie.GetCK()->SetContext(ie.GetIndex(), ctx);
   }
 
 	/// Get the init expression pointer.

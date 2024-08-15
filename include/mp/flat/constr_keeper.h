@@ -79,6 +79,10 @@ public:
   Context GetContext(int i) const override
   { assert(check_index(i)); return cons_[i].GetCon().GetContext(); }
 
+  /// Set context of contraint \a i
+  void SetContext(int i, Context ctx) override
+  { assert(check_index(i)); cons_[i].GetCon().SetContext(ctx); }
+
   /// Propagate expression result of constraint \a i top-down
   void PropagateResult(BasicFlatConverter& cvt,
                        int i,

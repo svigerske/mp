@@ -45,6 +45,10 @@ public:
   static constexpr ExpressionAcceptanceLevel \
   ExpressionInterfaceAcceptanceLevel() { return ExpressionAcceptanceLevel::val; }
 
+  /// Whether accepts NLObjective.
+  /// SCIP does not.
+  static int AcceptsNLObj() { return 1; }
+
 /// Reuse inherited names
   USE_BASE_CONSTRAINT_HANDLERS(BasicFlatModelAPI)
 

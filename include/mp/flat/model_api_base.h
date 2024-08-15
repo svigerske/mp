@@ -168,6 +168,9 @@ public:
   /// 0 - no, 1 - convex, 2 - nonconvex
   static int AcceptsQuadObj() { return 0; }
 
+  /// Whether accepts NLObjective (relevant in BasicExprModelAPI)
+  static int AcceptsNLObj() { return 0; }
+
   /// Placeholder for SetQuadraticObjective()
   void SetQuadraticObjective(int , const QuadraticObjective& ) {
     MP_UNSUPPORTED("FlatModelAPI::SetQuadraticObjective()");
