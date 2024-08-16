@@ -96,10 +96,10 @@ public:
     auto r = int( GetConverter().AddVar(lb(), ub(), type()) );
     SetResultVar( r );
     GetConstraint().SetResultVar( r );
-		GetConverter().IncrementVarUsage(r);
 	}
   void AddConstraint() {
     GetConverter().AddConstraint( std::move(GetConstraint()) );
+    GetConverter().IncrementVarUsage(GetResultVar());   // ater adding the con
   }
 };
 

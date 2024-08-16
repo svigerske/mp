@@ -21,6 +21,7 @@ using SmallVecDefSz = gch::small_vector<T>;
 
 /// Grow vector capacity by a factor if needed.
 /// @return reference to the element at \a i.
+/// @note better preallocate, or call in the reverse order of indexes.
 template <class Vec>
 auto AutoExpand(Vec& vec, typename Vec::size_type i) {
   if (vec.size()<=i) {

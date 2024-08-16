@@ -253,7 +253,7 @@ protected:
     bool IsUnused() const { return is_unused_; }
     /// Mark as unused
     void MarkAsUnused() {
-      MarkAsBridged();
+      MarkAsBridged();              // also inactive
       is_unused_=true;
     }
 

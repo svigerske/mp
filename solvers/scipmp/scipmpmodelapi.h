@@ -50,7 +50,7 @@ public:
   /// 'AcceptedButNotRecommended' would outline each expression
   /// with an auxiliary variable.
   /// See also per-expression type switches.
-  ACCEPT_EXPRESSION_INTERFACE(NotAccepted);
+  ACCEPT_EXPRESSION_INTERFACE(AcceptedButNotRecommended);
 
   /// For each suppoted constraint type, add the ACCEPT_CONSTRAINT macro
   /// and the relative AddConstraint function.

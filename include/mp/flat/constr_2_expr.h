@@ -33,6 +33,7 @@ public:
     MPD( GetModel() ).ConvertAllWithExpressions(*(Impl*)this);
     stage_cvt2expr_ = 2;               // func cons -> explicifiers
     MPD( GetModel() ).ConvertAllWithExpressions(*(Impl*)this);
+    MPD( EliminateExprResultVars() );  // In the very end
   }
 
   /// Mark which functional constraints to be used as expressions,
@@ -214,6 +215,13 @@ public:
     for (size_t iobj=0; iobj<objs.size(); ++iobj) {
       Convert1ObjWithExpressions(iobj, objs[iobj]);
     }
+  }
+
+  /// Mark expr result vars for elimination
+  void EliminateExprResultVars() {
+    for (auto i = MPCD(num_vars()); i--; )
+      if (!MPCD( IsProperVar(i) ))
+        MPD( MarkVarAsEliminated(i) );
   }
 
 

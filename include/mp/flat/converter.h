@@ -207,6 +207,7 @@ public:
 	/// Use "+1" a variable
 	void IncrementVarUsage(int v) {
 		++VarUsageRef(v);
+    assert(!IsUnused(GetInitExpression(v)));
 	}
 
 	/// Unuse result variable.
@@ -221,14 +222,13 @@ public:
 		}
 	}
 
-	/// Fix unused defined vars.
+  /// Mark unused defined vars for elimination.
 	/// Normally should delete them.
-	void FixUnusedDefinedVars() {
+  void EliminateUnusedDefinedVars() {
 		for (auto i=num_vars(); i--; ) {
 			if (HasInitExpression(i) &&
 					! VarUsageRef(i)) {
-				set_var_lb(i, 0.0);      // fix to 0
-				set_var_ub(i, 0.0);
+        MPD( MarkVarAsEliminated(i) );
 			}
 		}
 	}
@@ -535,6 +535,11 @@ public:
     ci.GetCK()->MarkAsUnused(ci.GetIndex());
   }
 
+  /// Is constraint unused?
+  bool IsUnused(const ConInfo& ci) const {
+    return ci.GetCK()->IsUnused(ci.GetIndex());
+  }
+
 
 protected:
   USE_BASE_MAP_FINDERS( BaseConverter )
@@ -575,7 +580,7 @@ public:
     MPD( ConvertModel() );
     if (relax())
       GetModel().RelaxIntegrality();
-		FixUnusedDefinedVars();       // Until we have proper var deletion
+    EliminateUnusedDefinedVars();       // Until we have proper var deletion
     CheckLinearCons();
     PresolveNames();
     GetModel().PushModelTo(GetModelAPI());

@@ -109,9 +109,9 @@ public:
   void PropagateResult(AndConstraint& con, double lb, double ub, Context ctx) {
     MPD( NarrowVarBounds(con.GetResultVar(), lb, ub) );
     con.AddContext(ctx);
-    MPD( PropagateResult2Vars(con.GetArguments(), lb, 1.0, +ctx) );
+    MPD( PropagateResult2Vars(con.GetArguments(), lb, 1.0, +ctx) );  // in any ctx??
     if (lb>0.5)                                 // Remove, arguments are fixed
-      MPD( DecrementVarUsage(con.GetResultVar()) );
+      MPD( DecrementVarUsage(con.GetResultVar()) );    // Or, remove completely?
   }
 
   void PropagateResult(OrConstraint& con, double lb, double ub, Context ctx) {
