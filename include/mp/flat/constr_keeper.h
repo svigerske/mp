@@ -200,6 +200,9 @@ public:
   void AddUnbridgedToBackend(
       BasicFlatModelAPI& be,
       const std::vector<std::string>* pvnam) override {
+    if (ExpressionAcceptanceLevel::NotAccepted
+        == GetChosenAcceptanceLevelEXPR()
+        || !GetConverter().IfWantNLOutput())
     try {
       AddAllUnbridged(be, pvnam);
     } catch (const std::exception& exc) {

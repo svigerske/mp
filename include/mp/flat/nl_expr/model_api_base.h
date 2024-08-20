@@ -119,9 +119,75 @@ public:
     return GetInitExpression(nll.GetResultVar());
   }
 
+  /// Get the expression term of an \a NLReification.
+  template <int sense>
+  ExprType GetExpression(const NLReification<sense>& nll) {
+    assert( nll.GetResultVar()>=0 );
+    return GetInitExpression(nll.GetResultVar());
+  }
+
+  /// Get the variable of an \a NLReification.
+  template <int sense>
+  int GetVariable(const NLReification<sense>& nll) {
+    assert( nll.GetResultVar()>=0 );
+    return nll.GetResultVar();
+  }
+
+  /// GetLinSize(le)
+  int GetLinSize(const LinExpression& le) const
+  { return le.GetFlatConstraint().GetAffineExpr().size(); }
+  /// GetLinCoef(le, i)
+  double GetLinCoef(const LinExpression& le, int i) const
+  { return le.GetFlatConstraint().GetAffineExpr().coef(i); }
+  /// GetLinTerm(le, i)
+  Expr GetLinTerm(const LinExpression& le, int i)
+  { return GetInitExpression(le.GetFlatConstraint().GetAffineExpr().var(i)); }
+  /// GetConstTerm(le)
+  double GetConstTerm(const LinExpression& le) const
+  { return le.GetFlatConstraint().GetAffineExpr().constant_term(); }
+
+  /// GetLinSize(qe)
+  int GetLinSize(const QuadExpression& qe) const
+  { return qe.GetFlatConstraint().GetQuadExpr().GetBody().GetLinTerms().size(); }
+  /// GetLinCoef(qe, i)
+  double GetLinCoef(const QuadExpression& qe, int i) const
+  { return qe.GetFlatConstraint().GetQuadExpr().GetBody().GetLinTerms().coef(i); }
+  /// GetLinTerm(qe, i)
+  Expr GetLinTerm(const QuadExpression& qe, int i)
+  { return GetInitExpression(qe.GetFlatConstraint().GetQuadExpr().GetBody().GetLinTerms().var(i)); }
+
+  /// GetQuadSize(qe)
+  int GetQuadSize(const QuadExpression& qe) const
+  { return qe.GetFlatConstraint().GetQuadExpr().GetBody().GetQPTerms().size(); }
+  /// GetQuadCoef(qe, i)
+  double GetQuadCoef(const QuadExpression& qe, int i) const
+  { return qe.GetFlatConstraint().GetQuadExpr().GetBody().GetQPTerms().coef(i); }
+  /// GetQuadTerm1(qe, i)
+  Expr GetQuadTerm1(const QuadExpression& qe, int i)
+  { return GetInitExpression(qe.GetFlatConstraint().GetQuadExpr().GetBody().GetQPTerms().var1(i)); }
+  /// GetQuadTerm2(qe, i)
+  Expr GetQuadTerm2(const QuadExpression& qe, int i)
+  { return GetInitExpression(qe.GetFlatConstraint().GetQuadExpr().GetBody().GetQPTerms().var2(i)); }
+
+  /// GetConstTerm(qe)
+  double GetConstTerm(const QuadExpression& qe) const
+  { return qe.GetFlatConstraint().GetQuadExpr().constant_term(); }
+
+  /// Get argument expression [\a i]
+  template <class FlatExpression>
+  Expr GetArgExpression(const FlatExpression& fe, int i)
+  { return GetInitExpression(fe.GetFlatConstraint().GetArguments().at(i)); }
+
+  /// Get expression parameter [\a i]
+  template <class FlatExpression>
+  double GetParameter(const FlatExpression& fe, int i)
+  { return fe.GetFlatConstraint().GetParameters().at(i); }
+
   ////////////////////// INTERNAL ////////////////////////
 
-  /// Get InitExpression()
+  /// Get InitExpression().
+  /// Solver expression for the given implicit variable,
+  /// or for the given independent variable.
   Expr GetInitExpression(int i_expr) {
     assert(i_expr < is_expr_stored_.size());
     assert(i_expr < expr_stored_.size());

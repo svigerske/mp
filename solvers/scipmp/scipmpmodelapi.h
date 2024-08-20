@@ -183,16 +183,42 @@ public:
   ACCEPT_EXPRESSION(QuadExpression, Recommended);
   SCIP_EXPR* AddExpression(const QuadExpression& le);
 
-  /// Linear indicator constraints can be used as
-  /// auxiliary constraints for logical conditions.
-  /// If not handled, the compared expressions need
-  /// deducible finite bounds for a big-M redefinition.
+  /// Each expression can be accpeted as a proper expression,
+  /// or a flat constraint var == expr (with var arguments).
+  ///
+  /// For each expression,
+  /// say ACCEPT_EXPRESSION(Recommended)
+  /// and/or ACCEPT_EXPRESSION(AcceptedButNotRecommended).
+  /// This can be user-configured via options 'acc:exp' etc.
+  ///
+  /// Use accessor: GetArgExpression(ee, 0)
+  /// - don't ExpExpression's methods.
+  ///
+  /// Similar for other expression types.
+  ACCEPT_EXPRESSION(AbsExpression, Recommended)
+  SCIP_EXPR* AddExpression(const AbsExpression& absc);
+
+  /// For each flat constraint type,
+  /// say ACCEPT_CONSTRAINT(Recommended)
+  /// and/or ACCEPT_CONSTRAINT(AcceptedButNotRecommended).
+  /// This can be user-configured via options 'acc:exp' etc.
   ACCEPT_CONSTRAINT(AbsConstraint, Recommended, CG_General)
   void AddConstraint(const AbsConstraint& absc);
+
+  // SCIP 9 has AND/OR as constraints only:
+  // ACCEPT_EXPRESSION(AndExpression, AcceptedButNotRecommended)
+  // void AddExpression(const AndExpression& cc);
+  // ACCEPT_EXPRESSION(OrExpression, Recommended)
+  // void AddExpression(const OrExpression& dc);
   ACCEPT_CONSTRAINT(AndConstraint, AcceptedButNotRecommended, CG_General)
   void AddConstraint(const AndConstraint& cc);
   ACCEPT_CONSTRAINT(OrConstraint, Recommended, CG_General)
   void AddConstraint(const OrConstraint& dc);
+
+  /// Linear indicator constraints can be used as
+  /// auxiliary constraints for logical conditions.
+  /// If not handled, the compared expressions need
+  /// deducible finite bounds for a big-M redefinition.
   ACCEPT_CONSTRAINT(IndicatorConstraintLinLE, AcceptedButNotRecommended, CG_General)
   void AddConstraint(const IndicatorConstraintLinLE& mc);
   ACCEPT_CONSTRAINT(IndicatorConstraintLinEQ, AcceptedButNotRecommended, CG_General)
@@ -213,32 +239,37 @@ public:
   ACCEPT_CONSTRAINT(SOS2Constraint, AcceptedButNotRecommended, CG_SOS)
   void AddConstraint(const SOS2Constraint& cc);
 
-  /// SCIP nonlinear generals.
+  /// SCIP nonlinear general constraints and expressions.
 
-  /// Each expression can be accpeted as a proper expression,
-  /// or a flat constraint var == expr (with var arguments).
-
-  /// For each expression,
-  /// say ACCEPT_EXPRESSION(Recommended)
-  /// and/or ACCEPT_EXPRESSION(AcceptedButNotRecommended).
-  /// This can be user-configured via options 'acc:exp' etc.
   ACCEPT_EXPRESSION(ExpExpression, Recommended)
   SCIP_EXPR* AddExpression(const ExpExpression& );
-
-  /// For each flat constraint type,
-  /// say ACCEPT_CONSTRAINT(Recommended)
-  /// and/or ACCEPT_CONSTRAINT(AcceptedButNotRecommended).
-  /// This can be user-configured via options 'acc:exp' etc.
   ACCEPT_CONSTRAINT(ExpConstraint, Recommended, CG_General)
   void AddConstraint(const ExpConstraint& cc);
+
+  ACCEPT_EXPRESSION(LogExpression, Recommended)
+  SCIP_EXPR* AddExpression(const LogExpression& );
   ACCEPT_CONSTRAINT(LogConstraint, Recommended, CG_General)
   void AddConstraint(const LogConstraint& cc);
+
+  /// Use accessor: GetParameter(pe, 0)
+  /// - don't use PowExpression's methods.
+  ACCEPT_EXPRESSION(PowExpression, Recommended)
+  SCIP_EXPR* AddExpression(const PowExpression& );
   ACCEPT_CONSTRAINT(PowConstraint, Recommended, CG_General)
   void AddConstraint(const PowConstraint& cc);
+
+  ACCEPT_EXPRESSION(SinExpression, Recommended)
+  SCIP_EXPR* AddExpression(const SinExpression& );
   ACCEPT_CONSTRAINT(SinConstraint, Recommended, CG_General)
   void AddConstraint(const SinConstraint& cc);
-  ACCEPT_CONSTRAINT(CosConstraint, AcceptedButNotRecommended, CG_General) //pretty slow
+
+  ACCEPT_EXPRESSION(CosExpression, Recommended)
+  SCIP_EXPR* AddExpression(const CosExpression& );
+  ACCEPT_CONSTRAINT(CosConstraint, Recommended, CG_General) //pretty slow in SCIP 8
   void AddConstraint(const CosConstraint& cc);
+
+  // TODO Div; PowVarExponent;
+  // CondLin... - not really, reader_nl.cpp only handles bool args
 };
 
 } // namespace mp

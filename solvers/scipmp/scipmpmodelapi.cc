@@ -111,6 +111,14 @@ void ScipModelAPI::AddConstraint(const LinConGE& lc) {
 }
 
 
+SCIP_EXPR* ScipModelAPI::AddExpression(const AbsExpression &abse) {
+  SCIP_EXPR* result_expr;
+  SCIP_CCALL( SCIPcreateExprAbs(getSCIP(), &result_expr,
+                               GetArgExpression(abse, 0), NULL, NULL) );
+  return result_expr;
+}
+
+
 void ScipModelAPI::AddConstraint(const AbsConstraint &absc)  {
   SCIP_VAR* x = getPROBDATA()->vars[absc.GetArguments()[0]];
   SCIP_VAR* res = getPROBDATA()->vars[absc.GetResultVar()];
@@ -306,16 +314,82 @@ void ScipModelAPI::AddConstraint( const NLLogical& nll ) {
   SCIP_CCALL( SCIPaddCons(getSCIP(), getPROBDATA()->nlconss.back()) );
 }
 
-void ScipModelAPI::AddConstraint( const NLEquivalence& nll ) { }
-void ScipModelAPI::AddConstraint( const NLImpl& nll ) { }
-void ScipModelAPI::AddConstraint( const NLRimpl& nll ) { }
+void ScipModelAPI::AddConstraint( const NLEquivalence& nll ) {
+  getPROBDATA()->nlconss.push_back(nullptr);
+
+  SCIP_CCALL( SCIPcreateConsBasicNonlinear(
+      getSCIP(), &getPROBDATA()->nlconss.back(), nll.GetName(),
+      GetExpression(nll), 0.0, 0.0) );
+  SCIP_CCALL( SCIPaddCons(getSCIP(), getPROBDATA()->nlconss.back()) );
+  SCIP_CCALL( SCIPaddLinearVarNonlinear(
+      getSCIP(), getPROBDATA()->nlconss.back(),
+      getPROBDATA()->vars[ GetVariable(nll) ], -1.0) );
+}
+void ScipModelAPI::AddConstraint( const NLImpl& nll ) {
+  getPROBDATA()->nlconss.push_back(nullptr);
+
+  SCIP_CCALL( SCIPcreateConsBasicNonlinear(
+      getSCIP(), &getPROBDATA()->nlconss.back(), nll.GetName(),
+      GetExpression(nll), 0.0, Infinity()) );
+  SCIP_CCALL( SCIPaddCons(getSCIP(), getPROBDATA()->nlconss.back()) );
+  SCIP_CCALL( SCIPaddLinearVarNonlinear(
+      getSCIP(), getPROBDATA()->nlconss.back(),
+      getPROBDATA()->vars[ GetVariable(nll) ], -1.0) );
+}
+void ScipModelAPI::AddConstraint( const NLRimpl& nll ) {
+  getPROBDATA()->nlconss.push_back(nullptr);
+
+  SCIP_CCALL( SCIPcreateConsBasicNonlinear(
+      getSCIP(), &getPROBDATA()->nlconss.back(), nll.GetName(),
+      GetExpression(nll), MinusInfinity(), 0.0) );
+  SCIP_CCALL( SCIPaddCons(getSCIP(), getPROBDATA()->nlconss.back()) );
+  SCIP_CCALL( SCIPaddLinearVarNonlinear(
+      getSCIP(), getPROBDATA()->nlconss.back(),
+      getPROBDATA()->vars[ GetVariable(nll) ], -1.0) );
+}
 
 SCIP_EXPR* ScipModelAPI::AddExpression(const LinExpression &le) {
-  return {};
+  std::vector<SCIP_EXPR*> terms(GetLinSize(le));
+  std::vector<double> coefs(GetLinSize(le));
+
+  for (size_t i=0; i<terms.size(); ++i) {
+    terms[i] = GetLinTerm(le, i);
+    coefs[i] = GetLinCoef(le, i);
+  }
+  SCIP_EXPR* sumexpr;
+
+  SCIP_CCALL( SCIPcreateExprSum(getSCIP(), &sumexpr,
+                               terms.size(), terms.data(), coefs.data(),
+                               GetConstTerm(le), NULL, NULL) );
+  return sumexpr;
 }
 
 SCIP_EXPR* ScipModelAPI::AddExpression(const QuadExpression &qe) {
-  return {};
+  std::vector<SCIP_EXPR*> terms(GetLinSize(qe) + GetQuadSize(qe));
+  std::vector<double> coefs(GetLinSize(qe) + GetQuadSize(qe));
+
+  for (int i=0; i<GetLinSize(qe); ++i) {
+    terms[i] = GetLinTerm(qe, i);
+    coefs[i] = GetLinCoef(qe, i);
+  }
+  for (int i=0; i<GetQuadSize(qe); ++i) {
+    int i_quad = i + GetLinSize(qe);
+    SCIP_EXPR* mul_terms[] =
+        { GetQuadTerm1(qe, i), GetQuadTerm2(qe, i) };
+    SCIP_CCALL( SCIPcreateExprProduct(getSCIP(), &terms[i_quad],
+                                     2, mul_terms, GetQuadCoef(qe, i), NULL, NULL) );
+    coefs[i_quad] = 1.0;
+  }
+  SCIP_EXPR* sumexpr;
+
+  SCIP_CCALL( SCIPcreateExprSum(getSCIP(), &sumexpr,
+                               terms.size(), terms.data(), coefs.data(),
+                               GetConstTerm(qe), NULL, NULL) );
+  for (int i=0; i<GetQuadSize(qe); ++i) {
+    int i_quad = i + GetLinSize(qe);
+    SCIP_CCALL( SCIPreleaseExpr(getSCIP(), &terms[i_quad]) );
+  }
+  return sumexpr;
 }
 
 
@@ -383,7 +457,10 @@ void ScipModelAPI::AddConstraint(const SOS2Constraint& sos) {
 }
 
 SCIP_EXPR* ScipModelAPI::AddExpression(const ExpExpression &ee) {
-  return {};
+  SCIP_EXPR* result_expr;
+  SCIP_CCALL( SCIPcreateExprExp(getSCIP(), &result_expr,
+                               GetArgExpression(ee, 0), NULL, NULL) );
+  return result_expr;
 }
 
 void ScipModelAPI::AddConstraint(const ExpConstraint &cc)  {
@@ -414,6 +491,13 @@ void ScipModelAPI::AddConstraint(const ExpConstraint &cc)  {
   SCIP_CCALL( SCIPreleaseExpr(getSCIP(), &xexpr) );
 }
 
+SCIP_EXPR* ScipModelAPI::AddExpression(const LogExpression &ee) {
+  SCIP_EXPR* result_expr;
+  SCIP_CCALL( SCIPcreateExprLog(getSCIP(), &result_expr,
+                               GetArgExpression(ee, 0), NULL, NULL) );
+  return result_expr;
+}
+
 void ScipModelAPI::AddConstraint(const LogConstraint &cc)  {
   SCIP_VAR* x = getPROBDATA()->vars[cc.GetArguments()[0]];
   SCIP_VAR* res = getPROBDATA()->vars[cc.GetResultVar()];
@@ -440,6 +524,15 @@ void ScipModelAPI::AddConstraint(const LogConstraint &cc)  {
   SCIP_CCALL( SCIPreleaseExpr(getSCIP(), &terms[1]) );
   SCIP_CCALL( SCIPreleaseExpr(getSCIP(), &terms[0]) );
   SCIP_CCALL( SCIPreleaseExpr(getSCIP(), &xexpr) );
+}
+
+SCIP_EXPR* ScipModelAPI::AddExpression(const PowExpression &ee) {
+  SCIP_EXPR* result_expr;
+  SCIP_CCALL( SCIPcreateExprPow(getSCIP(), &result_expr,
+                               GetArgExpression(ee, 0),
+                               GetParameter(ee, 0),
+                               NULL, NULL) );
+  return result_expr;
 }
 
 void ScipModelAPI::AddConstraint(const PowConstraint &cc)  {
@@ -470,6 +563,13 @@ void ScipModelAPI::AddConstraint(const PowConstraint &cc)  {
   SCIP_CCALL( SCIPreleaseExpr(getSCIP(), &xexpr) );
 }
 
+SCIP_EXPR* ScipModelAPI::AddExpression(const SinExpression &ee) {
+  SCIP_EXPR* result_expr;
+  SCIP_CCALL( SCIPcreateExprSin(getSCIP(), &result_expr,
+                               GetArgExpression(ee, 0), NULL, NULL) );
+  return result_expr;
+}
+
 void ScipModelAPI::AddConstraint(const SinConstraint &cc)  {
   SCIP_VAR* x = getPROBDATA()->vars[cc.GetArguments()[0]];
   SCIP_VAR* res = getPROBDATA()->vars[cc.GetResultVar()];
@@ -496,6 +596,13 @@ void ScipModelAPI::AddConstraint(const SinConstraint &cc)  {
   SCIP_CCALL( SCIPreleaseExpr(getSCIP(), &terms[1]) );
   SCIP_CCALL( SCIPreleaseExpr(getSCIP(), &terms[0]) );
   SCIP_CCALL( SCIPreleaseExpr(getSCIP(), &xexpr) );
+}
+
+SCIP_EXPR* ScipModelAPI::AddExpression(const CosExpression &ee) {
+  SCIP_EXPR* result_expr;
+  SCIP_CCALL( SCIPcreateExprCos(getSCIP(), &result_expr,
+                               GetArgExpression(ee, 0), NULL, NULL) );
+  return result_expr;
 }
 
 void ScipModelAPI::AddConstraint(const CosConstraint &cc)  {
