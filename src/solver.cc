@@ -1068,7 +1068,7 @@ void BasicSolver::ParseOptionString(
   }
 }
 
-bool BasicSolver::ParseOptions(char **argv, unsigned flags, const ASLProblem *) {
+bool BasicSolver::ParseOptions(char **argv, unsigned flags, const ASLProblem *, char* additional_options) {
   has_errors_ = false;
   bool_options_ &= ~SHOW_VERSION;
   option_flag_save_ = flags;
@@ -1107,6 +1107,8 @@ bool BasicSolver::ParseOptions(char **argv, unsigned flags, const ASLProblem *) 
       ParseOptionString(s, flags);
     }
   }
+  if (additional_options)
+      ParseOptionString(additional_options, 0);
   if ((bool_options_ & SHOW_VERSION) != 0)
     ShowVersion();
   return !has_errors_;
