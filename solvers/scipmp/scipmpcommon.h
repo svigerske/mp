@@ -14,12 +14,17 @@
 /// problem data stored in SCIP
 struct SCIP_ProbData
 {
-   SCIP_VAR**            vars;               /**< variables in the order given by AMPL */
-   int                   nvars;              /**< number of variables */
+  SCIP_VAR**            vars;               /**< variables in the order given by AMPL */
+  std::vector<SCIP_EXPR*>  var_exprs;       /**< expressions for the variables, when non-zero */
+  int                   nvars;              /**< number of variables */
 
-   std::vector<SCIP_CONS*>  linconss;        /**< linear constraints in the order given by AMPL */
-   int                   i = 0;              /**< shows free slot of linear constraints */
-   int                   nlinconss = 0;      /**< number of linear constraints */
+  std::vector<SCIP_CONS*>  linconss;        /**< linear constraints in the order given by AMPL */
+  int                   i = 0;              /**< shows free slot of linear constraints */
+  int                   nlinconss = 0;      /**< number of linear constraints */
+
+  std::vector<SCIP_CONS*>  nlconss;        /**< NL linear constraints in the order given by AMPL */
+
+  SCIP_EXPR* dummyexpr {nullptr};
 };
 
 namespace mp {

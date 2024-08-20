@@ -79,6 +79,10 @@ public:
   Context GetContext(int i) const override
   { assert(check_index(i)); return cons_[i].GetCon().GetContext(); }
 
+  /// Set context of contraint \a i
+  void SetContext(int i, Context ctx) override
+  { assert(check_index(i)); cons_[i].GetCon().SetContext(ctx); }
+
   /// Propagate expression result of constraint \a i top-down
   void PropagateResult(BasicFlatConverter& cvt,
                        int i,
@@ -137,6 +141,10 @@ public:
     DoCvtWithExprs();
   }
 
+  /// acc:_expr==1 ?
+  bool IfWantNLOutput() const override
+  { return GetConverter().IfWantNLOutput(); }
+
   /// Converter's ability to convert the constraint type
   bool IfConverterConverts(
       BasicFlatConverter& cvt ) const override {
@@ -192,6 +200,9 @@ public:
   void AddUnbridgedToBackend(
       BasicFlatModelAPI& be,
       const std::vector<std::string>* pvnam) override {
+    if (ExpressionAcceptanceLevel::NotAccepted
+        == GetChosenAcceptanceLevelEXPR()
+        || !GetConverter().IfWantNLOutput())
     try {
       AddAllUnbridged(be, pvnam);
     } catch (const std::exception& exc) {
@@ -199,6 +210,19 @@ public:
                              Constraint::GetTypeName() + "' to " +
                              Backend::GetTypeName() + std::string(": ") +
                              exc.what());
+    }
+  }
+
+  /// Store the solver's native expression for constraint \a i.
+  /// Have to abandon type safety - an alternative would be to
+  /// parameterize BasicConstraintKeeper by ConverterType
+  /// and ModelAPI incl. ExprType.
+  void StoreSolverExpression(
+      BasicFlatModelAPI& be, int i, void* pexpr) override {
+    if constexpr (ExpressionAcceptanceLevel::NotAccepted
+        != Backend::ExpressionInterfaceAcceptanceLevel()) {
+      *(typename Backend::Expr*)pexpr =
+          static_cast<Backend&>(be).AddExpression(cons_[i].GetExpr());
     }
   }
 
@@ -249,7 +273,7 @@ protected:
     bool IsUnused() const { return is_unused_; }
     /// Mark as unused
     void MarkAsUnused() {
-      MarkAsBridged();
+      MarkAsBridged();              // also inactive
       is_unused_=true;
     }
 
@@ -257,6 +281,11 @@ protected:
     const Constraint& GetCon() const { return con_.GetFlatConstraint(); }
     /// Get the flat constraint &
     Constraint& GetCon() { return con_.GetFlatConstraint(); }
+
+    /// Get the expression, const &
+    const FlatExprType& GetExpr() const { return con_; }
+    /// Get the expression &
+    FlatExprType& GetExpr() { return con_; }
 
   private:
     // Storing in the ExprWrapper,

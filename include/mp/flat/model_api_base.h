@@ -123,6 +123,7 @@ enum ConstraintGroup {
   CG_Quadratic,
 	CG_Conic,
   CG_General,
+  CG_Nonlinear,
   CG_Piecewiselinear,
   CG_SOS,
   CG_SOS1,
@@ -167,6 +168,9 @@ public:
   /// Whether accepting quadratic objectives:
   /// 0 - no, 1 - convex, 2 - nonconvex
   static int AcceptsQuadObj() { return 0; }
+
+  /// Whether accepts NLObjective (relevant in BasicExprModelAPI)
+  static int AcceptsNLObj() { return 0; }
 
   /// Placeholder for SetQuadraticObjective()
   void SetQuadraticObjective(int , const QuadraticObjective& ) {

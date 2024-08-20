@@ -35,11 +35,15 @@ public:
     b_(b), bv_(bv), con_(std::move(con)) { assert(check()); }
   bool check() const { return (b_>=0) && (bv_==0 || bv_==1); }
 
-  /// Getters
+  /// Get the binary var
   int get_binary_var() const { return b_; }
+  /// Get the value for b==value
   int get_binary_value() const { return bv_; }
+  /// Check if value==1
   bool is_binary_value_1() const
   { return 1==get_binary_value(); }
+
+  /// Get the implied constraint, const
   const Con& get_constraint() const { return con_; }
 
   /// Compute violation

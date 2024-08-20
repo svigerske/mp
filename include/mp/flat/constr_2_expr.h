@@ -24,7 +24,17 @@ public:
   /// will be handled in a special way.
   void Convert2NL() {
     MPD( MarkExpressions() );
+    /// Objectives before constraints,
+    /// because if we produce new expressions and their result variables
+    /// need to be explicit, this is done in constraints conversion.
+    MPD( ConvertObjectivesWithExpressions() );
+    stage_cvt2expr_ = 1;               // static cons
+                               // -> new static cons + func cons
     MPD( GetModel() ).ConvertAllWithExpressions(*(Impl*)this);
+    stage_cvt2expr_ = 2;               // func cons -> explicifiers
+    MPD( GetModel() ).ConvertAllWithExpressions(*(Impl*)this);
+    MPD( EliminateExprResultVars() );  // In the very end
+    MPD( PassHooksToModelAPI() );
   }
 
   /// Mark which functional constraints to be used as expressions,
@@ -80,12 +90,14 @@ public:
       const AlgebraicConstraint<Body, RhsOrRange>& con,
       int i,
       ConstraintAcceptanceLevel cal) {
+    assert(stage_cvt2expr_>0);
     /// Replace \a con by a NLConstraint,
     /// if either the ModelAPI does not accept it,
     /// or the linear/quadratic terms have expressions
     /// (and then they are non-flat.)
-    if (ConstraintAcceptanceLevel::Recommended != cal
-        || HasExpressionArgs(con.GetBody())) {
+    if (1==stage_cvt2expr_
+            && (ConstraintAcceptanceLevel::Recommended != cal
+            || HasExpressionArgs(con.GetBody()))) {
       ConvertToNLCon(con, i);
       return true;                              // to remove the original \a con
     }
@@ -101,11 +113,15 @@ public:
       const ConditionalConstraint< AlgebraicConstraint<Body, RhsOrRange> >& con,
       int i,
       ConstraintAcceptanceLevel ) {
-    ConsiderExplicifyingExpression(con, i);        // this is a func con too
-    if (!con.GetConstraint().GetBody().is_variable()) {      // already a variable
-      ConvertConditionalConLHS(con, i);
-      return true;
+    assert(stage_cvt2expr_>0 && stage_cvt2expr_<=2);
+    if (1==stage_cvt2expr_) {
+      if (!con.GetConstraint().GetBody().is_variable()) {  // already a variable
+        ConvertConditionalConLHS(con, i);
+        return true;
+      }
     }
+    else   // if (2==stage_cvt2expr_)
+      ConsiderExplicifyingExpression(con, i);        // this is a func con too
     return false;
   }
 
@@ -117,7 +133,8 @@ public:
                std::is_base_of_v<FunctionalConstraint, FuncCon>, bool > = true >
   bool ConvertWithExpressions(
       const FuncCon& con, int i, ConstraintAcceptanceLevel ) {
-    ConsiderExplicifyingExpression(con, i);
+    if (2==stage_cvt2expr_)
+      ConsiderExplicifyingExpression(con, i);
     return false;                          // leave it active
   }
 
@@ -129,7 +146,8 @@ public:
       const ComplementarityConstraint<Expr>& con,
       int i,
       ConstraintAcceptanceLevel ) {
-    if (!con.GetExpression().is_variable()) {             // already a variable
+    if (1==stage_cvt2expr_
+        && !con.GetExpression().is_variable()) {             // already a variable
       ConvertComplementarityExpr(con, i);
       return true;
     }
@@ -148,6 +166,7 @@ public:
   /// But check that they are flat?
   bool ConvertWithExpressions(
       const SOS1Constraint& con, int , ConstraintAcceptanceLevel ) {
+    if (2==stage_cvt2expr_)
     for (int v: con.GetArguments()) {
       assert(MPCD( IsProperVar(v) ));
     }
@@ -158,6 +177,7 @@ public:
   /// But check that they are flat?
   bool ConvertWithExpressions(
       const SOS2Constraint& con, int , ConstraintAcceptanceLevel ) {
+    if (2==stage_cvt2expr_)
     for (int v: con.GetArguments()) {
       assert(MPCD( IsProperVar(v) ));
     }
@@ -188,6 +208,33 @@ public:
   bool ConvertWithExpressions(
       const NLRimpl& , int , ConstraintAcceptanceLevel ) {
     return false;
+  }
+
+  /// Convert objectives
+  void ConvertObjectivesWithExpressions() {
+    auto& objs = MPD( get_objectives() );
+    for (size_t iobj=0; iobj<objs.size(); ++iobj) {
+      Convert1ObjWithExpressions(iobj, objs[iobj]);
+    }
+  }
+
+  /// Mark expr result vars for elimination
+  void EliminateExprResultVars() {
+    for (auto i = MPCD(num_vars()); i--; )
+      if (!MPCD( IsProperVar(i) ))
+        MPD( MarkVarAsEliminated(i) );
+  }
+
+  /// Pass some infos and callbacks to the ModelAPI
+  void PassHooksToModelAPI() {
+    MPD( GetModelAPI() ).PassVarProperFlags(
+        MPCD( GetVarProperFlags() ));
+    MPD( GetModelAPI() ).PassInitExprGetter(
+        [this](int i_res_var, void* pexpr) {
+      assert( !MPCD( IsProperVar(i_res_var) ) );      // is an expression
+      MPD( GetInitExpression(i_res_var) ).StoreSolverExpression(
+          MPD(GetModelAPI()), i_res_var, pexpr);
+    });
   }
 
 
@@ -246,6 +293,7 @@ protected:
     /// exprTerm will be a LinearFunctionalConstraint or a Quadratic...
     auto exprTerm = ExtractLinAndExprArgs(con.GetBody(), lt);
     assert(0.0 == exprTerm.GetArguments().constant_term());
+    AlgConRange rng { con.GetRhsOrRange().lb(), con.GetRhsOrRange().ub() };
     /// Store full LFC only if it is not 1.0*var
     int exprResVar = -1;
     if (exprTerm.GetArguments().is_variable()) {
@@ -253,6 +301,11 @@ protected:
       assert( !MPCD( IsProperVar(exprResVar) ) );     // is an expr
     } else {
       assert( !exprTerm.GetArguments().empty() );     // has more terms, or coef != 1.0
+      exprTerm.SetContext(                            // Context is compulsory
+          rng.lb() > MPCD( PracticallyMinusInf() )    // Should not need to propagate
+          ? (rng.ub() < MPCD( PracticallyInf() )
+                ? Context::CTX_MIX : Context::CTX_POS)
+              : Context::CTX_NEG);
       exprResVar = MPD( AssignResultVar2Args(std::move(exprTerm)) );
       if (!MPCD(VarHasMarking(exprResVar)))           // mark as expr if new
         MPD( MarkAsExpression(exprResVar) );
@@ -263,10 +316,50 @@ protected:
         lt.sort_terms();
       }
     }  // else, stays as -1
-    NLConstraint nlc{lt, exprResVar,
-                     { con.GetRhsOrRange().lb(), con.GetRhsOrRange().ub() },
-                     false};                  // no sorting
+    NLConstraint nlc{lt, exprResVar, rng, false};     // no sorting
     MPD( AddConstraint( std::move(nlc) ) );
+  }
+
+  /// Convert (if needed) an objective to NLObjective.
+  /// Logic similar to NLConstraint.
+  void Convert1ObjWithExpressions(int iobj, QuadraticObjective& qobj) {
+    LinTerms lt_varsonly;
+    LinTerms lt_in_expr = SplitLinTerms(qobj.GetLinTerms(), lt_varsonly);
+    // Have expression(s) or QP terms? Need to hide them into the expression part
+    if (lt_in_expr.size() || qobj.GetQPTerms().size()) {
+      int exprResVar = -1;
+      if (lt_in_expr.is_variable() && qobj.GetQPTerms().empty()) {
+        exprResVar = lt_in_expr.get_representing_variable();
+        assert( !MPCD( IsProperVar(exprResVar) ) );     // is an expr
+      } else {                      // We need a new expression
+        // Set up AutoLink
+        auto obj_src =              // source value node for this obj
+            MPD( GetValuePresolver() ).GetSourceNodes().GetObjValues()().Select(iobj);
+        pre::AutoLinkScope<Impl> auto_link_scope{ *(Impl*)this, obj_src };
+        if (qobj.GetQPTerms().empty())
+          exprResVar = MPD( AssignResultVar2Args(
+              LinearFunctionalConstraint{ {lt_in_expr, 1.0} } ) );
+        else                        // Move QP terms into the expr
+          exprResVar = MPD( AssignResultVar2Args(
+              QuadraticFunctionalConstraint
+              { {{lt_in_expr, std::move(qobj.GetQPTerms())}, 1.0} } ) );
+        MPD( SetInitExprContext(exprResVar,             // Context is compulsory
+                               obj::MAX==qobj.obj_sense_true()    // no need to propagate
+                                   ? Context::CTX_POS : Context::CTX_NEG) );
+        if ( !MPCD(VarHasMarking(exprResVar) ))         // mark as expr if new
+          MPD( MarkAsExpression(exprResVar) );
+        if ( !MPCD( GetModelAPI() ).AcceptsNLObj() )    // But as var if NLObj not accepted
+          MPD( MarkAsResultVar(exprResVar) );
+        if ( MPCD( IsProperVar(exprResVar) ) ) {        // Not an expression after all
+          lt_varsonly.add_term(1.0, exprResVar);
+          exprResVar = -1;                              // no expression
+          lt_varsonly.sort_terms();
+        }
+      }
+      qobj.GetLinTerms() = lt_varsonly;
+      if (exprResVar>=0)
+        qobj.SetExprIndex(exprResVar);
+    }
   }
 
   /// Extract linear and expression args
@@ -331,6 +424,7 @@ protected:
     ConditionalConstraint< AlgebraicConstraint<LinTerms, RhsOrRange> >
         ccnew { { std::move(lt), con.GetConstraint().GetRhsOrRange() } };
     MPD( RedefineVariable(con.GetResultVar(), std::move(ccnew)) );  // Use new CondCon
+    MPD( PropagateResultOfInitExpr(con.GetResultVar(), con.GetContext()) ); // context
   }
 
   /// Convert the expression part of complementarity.
@@ -342,6 +436,7 @@ protected:
     auto alscope = MPD( MakeAutoLinker( con, i ) );       // link from \a con
     /// Create a functional constraint from the LHS
     auto fc = MakeFunctionalConstraint(con.GetExpression());
+    fc.SetContext(Context::CTX_MIX);                      // need context
     auto resvar = MPD( AssignResultVar2Args(std::move(fc)) );
     /// resvar can be a proper variable - ModelAPI should flexibly handle this
     LinTerms lt { {1.0}, {resvar} };
@@ -360,7 +455,8 @@ protected:
   /// Add expr = var assignment for algebraic expression
   template <class FuncCon,
            std::enable_if_t<
-               std::is_base_of_v<NumericFunctionalConstraintTraits, FuncCon>, bool > = true >
+               std::is_base_of_v<
+                   NumericFunctionalConstraintTraits, FuncCon>, bool > = true >
   void DoExplicify(const FuncCon& con, int i) {
     auto alscope = MPD( MakeAutoLinker( con, i ) );       // link from \a con
     assert(!con.GetContext().IsNone());
@@ -379,7 +475,8 @@ protected:
   /// add root explicifier instead (NLLogical).
   template <class FuncCon,
            std::enable_if_t<
-               std::is_base_of_v<LogicalFunctionalConstraintTraits, FuncCon>, bool > = true >
+               std::is_base_of_v<
+                   LogicalFunctionalConstraintTraits, FuncCon>, bool > = true >
   void DoExplicify(const FuncCon& con, int i) {
     auto alscope = MPD( MakeAutoLinker( con, i ) );       // link from \a con
     auto resvar = con.GetResultVar();
@@ -404,6 +501,9 @@ private:
   std::function<void( int )> MarkVar_ = [this](int v){
     MPD( MarkAsResultVar(v) );       // no recursion
   };
+
+  /// NL conversion stage
+  int stage_cvt2expr_ {-1};
 };
 
 }  // namespace mp

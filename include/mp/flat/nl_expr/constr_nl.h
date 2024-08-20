@@ -39,7 +39,7 @@ public:
   bool HasExpr() const { return expr_>=0; }
 
   /// Expression index.
-  /// @note ModelAPI should call self.HasExpression
+  /// @note ModelAPI should call self.HasExpression()
   ///   and self.GetExpression()
   ///   to obtain the expression term.
   int ExprIndex() const { assert(HasExpr()); return expr_; }
@@ -90,6 +90,11 @@ inline void WriteModelItem(Writer& wrt,
   wrt << "NLExprIndex: " << vnam.at(nlc.ExprIndex()) << " IN: ";
   WriteModelItem(wrt, nlc.GetMainCon(), vnam);
 }
+
+
+/// NLComplementarity
+/// TODO extra class, to enable ACCEPT_CONSTRAINT
+using NLComplementarity = ComplementarityConstraint<AffineExpr>;
 
 
 /// NL logical constraint: expr(resvar) == true

@@ -247,7 +247,7 @@ public:
     AutoExpand(var_result_, v) = false;
   }
 
-  /// Variable has marking?
+  /// Variable has expr marking?
   bool VarHasMarking(int v) const {
     assert(v>=0);
     return v < (int)var_result_.size();
@@ -258,8 +258,16 @@ public:
   /// (Otheriwse, it's marked as implicit
   ///   - the init expr will be an expression)
   bool IsProperVar(int v) const {
-    assert(VarHasMarking(v));
-    return var_result_[v];
+    return !VarHasMarking(v) || var_result_[v];
+  }
+
+  /// Get var proper flags
+  const std::vector<bool>& GetVarProperFlags() const
+  { return var_result_; }
+
+  /// Mark var as eliminated.
+  void MarkVarAsEliminated(int v) {
+    AutoExpand(var_elim_, v) = true;
   }
 
 
@@ -373,6 +381,20 @@ protected:
 
   template <class Backend>
   void PushVariablesTo(Backend& backend) const {
+    /// Fix 'eliminated' variables - no proper deletion
+    var_lb_subm_ = var_lb_;
+    var_ub_subm_ = var_ub_;
+    for (auto i=std::min(var_elim_.size(), var_lb_subm_.size()); i--; ) {
+      if (var_elim_[i]) {
+        if (var_lb_subm_[i] > -1e20)
+          var_ub_subm_[i] = var_lb_subm_[i];
+        else if (var_ub_subm_[i] < 1e20)
+          var_lb_subm_[i] = var_ub_subm_[i];
+        else
+          var_lb_subm_[i] = var_ub_subm_[i] = 0.0;
+      }
+    }
+    /// Push variables
     if (var_names_storage_.size() > 0) {
       // Convert names to c-str if needed
       for (const std::string& s : var_names_storage_)
@@ -424,6 +446,8 @@ public:
 private:
   /// Variables' bounds
   VarBndVec var_lb_, var_ub_;
+  /// Variables' submitted bounds - what goes to the solver
+  mutable VarBndVec var_lb_subm_, var_ub_subm_;
   /// Variables' types
   VarTypeVec var_type_;
   /// Whether the variable, being the result variable of a functional constraint,
@@ -431,6 +455,9 @@ private:
   /// is becoming an expression.)
   /// Normal variables are marked too.
   std::vector<bool> var_result_;
+  /// Eliminated variables.
+  /// Currenlty they are just fixed.
+  std::vector<bool> var_elim_;
   ///  Variables' names
   mutable VarNameVec var_names_;
   std::vector<std::string> var_names_storage_;

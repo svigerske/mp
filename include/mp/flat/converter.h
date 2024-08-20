@@ -103,14 +103,16 @@ public:
 
   /// Propagate objective contexts
   void PropagateObjContexts() {
-    const auto& objs = MPD( get_objectives() );
+    auto& objs = MPD( get_objectives() );
     const auto objwgt = MPD( GetMOWeights() );
     if (GetEnv().multiobj())               // only in obj:multi mode
       assert(objs.size() == objwgt.size());
     for (size_t i=0; i<objs.size(); ++i) {
       auto isMax = obj::MAX==objs[i].obj_sense();
-      if (GetEnv().multiobj() && objwgt[i]<0.0)   // only in obj:multi
+      if (GetEnv().multiobj() && objwgt[i]<0.0) {  // only in obj:multi
         isMax = !isMax;
+        objs[i].set_sense_true(isMax ? obj::MAX : obj::MIN);
+      }
       auto ctx = isMax ? Context::CTX_POS : Context::CTX_NEG;
       MPD( PropagateResult2LinTerms(objs[i].GetLinTerms(),
                           MPD( MinusInfty() ), MPD( Infty() ), ctx) );
@@ -205,6 +207,7 @@ public:
 	/// Use "+1" a variable
 	void IncrementVarUsage(int v) {
 		++VarUsageRef(v);
+    assert(!IsUnused(GetInitExpression(v)));
 	}
 
 	/// Unuse result variable.
@@ -219,14 +222,13 @@ public:
 		}
 	}
 
-	/// Fix unused defined vars.
+  /// Mark unused defined vars for elimination.
 	/// Normally should delete them.
-	void FixUnusedDefinedVars() {
+  void EliminateUnusedDefinedVars() {
 		for (auto i=num_vars(); i--; ) {
 			if (HasInitExpression(i) &&
 					! VarUsageRef(i)) {
-				set_var_lb(i, 0.0);      // fix to 0
-				set_var_ub(i, 0.0);
+        MPD( MarkVarAsEliminated(i) );
 			}
 		}
 	}
@@ -309,7 +311,7 @@ protected:
   int AcceptanceLevelCommon() const { return options_.accAll_; }
 
   /// Option to actually use expressions if available
-  bool IfWantNLOutput() const { return options_.accExpr_; }
+  bool IfWantNLOutput() const { return options_.accExpr_==1; }
 
   /// Whether solver CAN accept expressions
   static constexpr bool IfAcceptingNLOutput()
@@ -533,6 +535,11 @@ public:
     ci.GetCK()->MarkAsUnused(ci.GetIndex());
   }
 
+  /// Is constraint unused?
+  bool IsUnused(const ConInfo& ci) const {
+    return ci.GetCK()->IsUnused(ci.GetIndex());
+  }
+
 
 protected:
   USE_BASE_MAP_FINDERS( BaseConverter )
@@ -573,7 +580,7 @@ public:
     MPD( ConvertModel() );
     if (relax())
       GetModel().RelaxIntegrality();
-		FixUnusedDefinedVars();       // Until we have proper var deletion
+    EliminateUnusedDefinedVars();       // Until we have proper var deletion
     CheckLinearCons();
     PresolveNames();
     GetModel().PushModelTo(GetModelAPI());
@@ -880,7 +887,14 @@ public:
   /// Does not check if that's a func con,
   /// user check for != CTX_NONE
   Context GetInitExprContext(int var) const {
-    return GetInitExpression(var).GetConstraint().GetContext();
+    auto ie = GetInitExpression(var);
+    return ie.GetCK()->GetContext(ie.GetIndex());
+  }
+
+  /// Set func expr context
+  void SetInitExprContext(int var, Context ctx) {
+    auto ie = GetInitExpression(var);
+    ie.GetCK()->SetContext(ie.GetIndex(), ctx);
   }
 
 	/// Get the init expression pointer.

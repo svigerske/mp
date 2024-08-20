@@ -35,9 +35,9 @@ public:
   /// Get context, if meaningful
   Context GetContext() const { return Context::CTX_NONE; }
   /// Set context, if meaningful
-  void SetContext(Context ) const { }
+  void SetContext(Context ) const { MP_RAISE("Setting context for static constraint"); }
   /// Add (merge) context, if meaningful
-  void AddContext(Context ) const { }
+  void AddContext(Context ) const { MP_RAISE("Setting context for static constraint"); }
   /// Has result var (is functional)?
   bool HasResultVar() const { return false; }
   /// For functional constraints, result variable index
@@ -64,6 +64,8 @@ public:
   ExprWrapper(Con c) : con_flat_(std::move(c)) { }
   /// Constraint type
   using FlatConType = Con;
+  /// Type name
+  const char* GetTypeName() const { return con_flat_.GetTypeName(); }
   /// Get const & (con)
   const Con& GetFlatConstraint() const { return con_flat_; }
   /// Get & (con)

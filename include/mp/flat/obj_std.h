@@ -12,7 +12,7 @@ namespace mp {
 
 /// Linear objective incl. sense and name
 class LinearObjective {
-  obj::Type sense_;
+  obj::Type sense_, sense_true_;
   LinTerms lt_;
   std::string name_;
 public:
@@ -24,10 +24,14 @@ public:
     sense_(s),
     lt_(std::forward<CoefVec>(c), std::forward<VarVec>(v)),
     name_(std::move(nm)){ }
-  /// Get sense
+  /// Get original sense
   obj::Type obj_sense() const { return sense_; }
-  /// Set sense
+  /// Get true sense (in multiobj mode)
+  obj::Type obj_sense_true() const { return sense_true_; }
+  /// Set original sense
   void set_sense(obj::Type s) { sense_ = s; }
+  /// Set true sense
+  void set_sense_true(obj::Type s) { sense_true_ = s; }
   /// Get lin terms, const
   const LinTerms& GetLinTerms() const { return lt_; }
   /// Get lin terms
@@ -51,13 +55,38 @@ public:
   }
 };
 
-/// Quadragtic objective
-class QuadraticObjective : public LinearObjective {
+
+/// NL objective.
+/// We have no proper transformation mechanism for objectives,
+/// so mixing them all.
+class NLObjective : public LinearObjective {
+  int expr_ {-1};
+public:
+  /// Construct
+  NLObjective(LinearObjective&& lc, int expr=-1) :
+      LinearObjective(std::move(lc)), expr_(expr) { }
+
+  /// Has expression term?
+  bool HasExpr() const { return expr_>=0; }
+
+  /// Expression index.
+  /// @note ModelAPI should call self.HasExpression()
+  ///   and self.GetExpression()
+  ///   to obtain the expression term.
+  int ExprIndex() const { assert(HasExpr()); return expr_; }
+
+  /// Set expression index
+  void SetExprIndex(int ei) { expr_ = ei; }
+};
+
+
+/// Quadratic objective
+class QuadraticObjective : public NLObjective {
   QuadTerms qt_;
 public:
   /// Construct
   QuadraticObjective(LinearObjective&& lc, QuadTerms&& qt) :
-    LinearObjective(std::move(lc)), qt_(std::move(qt)) { sort_qp_terms(); }
+    NLObjective(std::move(lc)), qt_(std::move(qt)) { sort_qp_terms(); }
 
   /// Get QP terms, const
   const QuadTerms& GetQPTerms() const { return qt_; }
@@ -85,6 +114,7 @@ double ComputeValue(
     const QuadraticObjective& obj, const VarVec& x) {
   return
       obj.GetLinTerms().ComputeValue(x)
+         + (obj.HasExpr() ? x[obj.ExprIndex()] : 0.0)
       + obj.GetQPTerms().ComputeValue(x);
 }
 
