@@ -34,6 +34,7 @@ public:
     stage_cvt2expr_ = 2;               // func cons -> explicifiers
     MPD( GetModel() ).ConvertAllWithExpressions(*(Impl*)this);
     MPD( EliminateExprResultVars() );  // In the very end
+    MPD( PassHooksToModelAPI() );
   }
 
   /// Mark which functional constraints to be used as expressions,
@@ -222,6 +223,18 @@ public:
     for (auto i = MPCD(num_vars()); i--; )
       if (!MPCD( IsProperVar(i) ))
         MPD( MarkVarAsEliminated(i) );
+  }
+
+  /// Pass some infos and callbacks to the ModelAPI
+  void PassHooksToModelAPI() {
+    MPD( GetModelAPI() ).PassVarProperFlags(
+        MPCD( GetVarProperFlags() ));
+    MPD( GetModelAPI() ).PassInitExprGetter(
+        [this](int i_res_var, void* pexpr) {
+      assert( !MPCD( IsProperVar(i_res_var) ) );      // is an expression
+      MPD( GetInitExpression(i_res_var) ).StoreSolverExpression(
+          MPD(GetModelAPI()), i_res_var, pexpr);
+    });
   }
 
 

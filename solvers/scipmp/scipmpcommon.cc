@@ -14,10 +14,19 @@ SCIP_DECL_PROBDELORIG(probdataDelOrigNl)
     SCIP_CALL( SCIPreleaseCons(scip, &(*probdata)->linconss[i]) );
   }
 
+  for (auto& pnlc: (*probdata)->nlconss)
+    SCIP_CALL( SCIPreleaseCons(scip, &pnlc) );
+
   for( i = 0; i < (*probdata)->nvars; ++i )
   {
     SCIP_CCALL( SCIPreleaseVar(scip, &(*probdata)->vars[i]) );
+    if ((*probdata)->var_exprs[i])
+      SCIP_CALL( SCIPreleaseExpr(scip, &(*probdata)->var_exprs[i]) );
   }
+
+  if ((*probdata)->dummyexpr)
+    SCIP_CALL( SCIPreleaseExpr(scip, &(*probdata)->dummyexpr) );
+
   SCIPfreeBlockMemoryArray(scip, &(*probdata)->vars, (*probdata)->nvars);
 
   SCIPfreeMemory(scip, probdata);

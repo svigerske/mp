@@ -1,14 +1,17 @@
 #include "scipmpmodelapi.h"
 
+
 namespace mp {
 
 void ScipModelAPI::InitProblemModificationPhase(const FlatModelInfo* flat_model_info) {
+  if (getPROBDATA()->nlinconss || getPROBDATA()->nlconss.size())
+    SCIP_CCALL( SCIPfreeTransform(getSCIP()) );                  // allow model update
   // Allocate storage if needed:
   int n_linear_cons = flat_model_info->GetNumberOfConstraintsOfGroup(CG_Linear);
-  if (getPROBDATA()->nlinconss)
-    SCIP_CCALL( SCIPfreeTransform(getSCIP()) );                  // allow model update
   getPROBDATA()->nlinconss = n_linear_cons;
   getPROBDATA()->linconss.resize(n_linear_cons);
+  int n_nl_cons = flat_model_info->GetNumberOfConstraintsOfGroup(CG_Nonlinear);
+  getPROBDATA()->nlconss.reserve(n_nl_cons);
 }
 
 void ScipModelAPI::AddVariables(const VarArrayDef& v) {
@@ -16,6 +19,7 @@ void ScipModelAPI::AddVariables(const VarArrayDef& v) {
 
   getPROBDATA()->nvars = v.size();
   SCIP_CCALL( SCIPallocBlockMemoryArray(getSCIP(), &getPROBDATA()->vars, getPROBDATA()->nvars) );
+  getPROBDATA()->var_exprs.resize(v.size());
 
   for (int i = 0; i < v.size(); i++) {
     SCIP_VAR* var = NULL;
@@ -60,6 +64,20 @@ void ScipModelAPI::SetQuadraticObjective(int iobj, const QuadraticObjective& qo)
   throw std::runtime_error("Quadratic objective not supported");
 }
 
+
+SCIP_EXPR* ScipModelAPI::GetVarExpression(int i) {
+  assert(getPROBDATA()->var_exprs.size()>i);
+  if (!getPROBDATA()->var_exprs[i])
+    SCIP_CCALL( SCIPcreateExprVar(
+        getSCIP(), &getPROBDATA()->var_exprs[i], getPROBDATA()->vars[i], NULL, NULL) );
+  return getPROBDATA()->var_exprs[i];
+}
+
+SCIP_EXPR* ScipModelAPI::GetZeroExpression() {
+  if (!getPROBDATA()->dummyexpr)
+    SCIP_CCALL( SCIPcreateExprValue(getSCIP(), &getPROBDATA()->dummyexpr, 0.0, NULL, NULL) );
+  return getPROBDATA()->dummyexpr;
+}
 
 void ScipModelAPI::linearHelper(const int* pvars, const double* pcoefs, const size_t size, const char* name, const double lb, const double ub) {
   SCIP_VAR** vars = NULL;
@@ -240,22 +258,66 @@ void ScipModelAPI::AddConstraint( const QuadConLE& qc ) {
   const auto& lt = qc.GetLinTerms();
   const auto& qt = qc.GetQPTerms();
 
-  helpQuad(qc.GetName(), lt.pvars(), lt.pcoefs(), lt.size(), qt.pvars1(), qt.pvars2(), qt.pcoefs(), qt.size(), MinusInfinity(), qc.rhs());
+  helpQuad(qc.GetName(), lt.pvars(), lt.pcoefs(), lt.size(),
+           qt.pvars1(), qt.pvars2(), qt.pcoefs(), qt.size(), MinusInfinity(), qc.rhs());
 }
 
 void ScipModelAPI::AddConstraint( const QuadConEQ& qc ) {
   const auto& lt = qc.GetLinTerms();
   const auto& qt = qc.GetQPTerms();
 
-  helpQuad(qc.GetName(), lt.pvars(), lt.pcoefs(), lt.size(), qt.pvars1(), qt.pvars2(), qt.pcoefs(), qt.size(), qc.rhs(), qc.rhs());
+  helpQuad(qc.GetName(), lt.pvars(), lt.pcoefs(), lt.size(),
+           qt.pvars1(), qt.pvars2(), qt.pcoefs(), qt.size(), qc.rhs(), qc.rhs());
 }
 
 void ScipModelAPI::AddConstraint( const QuadConGE& qc ) {
   const auto& lt = qc.GetLinTerms();
   const auto& qt = qc.GetQPTerms();
 
-  helpQuad(qc.GetName(), lt.pvars(), lt.pcoefs(), lt.size(), qt.pvars1(), qt.pvars2(), qt.pcoefs(), qt.size(), qc.lb(), Infinity());
+  helpQuad(qc.GetName(), lt.pvars(), lt.pcoefs(), lt.size(),
+           qt.pvars1(), qt.pvars2(), qt.pcoefs(), qt.size(), qc.lb(), Infinity());
 }
+
+/// To access information from an NLConstraint,
+/// use the following accessors (don't use methods of NLConstraint itself):
+/// - GetLinSize(nlc), GetLinCoef(nlc, i), GetLinVar(nlc, i),
+///   GetExpression(nlc), GetLower(nlc), GetUpper(nlc).
+///
+/// Implementation follows partly reader_nl.cc from SCIP.
+void ScipModelAPI::AddConstraint( const NLConstraint& nlc ) {
+  getPROBDATA()->nlconss.push_back(nullptr);
+
+  SCIP_CCALL( SCIPcreateConsBasicNonlinear(
+      getSCIP(), &getPROBDATA()->nlconss.back(), nlc.GetName(),
+      GetExpression(nlc), GetLower(nlc), GetUpper(nlc)) );
+  SCIP_CCALL( SCIPaddCons(getSCIP(), getPROBDATA()->nlconss.back()) );
+  for( int i = 0; i < GetLinSize(nlc); ++i )
+    SCIP_CCALL( SCIPaddLinearVarNonlinear(
+        getSCIP(), getPROBDATA()->nlconss.back(),
+        getPROBDATA()->vars[ GetLinVar(nlc, i) ], GetLinCoef(nlc, i)) );
+}
+
+void ScipModelAPI::AddConstraint( const NLLogical& nll ) {
+  getPROBDATA()->nlconss.push_back(nullptr);
+
+  SCIP_CCALL( SCIPcreateConsBasicNonlinear(
+      getSCIP(), &getPROBDATA()->nlconss.back(), nll.GetName(),
+      GetExpression(nll), 1.0, 1.0) );
+  SCIP_CCALL( SCIPaddCons(getSCIP(), getPROBDATA()->nlconss.back()) );
+}
+
+void ScipModelAPI::AddConstraint( const NLEquivalence& nll ) { }
+void ScipModelAPI::AddConstraint( const NLImpl& nll ) { }
+void ScipModelAPI::AddConstraint( const NLRimpl& nll ) { }
+
+SCIP_EXPR* ScipModelAPI::AddExpression(const LinExpression &le) {
+  return {};
+}
+
+SCIP_EXPR* ScipModelAPI::AddExpression(const QuadExpression &qe) {
+  return {};
+}
+
 
 void ScipModelAPI::AddConstraint( const QuadraticConeConstraint& qc ) {
   const auto& arg = qc.GetArguments();
@@ -271,7 +333,9 @@ void ScipModelAPI::AddConstraint( const QuadraticConeConstraint& qc ) {
   }
 
   SCIP_CONS* cons;
-  SCIP_CCALL( SCIPcreateConsBasicSOCNonlinear(getSCIP(), &cons, qc.GetName(), (int)arg.size()-1, vars+1, (SCIP_Real*)param.data(), NULL, 0.0, vars[0], qc.GetParameters().data()[0], 0.0) );
+  SCIP_CCALL( SCIPcreateConsBasicSOCNonlinear(getSCIP(), &cons, qc.GetName(),
+                                             (int)arg.size()-1, vars+1, (SCIP_Real*)param.data(), NULL,
+                                             0.0, vars[0], qc.GetParameters().data()[0], 0.0) );
   SCIP_CCALL( SCIPaddCons(getSCIP(), cons) );
   SCIP_CCALL( SCIPreleaseCons(getSCIP(), &cons) );
 
@@ -289,7 +353,8 @@ void ScipModelAPI::AddConstraint(const SOS1Constraint& sos) {
   }
 
   SCIP_CONS* cons = NULL;
-  SCIP_CCALL( SCIPcreateConsBasicSOS1(getSCIP(), &cons, sos.GetName(), sos.size(), vars, weights) );
+  SCIP_CCALL( SCIPcreateConsBasicSOS1(getSCIP(), &cons, sos.GetName(),
+                                     sos.size(), vars, weights) );
   SCIP_CCALL( SCIPaddCons(getSCIP(), cons) );
   SCIP_CCALL( SCIPreleaseCons(getSCIP(), &cons) );
 
@@ -308,7 +373,8 @@ void ScipModelAPI::AddConstraint(const SOS2Constraint& sos) {
   }
 
   SCIP_CONS* cons = NULL;
-  SCIP_CCALL( SCIPcreateConsBasicSOS2(getSCIP(), &cons, sos.GetName(), sos.size(), vars, weights) );
+  SCIP_CCALL( SCIPcreateConsBasicSOS2(getSCIP(), &cons, sos.GetName(),
+                                     sos.size(), vars, weights) );
   SCIP_CCALL( SCIPaddCons(getSCIP(), cons) );
   SCIP_CCALL( SCIPreleaseCons(getSCIP(), &cons) );
 
@@ -316,6 +382,9 @@ void ScipModelAPI::AddConstraint(const SOS2Constraint& sos) {
   SCIPfreeBufferArray(getSCIP(), &weights);
 }
 
+SCIP_EXPR* ScipModelAPI::AddExpression(const ExpExpression &ee) {
+  return {};
+}
 
 void ScipModelAPI::AddConstraint(const ExpConstraint &cc)  {
   SCIP_VAR* x = getPROBDATA()->vars[cc.GetArguments()[0]];

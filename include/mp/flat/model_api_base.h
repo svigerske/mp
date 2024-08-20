@@ -123,6 +123,7 @@ enum ConstraintGroup {
   CG_Quadratic,
 	CG_Conic,
   CG_General,
+  CG_Nonlinear,
   CG_Piecewiselinear,
   CG_SOS,
   CG_SOS1,

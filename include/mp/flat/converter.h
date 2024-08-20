@@ -311,7 +311,7 @@ protected:
   int AcceptanceLevelCommon() const { return options_.accAll_; }
 
   /// Option to actually use expressions if available
-  bool IfWantNLOutput() const { return options_.accExpr_; }
+  bool IfWantNLOutput() const { return options_.accExpr_==1; }
 
   /// Whether solver CAN accept expressions
   static constexpr bool IfAcceptingNLOutput()

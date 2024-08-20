@@ -261,6 +261,10 @@ public:
     return !VarHasMarking(v) || var_result_[v];
   }
 
+  /// Get var proper flags
+  const std::vector<bool>& GetVarProperFlags() const
+  { return var_result_; }
+
   /// Mark var as eliminated.
   void MarkVarAsEliminated(int v) {
     AutoExpand(var_elim_, v) = true;

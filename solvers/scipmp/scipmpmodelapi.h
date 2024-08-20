@@ -9,11 +9,11 @@ namespace mp {
 
 class ScipModelAPI :
                      public ScipCommon, public EnvKeeper,
-                     public BasicExprModelAPI<SCIP_EXPR*>
+                     public BasicExprModelAPI<ScipModelAPI, SCIP_EXPR*>
 {
-  using BaseModelAPI = BasicExprModelAPI<SCIP_EXPR*>;
+  using BaseModelAPI = BasicExprModelAPI<ScipModelAPI, SCIP_EXPR*>;
 
-private:
+protected:
   void linearHelper(const int* pvars, const double* pcoefs, const size_t size, const char* name, const double lb, const double ub);
   void helpIndicatorLin(const int* pvars, const double* pcoefs, const size_t size, const char* name, const double rhs, const int binary_var, const int binary_value, SCIP_Bool lessthanineq);
   void helpQuad(const char* name, const int* lt_pvars, const double* lt_pcoefs, const size_t lt_size, const int* qt_pvars1, const int* qt_pvars2, const double* qt_pcoefs, const size_t qt_size, const double lb, const double ub);
@@ -46,29 +46,50 @@ public:
   USE_BASE_CONSTRAINT_HANDLERS(BaseModelAPI)
 
   //////////////////////////// EXPRESSION TREES ////////////////////////////
-  ///
+  USE_BASE_EXPRESSION_HANDLERS(BaseModelAPI)
+  /// 'NotAccepted' or
   /// 'AcceptedButNotRecommended' would outline each expression
-  /// with an auxiliary variable.
-  /// See also per-expression type switches.
+  /// with an auxiliary variable,
+  /// but the latter option would enable option acc:_expr,
+  /// which when set to 1 switches on the expression trees.
+  /// When expressions are off, only flat constraints are used,
+  /// e.g., ExpConstraint(a, b), meaning a = exp(b), with a, b variables.
+  ///
+  /// See also per-expression and per-constraint type switches
+  /// (ACCEPT_EXPRESSION and ACCEPT_CONSTRAINT.)
+  /// When both are enabled for certain function
+  /// (e.g., ExpExpression and ExpConstraint),
+  /// option acc:exp allows switching between them.
+  ///
+  /// Expression trees are submitted to the solver via
+  /// the high-level constraints NLConstraint, NLComplementarity,
+  /// NLLogical, NLEquivalence, NLImpl, NLRimpl, and NLObjective.
   ACCEPT_EXPRESSION_INTERFACE(AcceptedButNotRecommended);
 
-  /// For each suppoted constraint type, add the ACCEPT_CONSTRAINT macro
-  /// and the relative AddConstraint function.
+  /// Once expressions are supported, need the following
+  /// helper methods.
+  ///
+  /// GetVarExpression(i): expression representing variable 0<=i<n_var.
+  /// Only called for 'nonlinear' variables.
+  SCIP_EXPR* GetVarExpression(int i);
+
+  /// GetZeroExpr(): constant 0.0 expression.
+  /// Can be used to represent empty expression in an NLConstraint.
+  SCIP_EXPR* GetZeroExpression();
+
+  /// For each supported top-level constraint type,
+  /// add the ACCEPT_CONSTRAINT macro
+  /// and the corresponding AddConstraint function.
   /// Below some typical constraint handlers of a MIP solver.
   /// Further constraint types which could be handled natively by some solvers:
   /// - IndicatorConstraint(Lin/Quad)(LE/EQ/GE)
   /// - Multidirectional indicators Cond(Lin/Quad)Con(LT/LE/EQ/GE/GT), where
-  ///   the implication direction (</==/>) depends in the context
+  ///   the implication direction (</==/>) depends on the context
   /// - Complementarity
   /// - Logical, counting, piecewise-linear constraints.
-  /// See \a constr_std.h and other drivers.
+  /// See \a constr_std.h.
 
-  /// For each expression,
-  /// say ACCEPT_EXPRESSION(Recommended)
-  /// or ACCEPT_EXPRESSION(AcceptedButNotRecommended).
-  /// This can be user-configured via options 'acc:exp' etc.
-  ACCEPT_EXPRESSION(ExpExpression, Recommended)
-  SCIP_EXPR* AddExpression(const ExpExpression& );
+  /// Below are high-level flat algebraic constraints.
 
   /// The linear range constraint, if fully supported with basis info etc.
   ACCEPT_CONSTRAINT(LinConRange, Recommended, CG_Linear)
@@ -101,6 +122,67 @@ public:
   ACCEPT_CONSTRAINT(QuadConGE, Recommended, CG_Quadratic)
   void AddConstraint(const QuadConGE& qc);
 
+  /// With expression trees, top-level nonlinear algebraic constraints
+  /// are submitted to the solver via NLConstraint.
+  /// It is still recommended that pure-linear
+  /// and pure-quadratic constraints are accepted, then they are
+  /// used to submit the corresponding constraint types.
+  ///
+  /// The implementation can have special treatment
+  /// for the case when the linear part has just 1 variable.
+  /// This might be so-called variable explicifier var = expr
+  /// (or var <= expr, var >= expr.)
+  ///
+  /// To access information from an NLConstraint,
+  /// use the following accessors (don't use methods of NLConstraint itself):
+  /// - GetLinSize(nlc), GetLinCoef(nlc, i), GetLinVar(nlc, i),
+  ///   GetExpression(nlc), GetLower(nlc), GetUpper(nlc).
+  ACCEPT_CONSTRAINT(NLConstraint, Recommended, CG_Nonlinear)
+  void AddConstraint(const NLConstraint& nlc);
+
+  /// NL logical constraint: expression = true.
+  /// Use GetExpression(nll) to access the expression.
+  /// Constraint group: CG_Nonlinear for SCIP,
+  /// because using SCIPcreateConsBasicNonlinear().
+  ACCEPT_CONSTRAINT(NLLogical, Recommended, CG_Nonlinear)
+  void AddConstraint(const NLLogical& nll);
+
+  /// NL equivalence: expression <==> var.
+  /// This is an 'expression explicifier'.
+  /// Accessors: GetExpression(nle), GetVariable(nle).
+  ACCEPT_CONSTRAINT(NLEquivalence, Recommended, CG_Nonlinear)
+  void AddConstraint(const NLEquivalence& nle);
+  /// NL implication: var==1 ==> expression.
+  /// This is an 'expression explicifier'.
+  /// Accessors: GetExpression(nle), GetVariable(nle).
+  ACCEPT_CONSTRAINT(NLImpl, Recommended, CG_Nonlinear)
+  void AddConstraint(const NLImpl& nle);
+  /// NL reverse implication: expression ==> var==1.
+  /// This is an 'expression explicifier'.
+  /// Accessors: GetExpression(nle), GetVariable(nle).
+  ACCEPT_CONSTRAINT(NLRimpl, Recommended, CG_Nonlinear)
+  void AddConstraint(const NLRimpl& nle);
+
+  /// Moreover, once algebraic expressions are accepted
+  /// via NLConstraint, subexpressions might be submitted via
+  /// LinExpression and QuadExpression.
+
+  /// LinExpression.
+  /// Use accessors, not methods;
+  /// - GetLinSize(le), GetLinCoef(le, i), GetLinTerm(le, i);
+  ///   GetConstTerm(le).
+  ACCEPT_EXPRESSION(LinExpression, Recommended);
+  SCIP_EXPR* AddExpression(const LinExpression& le);
+
+  /// QuadExpression.
+  /// Use accessors, not methods;
+  /// - GetLinSize(le), GetLinCoef(le, i), GetLinTerm(le, i);
+  ///   GetQuadSize(le), GetQuadCoef(le, i),
+  ///   GetQuadTerm1(le, i), GetQuadTerm2(le, i);
+  ///   GetConstTerm(le).
+  ACCEPT_EXPRESSION(QuadExpression, Recommended);
+  SCIP_EXPR* AddExpression(const QuadExpression& le);
+
   /// Linear indicator constraints can be used as
   /// auxiliary constraints for logical conditions.
   /// If not handled, the compared expressions need
@@ -131,7 +213,22 @@ public:
   ACCEPT_CONSTRAINT(SOS2Constraint, AcceptedButNotRecommended, CG_SOS)
   void AddConstraint(const SOS2Constraint& cc);
 
-  /// SCIP nonlinear generals
+  /// SCIP nonlinear generals.
+
+  /// Each expression can be accpeted as a proper expression,
+  /// or a flat constraint var == expr (with var arguments).
+
+  /// For each expression,
+  /// say ACCEPT_EXPRESSION(Recommended)
+  /// and/or ACCEPT_EXPRESSION(AcceptedButNotRecommended).
+  /// This can be user-configured via options 'acc:exp' etc.
+  ACCEPT_EXPRESSION(ExpExpression, Recommended)
+  SCIP_EXPR* AddExpression(const ExpExpression& );
+
+  /// For each flat constraint type,
+  /// say ACCEPT_CONSTRAINT(Recommended)
+  /// and/or ACCEPT_CONSTRAINT(AcceptedButNotRecommended).
+  /// This can be user-configured via options 'acc:exp' etc.
   ACCEPT_CONSTRAINT(ExpConstraint, Recommended, CG_General)
   void AddConstraint(const ExpConstraint& cc);
   ACCEPT_CONSTRAINT(LogConstraint, Recommended, CG_General)

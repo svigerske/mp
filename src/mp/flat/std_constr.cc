@@ -135,15 +135,15 @@ void BasicConstraintKeeper::DoAddAcceptanceOptions(
   auto eial = GetModelAPIAcceptance_EXPR_INTF(ma);
   const bool conacc = (ConstraintAcceptanceLevel::NotAccepted != cal);
   const bool expracc = (ExpressionAcceptanceLevel::NotAccepted != eal);
+  const bool expr_intf_acc = (ExpressionAcceptanceLevel::NotAccepted != eial);
+  acc_level_item_ = 0;
   if (conacc)
     acc_level_item_
         = std::underlying_type_t<ConstraintAcceptanceLevel>(cal);
-  // we prefer expressions, if ModelAPI recommends expression interface
-  if (expracc
-      && (!conacc || ExpressionAcceptanceLevel::Recommended == eial))
-    acc_level_item_
-        = std::underlying_type_t<ConstraintAcceptanceLevel>(cal)
-        + 2;
+  // we prefer expressions, if ModelAPI accepts expression interface
+  if (expracc && expr_intf_acc)
+    acc_level_item_      // Won't be taken however, if acc:_expr==0
+        = std::underlying_type_t<ExpressionAcceptanceLevel>(eal) + 2;
   if (conacc && expracc) {
     env.AddStoredOption(GetAcceptanceOptionNames(),
                         fmt::format(

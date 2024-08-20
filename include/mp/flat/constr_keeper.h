@@ -141,6 +141,10 @@ public:
     DoCvtWithExprs();
   }
 
+  /// acc:_expr==1 ?
+  bool IfWantNLOutput() const override
+  { return GetConverter().IfWantNLOutput(); }
+
   /// Converter's ability to convert the constraint type
   bool IfConverterConverts(
       BasicFlatConverter& cvt ) const override {
@@ -206,6 +210,19 @@ public:
     }
   }
 
+  /// Store the solver's native expression for constraint \a i.
+  /// Have to abandon type safety - an alternative would be to
+  /// parameterize BasicConstraintKeeper by ConverterType
+  /// and ModelAPI incl. ExprType.
+  void StoreSolverExpression(
+      BasicFlatModelAPI& be, int i, void* pexpr) override {
+    if constexpr (ExpressionAcceptanceLevel::NotAccepted
+        != Backend::ExpressionInterfaceAcceptanceLevel()) {
+      *(typename Backend::Expr*)pexpr =
+          static_cast<Backend&>(be).AddExpression(cons_[i].GetExpr());
+    }
+  }
+
   /// Log constraint group
   void LogConstraintGroup(
       BasicFlatModelAPI& be) override {
@@ -261,6 +278,11 @@ protected:
     const Constraint& GetCon() const { return con_.GetFlatConstraint(); }
     /// Get the flat constraint &
     Constraint& GetCon() { return con_.GetFlatConstraint(); }
+
+    /// Get the expression, const &
+    const FlatExprType& GetExpr() const { return con_; }
+    /// Get the expression &
+    FlatExprType& GetExpr() { return con_; }
 
   private:
     // Storing in the ExprWrapper,

@@ -92,6 +92,11 @@ inline void WriteModelItem(Writer& wrt,
 }
 
 
+/// NLComplementarity
+/// TODO extra class, to enable ACCEPT_CONSTRAINT
+using NLComplementarity = ComplementarityConstraint<AffineExpr>;
+
+
 /// NL logical constraint: expr(resvar) == true
 class NLLogical
     : public BasicConstraint, public LogicalFunctionalConstraintTraits {

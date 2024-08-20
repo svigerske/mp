@@ -61,6 +61,9 @@ public:
   /// Convert to use expressions
   virtual void ConvertAllWithExpressions(BasicFlatConverter& cvt) = 0;
 
+  /// acc:_expr==1 ?
+  virtual bool IfWantNLOutput() const = 0;
+
   /// Query (user-chosen) acceptance level.
   /// This is "combined" for constraint or expression
   ConstraintAcceptanceLevel GetChosenAcceptanceLevel() const {
@@ -70,6 +73,8 @@ public:
         al = acc_level_item_;
       std::array<int, 5> alv = {0, 1, 2, 1, 2};
       acceptance_level_ = alv.at(al);
+      if (al>2 && !IfWantNLOutput())  // expression accepted but NL format not chosen
+        acceptance_level_ = 0;
     }
     return ConstraintAcceptanceLevel(acceptance_level_);
   }
@@ -121,6 +126,13 @@ public:
   /// This adds all unbridged items to the backend (without conversion)
   virtual void AddUnbridgedToBackend(
       BasicFlatModelAPI& be, const std::vector<std::string>* vnames) = 0;
+
+  /// Store the solver's native expression for constraint \a i.
+  /// Have to abandon type safety - an alternative would be to
+  /// parameterize BasicConstraintKeeper by ConverterType
+  /// and ModelAPI incl. ExprType.
+  virtual void StoreSolverExpression(
+      BasicFlatModelAPI& be, int i, void* pexpr) = 0;
 
   /// This logs the constraint group
   virtual void LogConstraintGroup(BasicFlatModelAPI& be) = 0;
@@ -242,6 +254,11 @@ struct ConstraintLocationHelper {
   /// High-level getter
   typename ConstraintKeeper::ConstraintType&
   GetConstraint() { return GetCK()->GetConstraint(GetIndex()); }
+
+  /// Store native expression for result index \a i.
+  void StoreSolverExpression(
+      BasicFlatModelAPI& be, int i, void* pexpr) const
+  { GetCK()->StoreSolverExpression(be, i, pexpr); }
 
   /// Get Keeper
   ConstraintKeeper* GetCK() const { assert(HasId()); return pck_; }

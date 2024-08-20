@@ -64,6 +64,8 @@ public:
   ExprWrapper(Con c) : con_flat_(std::move(c)) { }
   /// Constraint type
   using FlatConType = Con;
+  /// Type name
+  const char* GetTypeName() const { return con_flat_.GetTypeName(); }
   /// Get const & (con)
   const Con& GetFlatConstraint() const { return con_flat_; }
   /// Get & (con)
