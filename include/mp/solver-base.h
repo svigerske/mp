@@ -457,7 +457,8 @@ public:
   /// false otherwise. It accepts a pointer to the problem because some
   /// options may depend on problem features.
   virtual bool ParseOptions(
-      char **argv, unsigned flags = 0, const ASLProblem *p = 0);
+      char **argv, unsigned flags = 0, const ASLProblem *p = 0,
+    char* additional_options=0);
 
   /// Solver flags
   enum {

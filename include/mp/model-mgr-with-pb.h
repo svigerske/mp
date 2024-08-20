@@ -80,7 +80,7 @@ protected:
   void ReadNLModel(const std::string& nl_filename,
                    const std::string& filename_no_ext,
                    Checker_AMPLS_ModeltTraits cb_checkmodel,
-                   std::function<void()> after_header)
+                   std::function<void(char*)> after_header)
   override {
     std::chrono::steady_clock::time_point start = std::chrono::steady_clock::now();
 
@@ -88,7 +88,7 @@ protected:
                [this, &filename_no_ext, after_header](){
       MakeProperSolutionHandler(filename_no_ext);
       if (after_header)
-        after_header();                   // parse options
+        after_header(nullptr);                   // parse options
     });
     ReadNames(filename_no_ext);
 
@@ -97,6 +97,19 @@ protected:
     {
         GetEnv().SetReadTime(read_time);
         GetEnv().Print("NL model read time = {:.6f}s\n", read_time);
+    }
+
+    if (cb_checkmodel) {
+      AMPLS_ModelTraits mtraits;
+      mtraits.n_alg_con = 0;
+      mtraits.n_conic_con = 0;
+      mtraits.n_log_con= 0;
+      mtraits.n_quad_con= 0;
+      mtraits.n_vars = 0;
+      mtraits.additional_options = 0;
+      cb_checkmodel(&mtraits);
+      if (mtraits.additional_options && after_header)
+        after_header(*mtraits.additional_options);
     }
 
     ConvertModelAndUpdateBackend();

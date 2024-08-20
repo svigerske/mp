@@ -32,7 +32,7 @@ public:
   virtual void ReadNLModel(const std::string& nl_filename,
                            const std::string& filename_no_ext,
                            Checker_AMPLS_ModeltTraits ,
-                           std::function<void()> after_header) = 0;
+                            std::function<void(char*)> after_header) = 0;
 
   /// User-provided primal solution
   virtual ArrayRef<double> InitialValues() = 0;

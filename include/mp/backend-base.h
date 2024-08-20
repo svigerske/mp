@@ -34,10 +34,11 @@ public:
   /// @param argv: (remaining part of) vector of cmdline strings
   /// @param flags: 0 or \a Solver::NO_OPTION_ECHO
   virtual
-  bool ParseSolverOptions(char **argv, unsigned flags = 0) {
+  bool ParseSolverOptions(char **argv, unsigned flags = 0,
+    ASLProblem* p=0, char* additional_options=0) {
     /// Chance e.g. for the Backend to init solver environment, etc
     InitOptionParsing();
-    if (ParseOptions(argv, flags)) {
+    if (ParseOptions(argv, flags, p, additional_options)) {
       /// Chance to consider options immediately (open cloud, etc)
       FinishOptionParsing();
       return true;

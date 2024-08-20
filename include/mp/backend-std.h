@@ -231,9 +231,9 @@ public:
               const std::string& filename_no_ext,
               char** opts) override {
     GetMM().ReadNLModel(nl_filename, filename_no_ext,
-                        GetCallbacks().check,
-                        [this, opts](){        // options parser lambda
-      this->ParseSolverOptions(opts, GetOptionFlags());
+      GetCallbacks().check,
+      [this, opts](char* additional) {        // options parser lambda
+        this->ParseSolverOptions(opts, GetOptionFlags(), nullptr, additional);
     });
   }
 

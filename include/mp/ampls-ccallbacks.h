@@ -13,10 +13,11 @@ typedef struct AMPLS_ModelTraits_T {
 	n_log_con,
 	n_quad_con,
 	n_conic_con;
+  char** additional_options;
 } AMPLS_ModelTraits;
 
 
-typedef void (*Checker_AMPLS_ModeltTraits)(const AMPLS_ModelTraits*);
+typedef void (*Checker_AMPLS_ModeltTraits)(AMPLS_ModelTraits*);
 
 
 /// Set of callbacks provided to a driver for licensing issues
@@ -31,6 +32,7 @@ typedef struct CCallbacks_T {
   const char* (*additionalText)();
   /// Function called after failures to provide additional diagnostics
   void (*diagnostics)();
+
 } CCallbacks;
 
 #ifdef __cplusplus
