@@ -188,6 +188,10 @@ protected:
   void WindupCPLEXSolve();
 
   void ReportResults() override;
+
+
+  const SuffixDef<double> sufBestNodeObj = { "bestnode", suf::OBJ | suf::OUTONLY };
+  const SuffixDef<double> sufBestNodeProb = { "bestbound", suf::PROBLEM | suf::OUTPUT };
   void ReportCPLEXResults();
 
   /// Solution attributes
@@ -232,7 +236,9 @@ private:
     std::string logFile_;
     std::string cpuMask_;
     std::string endBasis_;
+    std::string mipStart_;
     int outlev_ = 0;;
+    int noSolve_ = 0;
     int nPoolMode_=2;
     int populate_ = -1;
     int poolIntensity_ = -1;
@@ -241,7 +247,8 @@ private:
     int cpxMethod_ = -1; // to store actual method
     int crossover_ = 0;
     int solutionType_ = 0;
-
+    int bestnode_ = 0;
+    int dropTol_ = 0;
 
     int fBarrier_ = 0;
     int fPrimal_ = 0;

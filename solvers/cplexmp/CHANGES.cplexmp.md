@@ -11,8 +11,9 @@ Summary of recent updates to CPLEX MP for AMPL
      see `alg:method` in the `-=` output
    - Former option `timing` is now implemented through the corresponding
      MP feature. To print the number of available cores use
-   - `tech:numcores`.
-
+     `tech:numcores`.
+   - Use MP feature `tech:writemodelonly` instead of `writeprob` + `nosolve`.
+     Note that `nosolve` still applies when specifying `writemipstart`
 
 ## 20240801
 - Fix a problem that occured when reporting IIS
