@@ -263,9 +263,9 @@ public:
   ACCEPT_CONSTRAINT(SinConstraint, Recommended, CG_General)
   void AddConstraint(const SinConstraint& cc);
 
-  ACCEPT_EXPRESSION(CosExpression, Recommended)
+  ACCEPT_EXPRESSION(CosExpression, AcceptedButNotRecommended)  //pretty slow in SCIP 8/9
   SCIP_EXPR* AddExpression(const CosExpression& );
-  ACCEPT_CONSTRAINT(CosConstraint, Recommended, CG_General) //pretty slow in SCIP 8
+  ACCEPT_CONSTRAINT(CosConstraint, AcceptedButNotRecommended, CG_General)
   void AddConstraint(const CosConstraint& cc);
 
   // TODO Div; PowVarExponent;

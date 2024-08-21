@@ -154,17 +154,21 @@ public:
 
   /// Acceptance level of this constraint type in the ModelAPI
   ConstraintAcceptanceLevel GetModelAPIAcceptance(
-      const BasicFlatModelAPI& ba) const override {
+      const BasicFlatModelAPI&  = *(BasicFlatModelAPI*)nullptr)
+      const override {
     return
-        static_cast<const Backend&>( ba ).
+        // static_cast<const Backend&>( ba ).
+        Backend::
         AcceptanceLevel((Constraint*)nullptr);
   }
 
   /// Acceptance level of the corresponding expression type in the ModelAPI
   ExpressionAcceptanceLevel GetModelAPIAcceptanceEXPR(
-      const BasicFlatModelAPI& ba) const override {
+      const BasicFlatModelAPI&  = *(BasicFlatModelAPI*)nullptr)
+      const override {
     return
-        static_cast<const Backend&>( ba ).
+        // static_cast<const Backend&>( ba ).
+        Backend::
         AcceptanceLevel((FlatExprType*)nullptr);
   }
 
@@ -202,14 +206,15 @@ public:
       const std::vector<std::string>* pvnam) override {
     if (ExpressionAcceptanceLevel::NotAccepted
         == GetChosenAcceptanceLevelEXPR()
-        || !GetConverter().IfWantNLOutput())
-    try {
-      AddAllUnbridged(be, pvnam);
-    } catch (const std::exception& exc) {
-      MP_RAISE(std::string("Adding constraint of type '") +
-                             Constraint::GetTypeName() + "' to " +
-                             Backend::GetTypeName() + std::string(": ") +
-                             exc.what());
+        || !GetConverter().IfWantNLOutput()) {
+      try {
+        AddAllUnbridged(be, pvnam);
+      } catch (const std::exception& exc) {
+        MP_RAISE(std::string("Adding constraint of type '") +
+                 Constraint::GetTypeName() + "' to " +
+                 Backend::GetTypeName() + std::string(": ") +
+                 exc.what());
+      }
     }
   }
 
@@ -301,7 +306,12 @@ protected:
     int i=i_last;
     const auto acceptanceLevel =
         GetChosenAcceptanceLevel();
-    if (ConstraintAcceptanceLevel::NotAccepted == acceptanceLevel) {
+    if (ConstraintAcceptanceLevel::NotAccepted == acceptanceLevel
+        || (ConstraintAcceptanceLevel::NotAccepted == GetModelAPIAcceptance()
+            && (!GetConverter().IfWantNLOutput()
+                || ExpressionAcceptanceLevel::NotAccepted
+                       == GetChosenAcceptanceLevelEXPR())
+            && 2 != AccLevelCommon())) {                 // Not when acc:_all=2
       if (!IfConverterConverts(GetConverter())) {
         i = (int)cons_.size();
       } else {

@@ -73,8 +73,6 @@ public:
         al = acc_level_item_;
       std::array<int, 5> alv = {0, 1, 2, 1, 2};
       acceptance_level_ = alv.at(al);
-      if (al>2 && !IfWantNLOutput())  // expression accepted but NL format not chosen
-        acceptance_level_ = 0;
     }
     return ConstraintAcceptanceLevel(acceptance_level_);
   }
