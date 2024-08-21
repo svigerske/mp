@@ -897,7 +897,13 @@ public:
     ie.GetCK()->SetContext(ie.GetIndex(), ctx);
   }
 
-	/// Get the init expression pointer.
+  /// Add func expr context
+  void AddInitExprContext(int var, Context ctx) {
+    auto ie = GetInitExpression(var);
+    ie.GetCK()->AddContext(ie.GetIndex(), ctx);
+  }
+
+  /// Get the init expression pointer.
 	/// @return nullptr if no init expr or not this type
 	template <class ConType>
 	const ConType* GetInitExpressionOfType(int var) {

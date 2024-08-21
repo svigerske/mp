@@ -66,6 +66,10 @@ public:
   /// NLLogical, NLEquivalence, NLImpl, NLRimpl, and NLObjective.
   ACCEPT_EXPRESSION_INTERFACE(AcceptedButNotRecommended);
 
+  /// Whether accepts NLObjective.
+  /// No, as of SCIP 9.1.
+  static int AcceptsNLObj() { return 0; }
+
   /// Once expressions are supported, need the following
   /// helper methods.
   ///

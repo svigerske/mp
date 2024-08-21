@@ -100,7 +100,7 @@ public:
                             ? nlc.ExprIndex() : -1;
     if (i_expr<0)
       return MPD( GetZeroExpression() );
-    return GetInitExpression(i_expr);
+    return GetPureInitExpression(i_expr);
   }
 
   /// Get NLConstraint's lower bound
@@ -123,7 +123,7 @@ public:
   template <int sense>
   ExprType GetExpression(const NLReification<sense>& nll) {
     assert( nll.GetResultVar()>=0 );
-    return GetInitExpression(nll.GetResultVar());
+    return GetPureInitExpression(nll.GetResultVar());
   }
 
   /// Get the variable of an \a NLReification.
@@ -185,9 +185,9 @@ public:
 
   ////////////////////// INTERNAL ////////////////////////
 
-  /// Get InitExpression().
-  /// Solver expression for the given implicit variable,
-  /// or for the given independent variable.
+private:
+  /// Get Expr for a variable, if proper/explicit,
+  /// or for the InitExpression().
   Expr GetInitExpression(int i_expr) {
     assert(i_expr < is_expr_stored_.size());
     assert(i_expr < expr_stored_.size());
@@ -202,11 +202,37 @@ public:
     return expr_stored_[i_expr];  // ...............
   }
 
+  /// Get Expr for the InitExpression().
+  /// Solver expression for the given variable's init expression.
+  /// This is called for NLConstraint
+  /// and for NLReification. For them, during result explicification,
+  /// the result is marked as variable,
+  /// but we still need the expression.
+  /// We have to trust that the init expression is accepted.
+  /// @note GetInitExpression(\a i_expr) might still return
+  ///   the Expr for the result variable \a i_expr.
+  Expr GetPureInitExpression(int i_expr) {
+    assert(i_expr < is_expr_stored_.size());
+    assert(i_expr < expr_stored_.size());
+    assert(i_expr < is_init_expr_retrieved_.size());
+    assert(!is_init_expr_retrieved_[i_expr]);             // not twice explicified
+    if (IsVarProper(i_expr)) {
+      is_init_expr_retrieved_[i_expr] = true;             // is being explicified
+      Expr result;
+      get_init_expr_(i_expr, &result);
+      return result;
+    }
+    return GetInitExpression(i_expr);                     // standard case
+  }
+
+
+public:
   /// Pass vector of var proper flags
   void PassVarProperFlags(std::vector<bool> isvp) {
     is_var_proper_ = std::move(isvp);
     is_expr_stored_.resize(is_var_proper_.size());    // allocate
     expr_stored_.resize(is_var_proper_.size());
+    is_init_expr_retrieved_.resize(is_var_proper_.size());
   }
 
   /// Is var proper?
@@ -225,8 +251,9 @@ public:
 
 private:
   std::vector<bool> is_var_proper_;
-  std::vector<bool> is_expr_stored_;
+  std::vector<bool> is_expr_stored_;    // actual Expr's of the result var or the init expressions
   std::vector<ExprType> expr_stored_;
+  std::vector<bool> is_init_expr_retrieved_;
   InitExprGetterType get_init_expr_;
 };
 

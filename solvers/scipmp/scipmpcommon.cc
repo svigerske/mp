@@ -11,23 +11,25 @@ SCIP_DECL_PROBDELORIG(probdataDelOrigNl)
 
   for( i = 0; i < (*probdata)->nlinconss; ++i )
   {
-    SCIP_CALL( SCIPreleaseCons(scip, &(*probdata)->linconss[i]) );
+    SCIP_CCALL( SCIPreleaseCons(scip, &(*probdata)->linconss[i]) );
   }
 
   for (auto& pnlc: (*probdata)->nlconss)
-    SCIP_CALL( SCIPreleaseCons(scip, &pnlc) );
+    SCIP_CCALL( SCIPreleaseCons(scip, &pnlc) );
 
   for( i = 0; i < (*probdata)->nvars; ++i )
   {
-    SCIP_CCALL( SCIPreleaseVar(scip, &(*probdata)->vars[i]) );
     if ((*probdata)->var_exprs[i])
-      SCIP_CALL( SCIPreleaseExpr(scip, &(*probdata)->var_exprs[i]) );
+      SCIP_CCALL( SCIPreleaseExpr(scip, &(*probdata)->var_exprs[i]) );
+    SCIP_CCALL( SCIPreleaseVar(scip, &(*probdata)->vars[i]) );
   }
 
   if ((*probdata)->dummyexpr)
-    SCIP_CALL( SCIPreleaseExpr(scip, &(*probdata)->dummyexpr) );
+    SCIP_CCALL( SCIPreleaseExpr(scip, &(*probdata)->dummyexpr) );
 
   SCIPfreeBlockMemoryArray(scip, &(*probdata)->vars, (*probdata)->nvars);
+
+  SCIPsetMessagehdlrQuiet(scip, true);    // Spurious warnings and failure in Debug build
 
   SCIPfreeMemory(scip, probdata);
 

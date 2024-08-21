@@ -231,9 +231,9 @@ public:
         MPCD( GetVarProperFlags() ));
     MPD( GetModelAPI() ).PassInitExprGetter(
         [this](int i_res_var, void* pexpr) {
-      assert( !MPCD( IsProperVar(i_res_var) ) );      // is an expression
-      MPD( GetInitExpression(i_res_var) ).StoreSolverExpression(
-          MPD(GetModelAPI()), i_res_var, pexpr);
+      auto cloc = MPD( GetInitExpression(i_res_var) );
+      cloc.StoreSolverExpression(
+          MPD(GetModelAPI()), pexpr);
     });
   }
 
@@ -298,23 +298,23 @@ protected:
     int exprResVar = -1;
     if (exprTerm.GetArguments().is_variable()) {
       exprResVar = exprTerm.GetArguments().get_representing_variable();
-      assert( !MPCD( IsProperVar(exprResVar) ) );     // is an expr
+      // assert( !MPCD( IsProperVar(exprResVar) ) );     // is an expr
     } else {
       assert( !exprTerm.GetArguments().empty() );     // has more terms, or coef != 1.0
-      exprTerm.SetContext(                            // Context is compulsory
+      exprTerm.AddContext(                            // Context is compulsory
           rng.lb() > MPCD( PracticallyMinusInf() )    // Should not need to propagate
           ? (rng.ub() < MPCD( PracticallyInf() )
                 ? Context::CTX_MIX : Context::CTX_POS)
               : Context::CTX_NEG);
       exprResVar = MPD( AssignResultVar2Args(std::move(exprTerm)) );
-      if (!MPCD(VarHasMarking(exprResVar)))           // mark as expr if new
-        MPD( MarkAsExpression(exprResVar) );
-      /// Exists and marked a variable
-      else if (MPCD( IsProperVar(exprResVar) )) {     // Not an expression after all
-        lt.add_term(1.0, exprResVar);
-        exprResVar = -1;                              // no expression
-        lt.sort_terms();
-      }
+    }
+    if (!MPCD(VarHasMarking(exprResVar)))           // mark as expr if new
+      MPD( MarkAsExpression(exprResVar) );
+    /// Exists and marked a variable
+    else if (MPCD( IsProperVar(exprResVar) )) {     // Not an expression after all
+      lt.add_term(1.0, exprResVar);
+      exprResVar = -1;                              // no expression
+      lt.sort_terms();
     }  // else, stays as -1
     NLConstraint nlc{lt, exprResVar, rng, false};     // no sorting
     MPD( AddConstraint( std::move(nlc) ) );
@@ -330,7 +330,7 @@ protected:
       int exprResVar = -1;
       if (lt_in_expr.is_variable() && qobj.GetQPTerms().empty()) {
         exprResVar = lt_in_expr.get_representing_variable();
-        assert( !MPCD( IsProperVar(exprResVar) ) );     // is an expr
+        // assert( !MPCD( IsProperVar(exprResVar) ) );     // is an expr
       } else {                      // We need a new expression
         // Set up AutoLink
         auto obj_src =              // source value node for this obj
@@ -343,18 +343,18 @@ protected:
           exprResVar = MPD( AssignResultVar2Args(
               QuadraticFunctionalConstraint
               { {{lt_in_expr, std::move(qobj.GetQPTerms())}, 1.0} } ) );
-        MPD( SetInitExprContext(exprResVar,             // Context is compulsory
+        MPD( AddInitExprContext(exprResVar,             // Context is compulsory
                                obj::MAX==qobj.obj_sense_true()    // no need to propagate
                                    ? Context::CTX_POS : Context::CTX_NEG) );
-        if ( !MPCD(VarHasMarking(exprResVar) ))         // mark as expr if new
-          MPD( MarkAsExpression(exprResVar) );
-        if ( !MPCD( GetModelAPI() ).AcceptsNLObj() )    // But as var if NLObj not accepted
-          MPD( MarkAsResultVar(exprResVar) );
-        if ( MPCD( IsProperVar(exprResVar) ) ) {        // Not an expression after all
-          lt_varsonly.add_term(1.0, exprResVar);
-          exprResVar = -1;                              // no expression
-          lt_varsonly.sort_terms();
-        }
+      }
+      if ( !MPCD(VarHasMarking(exprResVar) ))         // mark as expr if new
+        MPD( MarkAsExpression(exprResVar) );
+      if ( !MPCD( GetModelAPI() ).AcceptsNLObj() )    // But as var if NLObj not accepted
+        MPD( MarkAsResultVar(exprResVar) );
+      if ( MPCD( IsProperVar(exprResVar) ) ) {        // Not an expression after all
+        lt_varsonly.add_term(1.0, exprResVar);
+        exprResVar = -1;                              // no expression
+        lt_varsonly.sort_terms();
       }
       qobj.GetLinTerms() = lt_varsonly;
       if (exprResVar>=0)
@@ -391,7 +391,7 @@ protected:
 
   /// Split linterms into pure-var and expressions
   /// @return the expressions part
-  LinTerms SplitLinTerms(const LinTerms& ltin, LinTerms lt_out_vars) {
+  LinTerms SplitLinTerms(const LinTerms& ltin, LinTerms& lt_out_vars) {
     LinTerms result;
     int nvars=0;
     for (int v: ltin.vars())
@@ -481,7 +481,8 @@ protected:
     auto alscope = MPD( MakeAutoLinker( con, i ) );       // link from \a con
     auto resvar = con.GetResultVar();
     if (MPCD( is_fixed(resvar) )                          // "root" context
-        && MPCD( fixed_value(resvar) )) {                 // static logical constraint
+        && MPCD( fixed_value(resvar) )
+        && con.GetContext().HasPositive()) {              // static logical constraint
       MPD( AddConstraint(NLLogical(resvar)) );
     }
     else {                                                // A (half-)reified function constraint

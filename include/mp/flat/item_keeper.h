@@ -35,6 +35,9 @@ public:
   /// Get context of contraint \a i
   virtual Context GetContext(int i) const = 0;
 
+  /// Add context of contraint \a i
+  virtual void AddContext(int i, Context ctx) = 0;
+
   /// Set context of contraint \a i
   virtual void SetContext(int i, Context ctx) = 0;
 
@@ -255,8 +258,8 @@ struct ConstraintLocationHelper {
 
   /// Store native expression for result index \a i.
   void StoreSolverExpression(
-      BasicFlatModelAPI& be, int i, void* pexpr) const
-  { GetCK()->StoreSolverExpression(be, i, pexpr); }
+      BasicFlatModelAPI& be, void* pexpr) const
+  { GetCK()->StoreSolverExpression(be, GetIndex(), pexpr); }
 
   /// Get Keeper
   ConstraintKeeper* GetCK() const { assert(HasId()); return pck_; }
