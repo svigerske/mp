@@ -66,6 +66,10 @@ public:
   /// NLLogical, NLEquivalence, NLImpl, NLRimpl, and NLObjective.
   ACCEPT_EXPRESSION_INTERFACE(AcceptedButNotRecommended);
 
+  /// Whether accepts NLObjective.
+  /// No, as of SCIP 9.1.
+  static int AcceptsNLObj() { return 0; }
+
   /// Once expressions are supported, need the following
   /// helper methods.
   ///
@@ -263,9 +267,9 @@ public:
   ACCEPT_CONSTRAINT(SinConstraint, Recommended, CG_General)
   void AddConstraint(const SinConstraint& cc);
 
-  ACCEPT_EXPRESSION(CosExpression, Recommended)
+  ACCEPT_EXPRESSION(CosExpression, AcceptedButNotRecommended)  //pretty slow in SCIP 8/9
   SCIP_EXPR* AddExpression(const CosExpression& );
-  ACCEPT_CONSTRAINT(CosConstraint, Recommended, CG_General) //pretty slow in SCIP 8
+  ACCEPT_CONSTRAINT(CosConstraint, AcceptedButNotRecommended, CG_General)
   void AddConstraint(const CosConstraint& cc);
 
   // TODO Div; PowVarExponent;

@@ -399,11 +399,11 @@ protected:
       // Convert names to c-str if needed
       for (const std::string& s : var_names_storage_)
         var_names_.push_back(s.c_str());
-      backend.AddVariables({ var_lb_, var_ub_, var_type_, var_names_ });
+      backend.AddVariables({ var_lb_subm_, var_ub_subm_, var_type_, var_names_ });
     } else {
-      backend.AddVariables({ var_lb_, var_ub_, var_type_ });
+      backend.AddVariables({ var_lb_subm_, var_ub_subm_, var_type_ });
     }
-    ExportVars(0, var_lb_, var_ub_, var_type_,
+    ExportVars(0, var_lb_subm_, var_ub_subm_, var_type_,
                "Updated model information.");
   }
 

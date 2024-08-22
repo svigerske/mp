@@ -17,7 +17,7 @@ typedef struct AMPLS_ModelTraits_T {
 } AMPLS_ModelTraits;
 
 
-typedef void (*Checker_AMPLS_ModeltTraits)(AMPLS_ModelTraits*);
+typedef void (*Checker_AMPLS_ModeltTraits)(const AMPLS_ModelTraits*);
 
 
 /// Set of callbacks provided to a driver for licensing issues

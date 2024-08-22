@@ -37,7 +37,7 @@ public:
   /// Set context, if meaningful
   void SetContext(Context ) const { MP_RAISE("Setting context for static constraint"); }
   /// Add (merge) context, if meaningful
-  void AddContext(Context ) const { MP_RAISE("Setting context for static constraint"); }
+  void AddContext(Context ) const { MP_RAISE("Adding context for static constraint"); }
   /// Has result var (is functional)?
   bool HasResultVar() const { return false; }
   /// For functional constraints, result variable index
