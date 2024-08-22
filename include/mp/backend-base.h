@@ -36,14 +36,19 @@ public:
   virtual
   bool ParseSolverOptions(char **argv, unsigned flags = 0,
     ASLProblem* p=0, char* additional_options=0) {
-    /// Chance e.g. for the Backend to init solver environment, etc
-    InitOptionParsing();
-    if (ParseOptions(argv, flags, p, additional_options)) {
-      /// Chance to consider options immediately (open cloud, etc)
-      FinishOptionParsing();
-      return true;
+    if (additional_options)
+      return ParseOptions(nullptr, flags, p, additional_options); 
+    else {
+      /// Chance e.g. for the Backend to init solver environment, etc
+      InitOptionParsing();
+      if (ParseOptions(argv, flags, p, additional_options)) {
+        /// Chance to consider options immediately (open cloud, etc)
+        FinishOptionParsing();
+        return true;
+      }
+      return false;
     }
-    return false;
+
   }
 
   /// Runs Solver given the NL file name

@@ -1072,6 +1072,11 @@ bool BasicSolver::ParseOptions(char **argv, unsigned flags, const ASLProblem *, 
   has_errors_ = false;
   bool_options_ &= ~SHOW_VERSION;
   option_flag_save_ = flags;
+  // 0. If additional options are specified, parse only those
+  if (additional_options) {
+    ParseOptionString(additional_options, NO_OPTION_ECHO);
+    return false;
+  }
   // 1. Try & parse 'mp_options'
   if (const char *s = std::getenv("mp_options")) {
     ParseOptionString(s, flags);
@@ -1107,8 +1112,7 @@ bool BasicSolver::ParseOptions(char **argv, unsigned flags, const ASLProblem *, 
       ParseOptionString(s, flags);
     }
   }
-  if (additional_options)
-      ParseOptionString(additional_options, 0);
+  
   if ((bool_options_ & SHOW_VERSION) != 0)
     ShowVersion();
   return !has_errors_;
