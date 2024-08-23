@@ -1,8 +1,10 @@
-Summary of recent updates to CPLEX MP for AMPL
+Summary of recent updates to CPLEX for AMPL
 ==============================================
 
-## TBD
-- Added multiple options
+## 20240823
+- CPLEX MP driver is now the default. To use the previous ASL-based driver set:
+  `option solver cplexasl;`
+- Added many options available in the ASL driver
 - Notable changes with ASL driver:
    - Keyword 'basis_cond' is now 'kappa' and follows the standard MP implementation
    - Multiobjective optimization follows the MP standard implementation
@@ -14,6 +16,7 @@ Summary of recent updates to CPLEX MP for AMPL
      `tech:numcores`.
    - Use MP feature `tech:writemodelonly` instead of `writeprob` + `nosolve`.
      Note that `nosolve` still applies when specifying `writemipstart`
+- Conversion of basis status for constraints depending on sense
 
 ## 20240801
 - Fix a problem that occured when reporting IIS

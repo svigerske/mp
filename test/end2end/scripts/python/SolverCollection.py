@@ -35,8 +35,8 @@ def addStdSolvers(solvers: SolverCollection, binPath=""):
     solvers.addSolver(Solver.OcteractSolver(path.join(binPath, "octeract-engine")))
     solvers.addSolver(Solver.GurobiDirectSolver(path.join(binPath,"gurobi")))
     solvers.addSolver(Solver.GurobiSolver(path.join(binPath,"gurobiasl")))
-    solvers.addSolver(Solver.CPLEXSolver(path.join(binPath,"cplex")))
-    solvers.addSolver(Solver.CPLEXDirectSolver(path.join(binPath,"cplexmp")))  ## Need as long as the target is there
+    solvers.addSolver(Solver.CPLEXSolver(path.join(binPath,"cplexasl")))
+    solvers.addSolver(Solver.CPLEXDirectSolver(path.join(binPath,"cplex"))) 
     solvers.addSolver(Solver.BaronSolver(path.join(binPath,"baron")))
     solvers.addSolver(Solver.ConoptSolver(path.join(binPath,"conopt4")))
     solvers.addSolver(Solver.ConoptSolver(path.join(binPath,"conopt")))

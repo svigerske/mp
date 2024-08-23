@@ -586,7 +586,8 @@ std::string XpressmpBackend::DoXpressFixedModel()
     { "-1", "Automatic choice (default)", -1},
     { "1", "Infeasible-start barrier algorithm", 1},
     { "2", "Homogeneous self-dual barrier algorithm", 2},
-    { "3", "Start with 2 and maybe switch to 1 while solving", 3}
+    { "3", "Start with 2 and maybe switch to 1 while solving", 3},
+    { "4", "Use the hybrid gradient algorithm", 4}
   };
 
   static const mp::OptionValueInfo values_barstart[] = {
@@ -743,7 +744,16 @@ std::string XpressmpBackend::DoXpressFixedModel()
  { "4", "skip pivots that are \"less numerically reliable\"", 4},
  { "8", "do a slower but more numerically stable crossover", 8},
   };
-
+  static const mp::OptionValueInfo values_barhgops[] = {
+ { "1", "use an asymmetric average for the primal averaging", 1},
+ { "2", "use the 1-norm of the coefficient matrix in normalizing the initial solution", 2},
+ { "4", "use the 2-norm of the coefficient matrix in normalizing the initial solution", 4},
+ { "8", "use the infinity norm of the coefficient matrix in normalizing the initial solution", 8},
+ { "16", "take the square root of omega", 16},
+ { "32", "contract omega towards 1 if the infeasibility is small enough", 32},
+ { "64", "omega is based on the infeasibility", 64},
+  };
+  
   static const mp::OptionValueInfo values_cutselect[] = {
     {"32", "clique cuts", 32},
     {"64", "mixed - integer founding(MIR) cuts", 64},
@@ -1688,7 +1698,7 @@ AddSolverOption("alg:resourcestrategy resourcestrategy",
 
   AddSolverOption("bar:cpuplatform cpuplatform",
     "Which instruction are allowed to the Newton barrier method:\n:",
-    XPRS_CPUPLATFORM, values_cpuplatform, -1);
+    XPRS_CPUPLATFORM, values_cpuplatform, -2);
 
   AddSolverOption("bar:crash barcrash",
     "Choice of crash procedure for crossover, higher number "
@@ -1729,6 +1739,20 @@ AddSolverOption("alg:resourcestrategy resourcestrategy",
     "Barrier method convergence tolerance on "
     "dual infeasibilities; default = 0 (automatic choice)",
     XPRS_BARDUALSTOP, 0.0, DBL_MAX);
+
+
+
+  AddSolverOption("bar:hgextrapolate barhgextrapolate",
+    "Extrapolation parameter for the hybrid gradient algorithm; default = 0.99",
+    XPRS_BARHGEXTRAPOLATE, 0.0, 1.0);
+
+  AddSolverOption("bar:hgmaxrestarts barhgmaxrestarts",
+    "Maximum number of restarts in the hybrid gradient algorithm; default =500",
+    XPRS_BARHGMAXRESTARTS, 0, INT_MAX);
+
+  AddSolverOption("bar:hgops barhgops",
+    "Control option for hybrid gradient (default = 8); sum of:\n"
+    "\n.. value-table::\n", XPRS_BARHGOPS, values_barhgops, -1);
 
   AddSolverOption("bar:gapstop bargapstop",
     "Barrier method convergence tolerance on the relative"

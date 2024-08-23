@@ -13,8 +13,8 @@
  * Below are CPLEX-specific AMPLS API functions.
  * They complement the 'public' AMPLS API defined in ampls-c-api.h.
  */
-DECLARE_SOLVER_API_FUNCTIONS(cplexmp)
+DECLARE_SOLVER_API_FUNCTIONS(cplex)
 
-AMPLS_C_EXPORT void* AMPLSGetEnv_cplexmp(AMPLS_MP_Solver* slv);
+AMPLS_C_EXPORT void* AMPLSGetEnv_cplex(AMPLS_MP_Solver* slv);
 
 #endif // CPLEXAMPLSCAPI_H

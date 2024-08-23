@@ -268,7 +268,7 @@ add_ampl_backend(highsmp DLL_RUNTIME SHARED_LIB MODULE HIGHS
 add_ampl_backend(ortoolsmp DLL_RUNTIME SHARED_LIB MODULE ortoolsmp 
   LIBRARIES ${ortoolsmp_LIBS} ${CMAKE_DL_LIBS})
 
-add_ampl_backend(cplexmp DLL_RUNTIME SHARED_LIB MODULE CPLEX
+add_ampl_backend(cplex DLL_RUNTIME SHARED_LIB MODULE CPLEX
                       LIBRARIES cplex-library ${CMAKE_DL_LIBS})
 
 add_ampl_backend(xpress DLL_RUNTIME SHARED_LIB MODULE XPRESS
@@ -359,10 +359,10 @@ endif()
 
 
 
-set(CPLEXSRC cplexmpbackend.cc cplexmpbackend.h
-            cplexmpcommon.cc cplexmpcommon.h
-            cplexmpmodelapi.cc cplexmpmodelapi.h
-            cplexmp-modelapi-connect.cc
+set(CPLEXSRC cplexbackend.cc cplexbackend.h
+            cplexcommon.cc cplexcommon.h
+            cplexmodelapi.cc cplexmodelapi.h
+            cplex-modelapi-connect.cc
             model-mgr-with-std-pb.cc)
 add_prefix(DIRCPLEXSRC "../cplexmp/" ${CPLEXSRC})
 set(CPLEXODHSRC cplexodhbackend.h cplexodhbackend.cc)

@@ -6,10 +6,10 @@
 
 #include "mp/env.h"
 #include "mp/flat/model_api_base.h"
-#include "cplexmpbackend.h"
+#include "cplexbackend.h"
 
 extern "C" {
-#include "cplexmp-ampls-c-api.h"    // CPLEX AMPLS C API
+#include "cplex-ampls-c-api.h"    // CPLEX AMPLS C API
 }
 #include "mp/ampls-cpp-api.h"
 
@@ -134,7 +134,7 @@ namespace mp {
 
   bool CplexBackend::IsMIP() const {
     auto type = CPXgetprobtype(env(), lp());
-    return (!(type == CPXPROB_LP) || (type == CPXPROB_QP)
+    return !((type == CPXPROB_LP) || (type == CPXPROB_QP)
       || (type == CPXPROB_QCP));
   }
   bool CplexBackend::IsQCP() const {
@@ -145,7 +145,7 @@ namespace mp {
   bool CplexBackend::HasSolution() {
     if (hasSolution_ == -1){
       auto status = GetSolveResult().first;
-      hasSolution_ = (status == sol::LIMIT_FEAS) || (status == sol::SOLVED);
+      hasSolution_ = (status == sol::LIMIT_FEAS) || (status == sol::SOLVED) || (status == sol::UNCERTAIN);
     }
     return hasSolution_;
   }
@@ -214,19 +214,27 @@ namespace mp {
     std::vector<int> cons(NumLinCons());
     int status = CPXgetbase(env(), lp(), nullptr, cons.data());
     if (status) return cons;
-    for (auto& s : cons) {
-      switch (s) {
+    std::vector<char> sense(NumLinCons());
+    CPLEX_CALL(CPXgetsense(env(), lp(), sense.data(), 0, NumLinCons()-1));
+    
+    for (auto i = cons.size(); i--; ) {
+      switch (cons[i]) {
       case CPX_BASIC:
-        s = (int)BasicStatus::bas;
+        cons[i] = (int)BasicStatus::bas;
         break;
       case CPX_AT_LOWER:
-        s = (int)BasicStatus::low;
+        if (sense[i] == 'L')
+          cons[i] = (int)BasicStatus::upp;
+        else if (sense[i] == 'E')
+          cons[i] = (int)BasicStatus::equ;
+        else
+          cons[i] = (int)BasicStatus::low;
         break;
       case CPX_AT_UPPER: // just for range constraints
-        s = (int)BasicStatus::upp;
+        cons[i] = (int)BasicStatus::upp;
         break;
       default:
-        MP_RAISE(fmt::format("Unknown CPLEX rstat value: {}", s));
+        MP_RAISE(fmt::format("Unknown CPLEX rstat value: {}", cons[i]));
       }
     }
     return cons;
@@ -364,7 +372,7 @@ pre::ValueMapDbl CplexBackend::DualSolution() {
 }
 
 ArrayRef<double> CplexBackend::DualSolution_LP() {
-  if (IsMIP() && need_fixed_MIP() && HasSolution())
+  if (HasSolution() && ((!IsMIP()) || need_fixed_MIP()))
   {
     int num_cons = NumLinCons();
     std::vector<double> pi(num_cons);
@@ -1079,7 +1087,7 @@ void CplexBackend::DoCplexFeasRelax() {
   std::vector<double> ubpen = feasrelax().ubpen();
   if (ubpen.size() && ubpen.size() < (size_t)NumVars())
     ubpen.resize(NumVars());
-  CPLEX_CALL(CPXfeasopt(env(), lp(), 
+  CPLEX_CALL(CPXfeasopt(env(), lp(),
     (double*)data_or_null(rhspen), (double*)data_or_null(rhspen),
     (double*)data_or_null(lbpen), (double*)data_or_null(ubpen)));
 }
@@ -2302,23 +2310,23 @@ void CplexBackend::CplexPlayObjNParams() {
 } // namespace mp
 
 
-AMPLS_MP_Solver* Open_cplexmp(CCallbacks cb = {}) {
+AMPLS_MP_Solver* Open_cplex(CCallbacks cb = {}) {
   AMPLS_MP_Solver* slv = 
     AMPLS__internal__Open(std::unique_ptr<mp::BasicBackend>{new mp::CplexBackend()},
     cb);
   return slv;
 }
 
-void AMPLSClose_cplexmp(AMPLS_MP_Solver* slv) {
+void AMPLSClose_cplex(AMPLS_MP_Solver* slv) {
   AMPLS__internal__Close(slv);
 }
 
-void* AMPLSGetModel_cplexmp(AMPLS_MP_Solver* slv) {
+void* AMPLSGetModel_cplex(AMPLS_MP_Solver* slv) {
   return
     dynamic_cast<mp::CplexBackend*>(AMPLSGetBackend(slv))->lp();
 }
 
-void* AMPLSGetEnv_cplexmp(AMPLS_MP_Solver* slv) {
+void* AMPLSGetEnv_cplex(AMPLS_MP_Solver* slv) {
   return
     dynamic_cast<mp::CplexBackend*>(AMPLSGetBackend(slv))->env();
 }

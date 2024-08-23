@@ -5,7 +5,7 @@
 
 #include "mp/backend-mip.h"
 #include "mp/flat/backend_flat.h"
-#include "cplexmpcommon.h"
+#include "cplexcommon.h"
 #include <map>
 
 namespace mp {
