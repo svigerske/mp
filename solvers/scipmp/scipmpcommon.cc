@@ -24,13 +24,16 @@ SCIP_DECL_PROBDELORIG(probdataDelOrigNl)
     SCIP_CCALL( SCIPreleaseVar(scip, &(*probdata)->vars[i]) );
   }
 
+  for (auto& e: (*probdata)->exprs)
+    SCIP_CCALL( SCIPreleaseExpr(scip, &e) );
+
   if ((*probdata)->dummyexpr)
     SCIP_CCALL( SCIPreleaseExpr(scip, &(*probdata)->dummyexpr) );
 
   SCIPfreeBlockMemoryArray(scip, &(*probdata)->vars, (*probdata)->nvars);
 
   SCIPsetMessagehdlrQuiet(scip, true);    // Spurious warnings and failure in Debug build
-
+                                          // https://github.com/scipopt/scip/issues/71
   SCIPfreeMemory(scip, probdata);
 
   return SCIP_OKAY;

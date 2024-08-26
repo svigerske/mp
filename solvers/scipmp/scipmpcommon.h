@@ -22,7 +22,9 @@ struct SCIP_ProbData
   int                   i = 0;              /**< shows free slot of linear constraints */
   int                   nlinconss = 0;      /**< number of linear constraints */
 
-  std::vector<SCIP_CONS*>  nlconss;        /**< NL linear constraints in the order given by AMPL */
+  std::vector<SCIP_CONS*>  nlconss;         /**< NL linear constraints in the order given by AMPL */
+
+  std::vector<SCIP_EXPR*> exprs;            /**< expressions*/
 
   SCIP_EXPR* dummyexpr {nullptr};
 };
@@ -80,9 +82,9 @@ protected:
 // solver API does not return a valid errorcode. In this mock driver, we define it 
 // ourselves, normally this constant would be defined in the solver's API.
 #define SCIP_RETCODE_OK 1
-#define SCIP_CCALL( call ) do { if (int e = (call) != SCIP_RETCODE_OK) \
+#define SCIP_CCALL( scip__call_ ) do { if (int err__code_ = (scip__call_) != SCIP_RETCODE_OK) \
   throw std::runtime_error( \
-    fmt::format("  Call failed: '{}' with code {}", #call, e )); } while (0)
+    fmt::format("  Call failed: '{}' with code {}", #scip__call_, err__code_ )); } while (0)
 
 } // namespace mp
 

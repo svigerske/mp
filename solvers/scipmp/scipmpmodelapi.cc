@@ -115,6 +115,7 @@ SCIP_EXPR* ScipModelAPI::AddExpression(const AbsExpression &abse) {
   SCIP_EXPR* result_expr;
   SCIP_CCALL( SCIPcreateExprAbs(getSCIP(), &result_expr,
                                GetArgExpression(abse, 0), NULL, NULL) );
+  getPROBDATA()->exprs.push_back(result_expr);
   return result_expr;
 }
 
@@ -361,6 +362,7 @@ SCIP_EXPR* ScipModelAPI::AddExpression(const LinExpression &le) {
   SCIP_CCALL( SCIPcreateExprSum(getSCIP(), &sumexpr,
                                terms.size(), terms.data(), coefs.data(),
                                GetConstTerm(le), NULL, NULL) );
+  getPROBDATA()->exprs.push_back(sumexpr);
   return sumexpr;
 }
 
@@ -389,6 +391,7 @@ SCIP_EXPR* ScipModelAPI::AddExpression(const QuadExpression &qe) {
     int i_quad = i + GetLinSize(qe);
     SCIP_CCALL( SCIPreleaseExpr(getSCIP(), &terms[i_quad]) );
   }
+  getPROBDATA()->exprs.push_back(sumexpr);
   return sumexpr;
 }
 
@@ -460,6 +463,7 @@ SCIP_EXPR* ScipModelAPI::AddExpression(const ExpExpression &ee) {
   SCIP_EXPR* result_expr;
   SCIP_CCALL( SCIPcreateExprExp(getSCIP(), &result_expr,
                                GetArgExpression(ee, 0), NULL, NULL) );
+  getPROBDATA()->exprs.push_back(result_expr);
   return result_expr;
 }
 
@@ -495,6 +499,7 @@ SCIP_EXPR* ScipModelAPI::AddExpression(const LogExpression &ee) {
   SCIP_EXPR* result_expr;
   SCIP_CCALL( SCIPcreateExprLog(getSCIP(), &result_expr,
                                GetArgExpression(ee, 0), NULL, NULL) );
+  getPROBDATA()->exprs.push_back(result_expr);
   return result_expr;
 }
 
@@ -532,6 +537,7 @@ SCIP_EXPR* ScipModelAPI::AddExpression(const PowExpression &ee) {
                                GetArgExpression(ee, 0),
                                GetParameter(ee, 0),
                                NULL, NULL) );
+  getPROBDATA()->exprs.push_back(result_expr);
   return result_expr;
 }
 
@@ -567,6 +573,7 @@ SCIP_EXPR* ScipModelAPI::AddExpression(const SinExpression &ee) {
   SCIP_EXPR* result_expr;
   SCIP_CCALL( SCIPcreateExprSin(getSCIP(), &result_expr,
                                GetArgExpression(ee, 0), NULL, NULL) );
+  getPROBDATA()->exprs.push_back(result_expr);
   return result_expr;
 }
 
@@ -602,6 +609,7 @@ SCIP_EXPR* ScipModelAPI::AddExpression(const CosExpression &ee) {
   SCIP_EXPR* result_expr;
   SCIP_CCALL( SCIPcreateExprCos(getSCIP(), &result_expr,
                                GetArgExpression(ee, 0), NULL, NULL) );
+  getPROBDATA()->exprs.push_back(result_expr);
   return result_expr;
 }
 

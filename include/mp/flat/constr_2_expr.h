@@ -115,7 +115,7 @@ public:
       ConstraintAcceptanceLevel , ExpressionAcceptanceLevel eal) {
     assert(stage_cvt2expr_>0 && stage_cvt2expr_<=2);
     if (ExpressionAcceptanceLevel::NotAccepted != eal) {     // going into an expr
-      if (1==stage_cvt2expr_) {
+      if (1==stage_cvt2expr_) {                              // otherwise it's a flat con
         if (!con.GetConstraint().GetBody().is_variable()) {  // already a variable
           ConvertConditionalConLHS(con, i);
           return true;

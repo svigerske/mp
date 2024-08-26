@@ -173,10 +173,20 @@ public:
   double GetConstTerm(const QuadExpression& qe) const
   { return qe.GetFlatConstraint().GetQuadExpr().constant_term(); }
 
+  /// Get number of arguments
+  template <class FlatExpression>
+  int GetNumArguments(const FlatExpression& fe)
+  { return GetInitExpression(fe.GetFlatConstraint().GetArguments().size()); }
+
   /// Get argument expression [\a i]
   template <class FlatExpression>
   Expr GetArgExpression(const FlatExpression& fe, int i)
   { return GetInitExpression(fe.GetFlatConstraint().GetArguments().at(i)); }
+
+  /// Get number of parameters
+  template <class FlatExpression>
+  int GetNumParameters(const FlatExpression& fe)
+  { return fe.GetFlatConstraint().GetParameters().size(); }
 
   /// Get expression parameter [\a i]
   template <class FlatExpression>
