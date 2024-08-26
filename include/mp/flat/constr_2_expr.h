@@ -114,8 +114,10 @@ public:
       int i,
       ConstraintAcceptanceLevel , ExpressionAcceptanceLevel eal) {
     assert(stage_cvt2expr_>0 && stage_cvt2expr_<=2);
-    if (ExpressionAcceptanceLevel::NotAccepted != eal) {     // going into an expr
-      if (1==stage_cvt2expr_) {                              // otherwise it's a flat con
+    // See if the item is going into an expr.
+    // Otherwise it's a flat con.
+    if (ExpressionAcceptanceLevel::NotAccepted != eal) {
+      if (1==stage_cvt2expr_) {
         if (!con.GetConstraint().GetBody().is_variable()) {  // already a variable
           ConvertConditionalConLHS(con, i);
           return true;
@@ -343,7 +345,6 @@ protected:
       int exprResVar = -1;
       if (lt_in_expr.is_variable() && qobj.GetQPTerms().empty()) {
         exprResVar = lt_in_expr.get_representing_variable();
-        // assert( !MPCD( IsProperVar(exprResVar) ) );     // is an expr
       } else {                      // We need a new expression
         // Set up AutoLink
         auto obj_src =              // source value node for this obj

@@ -21,7 +21,7 @@ public:
             class VarVec=std::initializer_list<int> >
   LinearObjective(obj::Type s, CoefVec&& c, VarVec&& v,
                   std::string nm = {}) noexcept :
-    sense_(s),
+      sense_(s), sense_true_(s),
     lt_(std::forward<CoefVec>(c), std::forward<VarVec>(v)),
     name_(std::move(nm)){ }
   /// Get original sense

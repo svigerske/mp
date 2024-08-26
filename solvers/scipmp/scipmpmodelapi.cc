@@ -44,7 +44,7 @@ void ScipModelAPI::AddVariables(const VarArrayDef& v) {
 
 void ScipModelAPI::SetLinearObjective( int iobj, const LinearObjective& lo ) {
   if (iobj<1) {
-    SCIP_CCALL( SCIPsetObjsense(getSCIP(), 
+    SCIP_CCALL( SCIPsetObjsense(getSCIP(),
                     obj::Type::MAX==lo.obj_sense() ? SCIP_OBJSENSE_MAXIMIZE : SCIP_OBJSENSE_MINIMIZE) );
     SCIP_VAR** vars = getPROBDATA()->vars;
     for (int i = 0; i < getPROBDATA()->nvars; i++) {
