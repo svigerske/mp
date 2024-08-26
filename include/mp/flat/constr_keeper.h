@@ -380,9 +380,10 @@ protected:
 
   void DoCvtWithExprs() {
     auto cal = GetChosenAcceptanceLevel();
+    auto eal = GetChosenAcceptanceLevelEXPR();
     ForEachActive(
-        [this, cal](const auto& con, int i) {
-          return this->GetConverter().ConvertWithExpressions(con, i, cal);
+        [this, cal, eal](const auto& con, int i) {
+          return this->GetConverter().ConvertWithExpressions(con, i, cal, eal);
         });
   }
 

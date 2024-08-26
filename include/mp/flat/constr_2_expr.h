@@ -89,14 +89,14 @@ public:
   bool ConvertWithExpressions(
       const AlgebraicConstraint<Body, RhsOrRange>& con,
       int i,
-      ConstraintAcceptanceLevel cal) {
+      ConstraintAcceptanceLevel cal, ExpressionAcceptanceLevel ) {
     assert(stage_cvt2expr_>0);
     /// Replace \a con by a NLConstraint,
     /// if either the ModelAPI does not accept it,
     /// or the linear/quadratic terms have expressions
     /// (and then they are non-flat.)
     if (1==stage_cvt2expr_
-            && (ConstraintAcceptanceLevel::Recommended != cal
+        && (ConstraintAcceptanceLevel::Recommended != cal
             || HasExpressionArgs(con.GetBody()))) {
       ConvertToNLCon(con, i);
       return true;                              // to remove the original \a con
@@ -112,16 +112,18 @@ public:
   bool ConvertWithExpressions(
       const ConditionalConstraint< AlgebraicConstraint<Body, RhsOrRange> >& con,
       int i,
-      ConstraintAcceptanceLevel ) {
+      ConstraintAcceptanceLevel , ExpressionAcceptanceLevel eal) {
     assert(stage_cvt2expr_>0 && stage_cvt2expr_<=2);
-    if (1==stage_cvt2expr_) {
-      if (!con.GetConstraint().GetBody().is_variable()) {  // already a variable
-        ConvertConditionalConLHS(con, i);
-        return true;
+    if (ExpressionAcceptanceLevel::NotAccepted != eal) {     // going into an expr
+      if (1==stage_cvt2expr_) {
+        if (!con.GetConstraint().GetBody().is_variable()) {  // already a variable
+          ConvertConditionalConLHS(con, i);
+          return true;
+        }
       }
+      else   // if (2==stage_cvt2expr_)
+        ConsiderExplicifyingExpression(con, i);        // this is a func con too
     }
-    else   // if (2==stage_cvt2expr_)
-      ConsiderExplicifyingExpression(con, i);        // this is a func con too
     return false;
   }
 
@@ -132,9 +134,12 @@ public:
            std::enable_if_t<
                std::is_base_of_v<FunctionalConstraint, FuncCon>, bool > = true >
   bool ConvertWithExpressions(
-      const FuncCon& con, int i, ConstraintAcceptanceLevel ) {
-    if (2==stage_cvt2expr_)
-      ConsiderExplicifyingExpression(con, i);
+      const FuncCon& con, int i,
+      ConstraintAcceptanceLevel , ExpressionAcceptanceLevel eal) {
+    if (ExpressionAcceptanceLevel::NotAccepted != eal) {     // going into an expr
+      if (2==stage_cvt2expr_)
+        ConsiderExplicifyingExpression(con, i);
+    }
     return false;                          // leave it active
   }
 
@@ -145,7 +150,7 @@ public:
   bool ConvertWithExpressions(
       const ComplementarityConstraint<Expr>& con,
       int i,
-      ConstraintAcceptanceLevel ) {
+      ConstraintAcceptanceLevel , ExpressionAcceptanceLevel ) {   // TODO check acc for NLCompl
     if (1==stage_cvt2expr_
         && !con.GetExpression().is_variable()) {             // already a variable
       ConvertComplementarityExpr(con, i);
@@ -158,14 +163,16 @@ public:
   /// But check that they are flat?
   template <class SubCon>
   bool ConvertWithExpressions(
-      const IndicatorConstraint<SubCon>& , int , ConstraintAcceptanceLevel ) {
+      const IndicatorConstraint<SubCon>& , int ,
+      ConstraintAcceptanceLevel , ExpressionAcceptanceLevel ) {
     return false;
   }
 
   /// SOS1: do nothing.
   /// But check that they are flat?
   bool ConvertWithExpressions(
-      const SOS1Constraint& con, int , ConstraintAcceptanceLevel ) {
+      const SOS1Constraint& con, int ,
+      ConstraintAcceptanceLevel , ExpressionAcceptanceLevel ) {
     if (2==stage_cvt2expr_)
     for (int v: con.GetArguments()) {
       assert(MPCD( IsProperVar(v) ));
@@ -176,7 +183,8 @@ public:
   /// SOS1: do nothing.
   /// But check that they are flat?
   bool ConvertWithExpressions(
-      const SOS2Constraint& con, int , ConstraintAcceptanceLevel ) {
+      const SOS2Constraint& con, int ,
+      ConstraintAcceptanceLevel , ExpressionAcceptanceLevel ) {
     if (2==stage_cvt2expr_)
     for (int v: con.GetArguments()) {
       assert(MPCD( IsProperVar(v) ));
@@ -186,27 +194,32 @@ public:
 
   /// NLConstraint: just produced.
   bool ConvertWithExpressions(
-      const NLConstraint& , int , ConstraintAcceptanceLevel ) {
+      const NLConstraint& , int ,
+      ConstraintAcceptanceLevel , ExpressionAcceptanceLevel ) {
     return false;
   }
   /// NLLogical: just produced.
   bool ConvertWithExpressions(
-      const NLLogical& , int , ConstraintAcceptanceLevel ) {
+      const NLLogical& , int ,
+      ConstraintAcceptanceLevel , ExpressionAcceptanceLevel ) {
     return false;
   }
   /// NLEquivalence: just produced.
   bool ConvertWithExpressions(
-      const NLEquivalence& , int , ConstraintAcceptanceLevel ) {
+      const NLEquivalence& , int ,
+      ConstraintAcceptanceLevel , ExpressionAcceptanceLevel ) {
     return false;
   }
   /// NLImpl: just produced.
   bool ConvertWithExpressions(
-      const NLImpl& , int , ConstraintAcceptanceLevel ) {
+      const NLImpl& , int ,
+      ConstraintAcceptanceLevel , ExpressionAcceptanceLevel ) {
     return false;
   }
   /// NLRimpl: just produced.
   bool ConvertWithExpressions(
-      const NLRimpl& , int , ConstraintAcceptanceLevel ) {
+      const NLRimpl& , int ,
+      ConstraintAcceptanceLevel , ExpressionAcceptanceLevel ) {
     return false;
   }
 
