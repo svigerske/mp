@@ -379,7 +379,10 @@ protected:
   }
 
   void DoCvtWithExprs() {
-    auto cal = GetChosenAcceptanceLevel();
+    // For acc:_all=0 to work, we have to accept non-convertible con types
+    auto cal = IfConverterConverts(GetConverter())
+                   ? GetChosenAcceptanceLevel()
+                   : ConstraintAcceptanceLevel::Recommended;
     auto eal = GetChosenAcceptanceLevelEXPR();
     ForEachActive(
         [this, cal, eal](const auto& con, int i) {
@@ -390,7 +393,7 @@ protected:
 	/// Call Converter's RunConversion() and mark as "bridged".
   ///
 	/// @param cnt the constraint container -
-	/// actually redundant, as \a i is enough to find it. But for speed.
+  ///   actually redundant, as \a i is enough to find it. But for speed.
   /// @param i constraint index, needed for bridging
   void ConvertConstraint(Container& cnt, int i) {
     assert(!cnt.IsBridged());

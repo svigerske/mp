@@ -284,8 +284,9 @@ protected:
 
   bool HasExpressionArgs(const LinTerms& lt) const {
     for (auto v: lt.vars())
-      if (!MPCD( IsProperVar(v) ))
+      if (!MPCD( IsProperVar(v) )) {
         return true;
+      }
     return false;
   }
 
@@ -415,9 +416,9 @@ protected:
     result.reserve(ltin.size() - nvars);
     int v=0;
     for (size_t i=0; i<ltin.size(); ++i) {
-      if (MPCD( IsProperVar(v = ltin.var(i)) ))
+      if (MPCD( IsProperVar(v = ltin.var(i)) )) {
         lt_out_vars.add_term(ltin.coef(i), v);
-      else
+      } else
         result.add_term(ltin.coef(i), v);
     }
     return result;
