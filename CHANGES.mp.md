@@ -3,6 +3,8 @@ Summary of recent updates to the AMPL MP Library
 
 
 ## unreleased
+- Option tech:writemodel:index to choose the iteration
+	when solver model is exported.
 - SCIP (and any solver with linear objective
 	and non-linear constraints): improve reformulation
 	of QP objectives.

@@ -261,6 +261,20 @@
     }
   },
   {
+    "name" : "obj_abs_01 obj:multi=2 writeprobindex",
+    "tags" : ["linear", "integer", "multiobj"],
+    "options": {
+      "ANYSOLVER_options": "multiobj=2 writeprob=obj_abs_01.lp writeprobindex=2",
+      "scip_options": "multiobj=2 writeprob=obj_abs_01.cip writeprobindex=2",
+      "gcg_options": "multiobj=2 writeprob=obj_abs_01.lp writeprobindex=2",
+      "mosek_options": "multiobj=2 writeprob=obj_abs_01.jtask writeprobindex=2"
+    },
+    "values": {
+      "_sobj[1]": 13,
+      "_sobj[2]": -17
+    }
+  },
+  {
     "name" : "obj_abs_02",
     "tags" : ["linear", "integer", "multiobj"],
     "options": {

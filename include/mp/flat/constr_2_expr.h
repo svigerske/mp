@@ -415,11 +415,15 @@ protected:
     lt_out_vars.reserve(nvars);
     result.reserve(ltin.size() - nvars);
     int v=0;
+    double c=0.0;
     for (size_t i=0; i<ltin.size(); ++i) {
-      if (MPCD( IsProperVar(v = ltin.var(i)) )) {
-        lt_out_vars.add_term(ltin.coef(i), v);
-      } else
-        result.add_term(ltin.coef(i), v);
+      if ((c = ltin.coef(i))) {                       // non-0
+        if (MPCD( IsProperVar(v = ltin.var(i)) )) {
+          lt_out_vars.add_term(c, v);
+        } else {
+          result.add_term(c, v);
+        }
+      }
     }
     return result;
   }

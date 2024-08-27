@@ -173,7 +173,7 @@ protected:
       /// Redefine this if you want some extensions
       /// to be written after solving instead.
       /// This is for compatibility wiht ASL drivers
-      /// where 'writeprob' was used for native-format model
+      /// where 'writeprob' was used both for native-format model
       /// and solution output #218.
       virtual std::set<std::string> NativeResultExtensions() const
   { return {".sol", ".ilp", ".mst", ".hnt", ".bas", ".json"}; }
@@ -276,9 +276,11 @@ protected:
     auto get_sol = [this]() {
       return GetSolution();
     };
-    int i=0;
+    int i_solve=0;
     while (GetMM().PrepareSolveIteration(get_stt, get_sol)) {
-      // ExportModel({"/tmp/model" + std::to_string(++i) + ".lp"});
+      if (++i_solve==storedOptions_.writemodel_index_
+          && exportFileMode() > 0)
+        ExportModel(export_file_names());
       Solve();
     }
   }
@@ -808,6 +810,7 @@ private:
 
     /// For write prob
     std::vector<std::string> export_files_;
+    int writemodel_index_ = 0;
     std::vector<std::string> just_export_files_;
     /// For write sol
     std::vector<std::string> export_sol_files_;
@@ -936,11 +939,21 @@ protected:
     }
 
     if (IMPL_HAS_STD_FEATURE(WRITE_PROBLEM)) {
-      AddListOption("tech:writemodel writeprob writemodel tech:exportfile",
+      AddListOption("tech:writemodel tech:writeprob writeprob writemodel tech:exportfile",
         "Specifies files where to export the model before "
         "solving (repeat the option for several files.) "
-        "File name extensions can be ``.lp[.7z]``, ``.mps``, etc.",
+        "File name extensions can be ``.lp[.7z]``, ``.mps``, etc."
+                    "\n"
+                    "To write a model during iterative solve (e.g., with obj:multi=2), "
+                    "use tech:writemodel:index.",
         storedOptions_.export_files_);
+
+      AddStoredOption("tech:writemodel:index tech:writeprob:index writeprobindex writemodelindex",
+                    "During iterative solve (e.g., with obj:multi=2), "
+                    "the iteration before which to write solver model. "
+                    "0 means before iteration is initialized; positive value - "
+                    "before solving that iteration. Default 0.",
+                    storedOptions_.writemodel_index_);
 
       AddListOption("tech:writemodelonly justwriteprob justwritemodel",
         "Specifies files where to export the model, no solving "
