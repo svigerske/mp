@@ -32,6 +32,8 @@ public:
     try {                            // protect
       std::vector<double> x_back = x;
       if (MPCD( sol_check_mode() ) & (1+2+4+8+16)) {
+        if (MPCD( IfWantNLOutput() ))
+          x = RecomputeAuxVars(x, true);   // Compute expressions
         msgreal = DoCheckSol(x, duals, obj, {}, x_back, false);
       }
       if (MPCD( sol_check_mode() ) & (32+64+128+256+512)) {
@@ -64,8 +66,9 @@ public:
         // a summary in the final solve message.
         // For now, do this via warnings?
         if (MPCD( sol_check_fail() ))
-          MP_RAISE_WITH_CODE(int(sol::MP_SOLUTION_CHECK),   // failure
-                             warn);
+          MP_RAISE_WITH_CODE(int(sol::MP_SOLUTION_CHECK),
+                             "Solution check failed - reporting as fatal:\n"
+                             + warn);
         else
           MPD( AddWarning(
                  MPD( GetEnv() ).GetSolCheckWarningKey(true),
@@ -108,7 +111,9 @@ public:
   };
 
   /// Recompute auxiliary variables
-  ArrayRef<double> RecomputeAuxVars(ArrayRef<double> x) {
+  /// @param fExprOnly: only NL expressions
+  ArrayRef<double> RecomputeAuxVars(
+      ArrayRef<double> x, bool fExprOnly=false) {
     VarInfoRecomp vir {
       MPCD( sol_feas_tol() ),
           true,        // currently not relevant for recomputation
@@ -120,8 +125,14 @@ public:
           MPCD( sol_round() ), MPCD( sol_prec() )
     };
     vir.get_x().set_p_var_info(&vir);
-    for (auto i=vir.size(); i--; )
-      vir[i];         // touch the variable to be recomputed
+    if (fExprOnly) {
+      for (auto i=vir.size(); i--; )
+        if ( !MPCD( IsProperVar(i) ) )
+          vir[i];         // touch the variable to be recomputed
+    } else {
+      for (auto i=vir.size(); i--; )
+        vir[i];
+    }
     return std::move(vir.get_x().get_x());
   }
 

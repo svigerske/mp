@@ -310,6 +310,7 @@ protected:
   /// if provided (>=0)
   int AcceptanceLevelCommon() const { return options_.accAll_; }
 
+public:
   /// Option to actually use expressions if available
   bool IfWantNLOutput() const { return options_.accExpr_==1; }
 
@@ -322,6 +323,7 @@ protected:
            ExpressionAcceptanceLevel::Recommended
                == ModelAPI::ExpressionInterfaceAcceptanceLevel(); }
 
+protected:
   /// Finish exporting the reformulation graph
   void CloseGraphExporter() {
     value_presolver_.FinishExportingLinkEntries();
