@@ -353,11 +353,11 @@ protected:
         pre::AutoLinkScope<Impl> auto_link_scope{ *(Impl*)this, obj_src };
         if (qobj.GetQPTerms().empty())
           exprResVar = MPD( AssignResultVar2Args(
-              LinearFunctionalConstraint{ {lt_in_expr, 1.0} } ) );
+              LinearFunctionalConstraint{ {lt_in_expr, 0.0} } ) );
         else                        // Move QP terms into the expr
           exprResVar = MPD( AssignResultVar2Args(
               QuadraticFunctionalConstraint
-              { {{lt_in_expr, std::move(qobj.GetQPTerms())}, 1.0} } ) );
+              { {{lt_in_expr, std::move(qobj.GetQPTerms())}, 0.0} } ) );
         MPD( AddInitExprContext(exprResVar,             // Context is compulsory
                                obj::MAX==qobj.obj_sense_true()    // no need to propagate
                                    ? Context::CTX_POS : Context::CTX_NEG) );
