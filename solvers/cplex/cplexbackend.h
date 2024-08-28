@@ -209,6 +209,7 @@ private:
   void setSilenceOutput(bool doSilence) {
     silenceOutput_ = doSilence;
   }
+  
   void mymsgfunc(const char* msg, const char* level)
   {
     if (!silenceOutput_)
@@ -250,12 +251,12 @@ private:
     int bestnode_ = 0;
     int dropTol_ = 0;
 
-    int fBarrier_ = 0;
-    int fPrimal_ = 0;
-    int fDual_ = 0;
-    int fNetwork_ = 0;
-    int fSifting_ = 0;
-    int fBenders_ = 0;
+    bool fBarrier_ = false;
+    bool fPrimal_ = false;
+    bool fDual_ = false;
+    bool fNetwork_ = false;
+    bool fSifting_ = false;
+    bool fBenders_ = false;
 
     int cuts_ = -2;
     int cutstats_ = 0;

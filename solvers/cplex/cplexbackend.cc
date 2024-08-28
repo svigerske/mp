@@ -302,6 +302,8 @@ namespace mp {
 
 
   SolutionBasis CplexBackend::GetBasis() {
+    bool outputStatus = silenceOutput_;
+    setSilenceOutput(true);
     std::vector<int> varstt = VarStatii();
     std::vector<int> constt = ConStatii();
     if (varstt.size() && constt.size()) {
@@ -312,6 +314,7 @@ namespace mp {
       constt = mv.GetConValues()();
       assert(varstt.size());
     }
+    setSilenceOutput(outputStatus);
     return { std::move(varstt), std::move(constt) };
   }
 
@@ -372,7 +375,7 @@ pre::ValueMapDbl CplexBackend::DualSolution() {
 }
 
 ArrayRef<double> CplexBackend::DualSolution_LP() {
-  if (HasSolution() && ((!IsMIP()) || need_fixed_MIP()))
+  if (HasSolution() && ((!IsMIP()) || need_fixed_MIP()) && (NumLinCons()>0))
   {
     int num_cons = NumLinCons();
     std::vector<double> pi(num_cons);
@@ -461,6 +464,7 @@ void CplexBackend::Solve() {
   }
 
     RedirectOutput();
+    setSilenceOutput(storedOptions_.outlev_==0);
     setSolutionMethod();
     
     if (storedOptions_.dropTol_ > 0) {
@@ -1515,19 +1519,19 @@ void CplexBackend::InitCustomOptions() {
     "Solve (MIP root) LPs by barrier method.",
     storedOptions_.fBarrier_);
 
-  AddStoredOption("alg:primal primal",
+  AddStoredOption("alg:primal primalopt",
     "Solve (MIP root) LPs by primal simplex method.",
     storedOptions_.fPrimal_);
 
-  AddStoredOption("alg:dual dual",
+  AddStoredOption("alg:dual dual dualopt",
     "Solve (MIP root) LPs by dual simplex method.",
     storedOptions_.fDual_);
 
-  AddStoredOption("alg:sifting sifting",
+  AddStoredOption("alg:sifting sifting siftopt siftingopt",
     "Solve (MIP root) LPs by sifting method.",
     storedOptions_.fSifting_);
 
-  AddStoredOption("alg:network network",
+  AddStoredOption("alg:network network netopt",
     "Solve (substructure of) (MIP node) LPs "
     "by network simplex method.",
     storedOptions_.fNetwork_);
