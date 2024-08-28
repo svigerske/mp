@@ -137,7 +137,7 @@ protected:
       const auto& i0_vec = pr_level.second;
       obj_new_.push_back(obj_orig.at(i0_vec.front()));
       obj_new_.back().set_sense(obj_orig.front().obj_sense());      // "Legacy" obj:multi:weight
-      obj_new_.back().set_sense_true(obj_orig.front().obj_sense());
+      obj_new_.back().set_sense_true(obj_orig.front().obj_sense_true());
       obj_new_.back().GetLinTerms() *= objwgt.at(i0_vec.front());   // Use weight
       obj_new_.back().GetQPTerms() *= objwgt.at(i0_vec.front());
       obj_new_tola_.push_back(objtola.at(i0_vec.front()));

@@ -152,8 +152,9 @@ public:
   bool ConvertWithExpressions(
       const ComplementarityConstraint<Expr>& con,
       int i,
-      ConstraintAcceptanceLevel , ExpressionAcceptanceLevel ) {   // TODO check acc for NLCompl
-    if (1==stage_cvt2expr_
+      ConstraintAcceptanceLevel , ExpressionAcceptanceLevel ) {
+    if (false                      // TODO check acc for NLCompl
+        && 1==stage_cvt2expr_
         && !con.GetExpression().is_variable()) {             // already a variable
       ConvertComplementarityExpr(con, i);
       return true;
@@ -353,11 +354,11 @@ protected:
         pre::AutoLinkScope<Impl> auto_link_scope{ *(Impl*)this, obj_src };
         if (qobj.GetQPTerms().empty())
           exprResVar = MPD( AssignResultVar2Args(
-              LinearFunctionalConstraint{ {lt_in_expr, 1.0} } ) );
+              LinearFunctionalConstraint{ {lt_in_expr, 0.0} } ) );
         else                        // Move QP terms into the expr
           exprResVar = MPD( AssignResultVar2Args(
               QuadraticFunctionalConstraint
-              { {{lt_in_expr, std::move(qobj.GetQPTerms())}, 1.0} } ) );
+              { {{lt_in_expr, std::move(qobj.GetQPTerms())}, 0.0} } ) );
         MPD( AddInitExprContext(exprResVar,             // Context is compulsory
                                obj::MAX==qobj.obj_sense_true()    // no need to propagate
                                    ? Context::CTX_POS : Context::CTX_NEG) );
@@ -415,11 +416,15 @@ protected:
     lt_out_vars.reserve(nvars);
     result.reserve(ltin.size() - nvars);
     int v=0;
+    double c=0.0;
     for (size_t i=0; i<ltin.size(); ++i) {
-      if (MPCD( IsProperVar(v = ltin.var(i)) )) {
-        lt_out_vars.add_term(ltin.coef(i), v);
-      } else
-        result.add_term(ltin.coef(i), v);
+      if ((c = ltin.coef(i))) {                       // non-0
+        if (MPCD( IsProperVar(v = ltin.var(i)) )) {
+          lt_out_vars.add_term(c, v);
+        } else {
+          result.add_term(c, v);
+        }
+      }
     }
     return result;
   }

@@ -140,8 +140,6 @@ void ScipBackend::SetInterrupter(mp::Interrupter *inter) {
 }
 
 void ScipBackend::Solve() {
-  if (!storedOptions_.exportFile_.empty())
-    ExportModel(storedOptions_.exportFile_);
   if (!storedOptions_.paramRead_.empty())
     SCIP_CCALL( SCIPreadParams(getSCIP(), storedOptions_.paramRead_.c_str()) );
   if (!storedOptions_.logFile_.empty())
@@ -367,12 +365,6 @@ void ScipBackend::InitCustomOptions() {
   AddSolverOption("tech:outlev-native outlev-native",
     "0*/1/2/3/4/5: Whether to write SCIP log lines (chatter) to stdout and to file (native output level of SCIP).",
     "display/verblevel", 0, 5);
-
-  AddStoredOption("tech:exportfile writeprob writemodel",
-    "Specifies the name of a file where to export the model before "
-    "solving it. This file name can have extension ``.lp``, ``.mps``, etc. "
-    "Default = \"\" (don't export the model).",
-    storedOptions_.exportFile_);
 
   AddStoredOption("tech:logfile logfile",
     "Log file name.",
@@ -963,6 +955,9 @@ void ScipBackend::AddMIPStart(ArrayRef<double> x0, ArrayRef<int> sparsity) {
   SCIP_CCALL( SCIPaddSolFree(getSCIP(), &solution, &keep) );
 }
 
+void ScipBackend::DoWriteProblem(const std::string& name) {
+  ExportModel(name);
+}
 
 } // namespace mp
 

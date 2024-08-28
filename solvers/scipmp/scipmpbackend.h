@@ -81,6 +81,12 @@ public:
   void AddMIPStart(ArrayRef<double> x0,
 									 ArrayRef<int> sparsity) override;
 
+  /**
+  * EXPORT PROBLEM
+  **/
+  ALLOW_STD_FEATURE(WRITE_PROBLEM, true)
+  void DoWriteProblem(const std::string& name) override;
+
 
  /**
   * Get MIP Gap
@@ -157,7 +163,7 @@ protected:
 private:
   /// These options are stored in the class
   struct Options {
-    std::string exportFile_, logFile_, paramRead_;
+    std::string logFile_, paramRead_;
     int concurrent_ = 0;
     int heuristics_ = 0;
     int cuts_ = 0;

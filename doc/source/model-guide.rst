@@ -13,9 +13,9 @@ Ever wondered how to model logical and non-linear constraints? For example:
 
 - Piecewise-linear approximation of *y = sin(x)*.
 
-Moreover, MP supports :ref:`multiple-objectives`.
 MP automates many of such modeling tasks by reformulating AMPL models
 suitably for the given solver.
+Moreover, MP supports :ref:`multiple-objectives`.
 A series of small modeling tasks like these are handled in the
 `MP Modeling Series <https://ampl.com/streamlit/Modeling_Tips>`_,
 while below follows a comprehensive guide.

@@ -273,13 +273,13 @@ protected:
       constr_depth_ = 1;  // Workaround. TODO have maps as special constraints
 			MP_DISPATCH( ConvertMaps() );
       MP_DISPATCH( PreprocessFlatFinal() );               // final flat model prepro
-      MP_DISPATCH( ConsiderEmulatingMultiobj() );
       if constexpr (IfAcceptingNLOutput()) {
         if (IfWantNLOutput()) {
           MPD( Convert2NL() );
           MPD( PreprocessNLFinal() );
         }
       }
+      MP_DISPATCH( ConsiderEmulatingMultiobj() );     // After NL conversion
     } catch (const ConstraintConversionFailure& cff) {
       MP_RAISE(cff.message());
     }
@@ -310,6 +310,7 @@ protected:
   /// if provided (>=0)
   int AcceptanceLevelCommon() const { return options_.accAll_; }
 
+public:
   /// Option to actually use expressions if available
   bool IfWantNLOutput() const { return options_.accExpr_==1; }
 
@@ -322,6 +323,7 @@ protected:
            ExpressionAcceptanceLevel::Recommended
                == ModelAPI::ExpressionInterfaceAcceptanceLevel(); }
 
+protected:
   /// Finish exporting the reformulation graph
   void CloseGraphExporter() {
     value_presolver_.FinishExportingLinkEntries();
