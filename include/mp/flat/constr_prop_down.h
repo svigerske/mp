@@ -94,7 +94,7 @@ public:
   template <class ExprBody>
   void PropagateResult(ComplementarityConstraint<ExprBody>& con,
                        double lb, double ub, Context ctx) {
-    internal::Unused(lb, ub, ctx);
+    internal::Unused(ctx);
     MPD( PropagateResult2Args(con.GetExpression().GetBody(),
                          lb, ub, Context::CTX_MIX) );
     MPD( PropagateResultOfInitExpr(con.GetVariable(), lb, ub, Context::CTX_MIX) );

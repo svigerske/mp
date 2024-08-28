@@ -2,6 +2,14 @@ Summary of recent updates to SCIP for AMPL
 ==========================================
 
 
+## unreleased
+- MINLP expression trees (option acc:_expr.)
+	- Using the expression tree API, available since SCIP v8,
+		to model nonlinear expressions. Earlier the expressions
+		were submitted to the solver in a flat form equating
+		an auxiliary variable to each expression.
+
+
 ## 20240724
 - Option *acc:_all*
 	- Useful to disable all reformulations (acc:_all=2),
