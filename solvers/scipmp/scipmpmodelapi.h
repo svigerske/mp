@@ -64,7 +64,7 @@ public:
   /// Expression trees are submitted to the solver via
   /// the high-level constraints NLConstraint, NLComplementarity,
   /// NLLogical, NLEquivalence, NLImpl, NLRimpl, and NLObjective.
-  ACCEPT_EXPRESSION_INTERFACE(AcceptedButNotRecommended);
+  ACCEPT_EXPRESSION_INTERFACE(Recommended);
 
   /// Whether accepts NLObjective.
   /// No, as of SCIP 9.1.
