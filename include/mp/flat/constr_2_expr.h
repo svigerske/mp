@@ -55,7 +55,8 @@ public:
       assert(                     // Check: the result var has \a con as the init expr
           MPD( template GetInitExpressionOfType<Con>(con.GetResultVar()) )
           == &con);
-      MPD( MarkAsExpression(con.GetResultVar()) );   // can be changed later
+      if ( !MPD( IfVarBoundsStrongerThanInitExpr(con.GetResultVar()) ) )
+        MPD( MarkAsExpression(con.GetResultVar()) );   // can be changed later
     }
   }
 
@@ -222,6 +223,14 @@ public:
   /// NLRimpl: just produced.
   bool ConvertWithExpressions(
       const NLRimpl& , int ,
+      ConstraintAcceptanceLevel , ExpressionAcceptanceLevel ) {
+    return false;
+  }
+
+  /// Any other static con.
+  template <class A, class P, class I>
+  bool ConvertWithExpressions(
+      const CustomStaticConstraint<A, P, I>& , int ,
       ConstraintAcceptanceLevel , ExpressionAcceptanceLevel ) {
     return false;
   }

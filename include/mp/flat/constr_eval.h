@@ -330,6 +330,31 @@ Violation ComputeViolation(       // where ax, by >= 0
         by * std::exp(cz / by)};
 }
 
+/// Compute violation of the ExponentialCone constraint.
+template <class VarVec>        // ax >= by exp(cz / (by))
+Violation ComputeViolation(       // where ax, by >= 0
+    const PowerConeConstraint& con, const VarVec& x) {
+  // TODO
+  return {1000.0, 1.0};
+}
+
+/// Compute violation of the ExponentialCone constraint.
+template <class VarVec>        // ax >= by exp(cz / (by))
+Violation ComputeViolation(       // where ax, by >= 0
+    const GeometricConeConstraint& con, const VarVec& x) {
+  // TODO
+  return {1000.0, 1.0};
+}
+
+/// Compute violation of the ExponentialCone constraint.
+template <class VarVec>        // ax >= by exp(cz / (by))
+Violation ComputeViolation(       // where ax, by >= 0
+    const UnaryEncodingConstraint& con, const VarVec& x) {
+  // TODO
+  return {1000.0, 1.0};
+}
+
+
 /// Compute result of the PL constraint.
 template <class VarVec>
 double ComputeValue(const PLConstraint& con, const VarVec& x) {
@@ -354,12 +379,22 @@ double ComputeValue(const PLConstraint& con, const VarVec& x) {
 /// Should be here,
 /// after ComputeViolation() is specialized
 /// for some constraints.
-template <class Args, class Params,
-          class NumOrLogic, class Id>
+template <class Args, class Params, class Id>
 template <class VarVec>
 Violation
-CustomFunctionalConstraint<Args, Params, NumOrLogic, Id>
+CustomStaticConstraint<Args, Params, Id>
 ::ComputeViolation(const VarVec& x) const
+{ return mp::ComputeViolation(*this, x); }
+
+/// Should be here,
+/// after ComputeViolation() is specialized
+/// for some constraints.
+template <class Args, class Params,
+         class NumOrLogic, class Id>
+template <class VarVec>
+Violation
+    CustomFunctionalConstraint<Args, Params, NumOrLogic, Id>
+    ::ComputeViolation(const VarVec& x) const
 { return mp::ComputeViolation(*this, x); }
 
 

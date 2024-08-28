@@ -48,8 +48,8 @@ public:
   }
 
   /// Propagate a root algebraic range constraint
-  template <class Body>
-  void PropagateResult(const AlgebraicConstraint<Body, AlgConRange>& con) {
+  template <class Body, class RangeOrRhs>
+  void PropagateResult(const AlgebraicConstraint<Body, RangeOrRhs>& con) {
     PropagateResult(con, Context::CTX_POS);
   }
 
