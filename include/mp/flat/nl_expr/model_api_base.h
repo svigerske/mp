@@ -100,7 +100,7 @@ public:
                             ? nlc.ExprIndex() : -1;
     if (i_expr<0)
       return MPD( GetZeroExpression() );
-    return GetPureInitExpression(i_expr);
+    return GetInitExpression(i_expr);       // could be explicified
   }
 
   /// Get NLConstraint's lower bound
@@ -113,24 +113,38 @@ public:
     return nlc.GetMainCon().ub();
   }
 
+  /// Get the expression term of an \a NLBaseAssign.
+  template <int sense>
+  ExprType GetExpression(const NLBaseAssign<sense>& nll) {
+    assert( nll.GetVar()>=0 );
+    return GetPureInitExpression(nll.GetVar());
+  }
+
+  /// Get the variable of an \a NLBaseAssign.
+  template <int sense>
+  int GetVariable(const NLBaseAssign<sense>& nll) {
+    assert( nll.GetVar()>=0 );
+    return nll.GetVar();
+  }
+
   /// Get the expression term of an \a NLLogical.
   ExprType GetExpression(const NLLogical& nll) {
     assert( nll.GetResultVar()>=0 );
-    return GetInitExpression(nll.GetResultVar());
+    return GetPureInitExpression(nll.GetResultVar());
   }
 
   /// Get the expression term of an \a NLReification.
   template <int sense>
   ExprType GetExpression(const NLReification<sense>& nll) {
-    assert( nll.GetResultVar()>=0 );
-    return GetPureInitExpression(nll.GetResultVar());
+    assert( nll.GetBVar()>=0 );
+    return GetPureInitExpression(nll.GetBVar());
   }
 
   /// Get the variable of an \a NLReification.
   template <int sense>
   int GetVariable(const NLReification<sense>& nll) {
-    assert( nll.GetResultVar()>=0 );
-    return nll.GetResultVar();
+    assert( nll.GetBVar()>=0 );
+    return nll.GetBVar();
   }
 
   /// GetLinSize(le)

@@ -1588,6 +1588,13 @@ protected:
   STORE_CONSTRAINT_TYPE__NO_MAP(
       NLConstraint, "acc:nlcon acc:nlalgcon")
   STORE_CONSTRAINT_TYPE__NO_MAP(
+      NLAssignEQ, "acc:nlassigneq")
+  STORE_CONSTRAINT_TYPE__NO_MAP(
+      NLAssignLE, "acc:nlassignle")
+  STORE_CONSTRAINT_TYPE__NO_MAP(
+      NLAssignGE, "acc:nlassignge")
+
+  STORE_CONSTRAINT_TYPE__NO_MAP(
       NLLogical, "acc:nllogcon acc:nllogical")
   STORE_CONSTRAINT_TYPE__NO_MAP(
       NLEquivalence, "acc:nlequiv")
