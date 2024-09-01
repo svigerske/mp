@@ -383,8 +383,10 @@ void MosekBackend::FinishOptionParsing() {
   int v=-1;
   GetSolverOption(MSK_IPAR_LOG, v);
   set_verbose_mode(v>0);
-
-  // Nartive params
+  if (!logFile().empty()) {
+    MOSEK_CCALL(MSK_linkfiletotaskstream(lp(), MSK_STREAM_LOG, logFile().c_str(), false));
+  }
+  // Native params
   if (paramfile_read().size())
     MOSEK_CCALL(
       MSK_readparamfile(lp(), paramfile_read().c_str()));
@@ -532,8 +534,13 @@ void MosekBackend::InitCustomOptions() {
     MSK_DPAR_MIO_REL_GAP_CONST, 0.0, DBL_MAX);
 
   AddSolverOption("tech:outlev outlev",
-    "0*/1: Whether to write mosek log lines to stdout.",
+    "0*/1: Whether to write mosek log lines to stdout and to the logfile.",
     MSK_IPAR_LOG, 0, 1);
+
+  AddStoredOption("tech:logfile logfile",
+    "Log file name. Note that if outlev is set to 0, there will be no output "
+    "written.",
+    storedOptions_.logFile_);
 
   AddSolverOption("lim:sol sollimit solutionlimit",
     "Limit the number of feasible MIP solutions found, causing early "

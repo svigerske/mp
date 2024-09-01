@@ -177,6 +177,7 @@ private:
 
     std::string paramRead_, paramWrite_;
     std::list<std::string> inlineParams_;
+    std::string logFile_;
   };
   Options storedOptions_;
 
@@ -188,6 +189,7 @@ protected:
   { return storedOptions_.inlineParams_; }
   const std::string& paramfile_read() const { return storedOptions_.paramRead_; }
   const std::string& paramfile_write() const { return storedOptions_.paramWrite_; }
+  const std::string& logFile() const { return storedOptions_.logFile_; }
 };
 
 }  // namespace mp
