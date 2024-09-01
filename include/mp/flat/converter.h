@@ -791,6 +791,23 @@ public:
   template <class VarArray>
   double ub_array(const VarArray& va) const
   { return this->GetModel().ub_array(va); }
+  /// Does the variable imply stronger bounds than its init expression?
+  /// We might extend this to automatically recompute bounds from bottom up.
+  /// @note this was done when creating the functional constraint,
+  /// but we might obtain stronger implied bounds.
+  bool IfVarBoundsStrongerThanInitExpr(int res_var) {
+    if (MPCD( HasInitExpression(res_var) )) {
+      if (lb(res_var)>MPCD( MinusInfty() )
+          || ub(res_var)<MPCD( Infty() )) {
+        const auto& cloc = MPD( GetInitExpression(res_var) );
+        PreprocessInfoStd preinfo;
+        cloc.GetCK()->PreprocessConstraint(cloc.GetIndex(), preinfo);
+        return lb(res_var) > preinfo.lb()
+               || ub(res_var) < preinfo.ub();
+      }
+    }
+    return false;
+  }
   /// Set lb(var)
   void set_var_lb(int var, double lb) { this->GetModel().set_lb(var, lb); }
   /// Set ub(var)
@@ -889,19 +906,19 @@ public:
   /// Does not check if that's a func con,
   /// user check for != CTX_NONE
   Context GetInitExprContext(int var) const {
-    auto ie = GetInitExpression(var);
+    const auto& ie = GetInitExpression(var);
     return ie.GetCK()->GetContext(ie.GetIndex());
   }
 
   /// Set func expr context
   void SetInitExprContext(int var, Context ctx) {
-    auto ie = GetInitExpression(var);
+    const auto& ie = GetInitExpression(var);
     ie.GetCK()->SetContext(ie.GetIndex(), ctx);
   }
 
   /// Add func expr context
   void AddInitExprContext(int var, Context ctx) {
-    auto ie = GetInitExpression(var);
+    const auto& ie = GetInitExpression(var);
     ie.GetCK()->AddContext(ie.GetIndex(), ctx);
   }
 
@@ -910,7 +927,7 @@ public:
 	template <class ConType>
 	const ConType* GetInitExpressionOfType(int var) {
 		if (MPCD( HasInitExpression(var) )) {
-			auto ci0 = MPCD( GetInitExpression(var) );
+      const auto& ci0 = MPCD( GetInitExpression(var) );
 			if (IsConInfoType<ConType>(ci0)) {
 				const auto& con =
 						GetConstraint<ConType>(ci0);
@@ -1570,6 +1587,13 @@ protected:
   ////////////////////// NL constraints & expressions ///////////////////////
   STORE_CONSTRAINT_TYPE__NO_MAP(
       NLConstraint, "acc:nlcon acc:nlalgcon")
+  STORE_CONSTRAINT_TYPE__NO_MAP(
+      NLAssignEQ, "acc:nlassigneq")
+  STORE_CONSTRAINT_TYPE__NO_MAP(
+      NLAssignLE, "acc:nlassignle")
+  STORE_CONSTRAINT_TYPE__NO_MAP(
+      NLAssignGE, "acc:nlassignge")
+
   STORE_CONSTRAINT_TYPE__NO_MAP(
       NLLogical, "acc:nllogcon acc:nllogical")
   STORE_CONSTRAINT_TYPE__NO_MAP(

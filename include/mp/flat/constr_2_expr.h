@@ -55,7 +55,8 @@ public:
       assert(                     // Check: the result var has \a con as the init expr
           MPD( template GetInitExpressionOfType<Con>(con.GetResultVar()) )
           == &con);
-      MPD( MarkAsExpression(con.GetResultVar()) );   // can be changed later
+      if ( !MPD( IfVarBoundsStrongerThanInitExpr(con.GetResultVar()) ) )
+        MPD( MarkAsExpression(con.GetResultVar()) );   // can be changed later
     }
   }
 
@@ -201,6 +202,25 @@ public:
       ConstraintAcceptanceLevel , ExpressionAcceptanceLevel ) {
     return false;
   }
+  /// NLAssignEQ: just produced.
+  bool ConvertWithExpressions(
+      const NLAssignEQ& , int ,
+      ConstraintAcceptanceLevel , ExpressionAcceptanceLevel ) {
+    return false;
+  }
+  /// NLAssignLE: just produced.
+  bool ConvertWithExpressions(
+      const NLAssignLE& , int ,
+      ConstraintAcceptanceLevel , ExpressionAcceptanceLevel ) {
+    return false;
+  }
+  /// NLAssignGE: just produced.
+  bool ConvertWithExpressions(
+      const NLAssignGE& , int ,
+      ConstraintAcceptanceLevel , ExpressionAcceptanceLevel ) {
+    return false;
+  }
+
   /// NLLogical: just produced.
   bool ConvertWithExpressions(
       const NLLogical& , int ,
@@ -222,6 +242,14 @@ public:
   /// NLRimpl: just produced.
   bool ConvertWithExpressions(
       const NLRimpl& , int ,
+      ConstraintAcceptanceLevel , ExpressionAcceptanceLevel ) {
+    return false;
+  }
+
+  /// Any other static con.
+  template <class A, class P, class I>
+  bool ConvertWithExpressions(
+      const CustomStaticConstraint<A, P, I>& , int ,
       ConstraintAcceptanceLevel , ExpressionAcceptanceLevel ) {
     return false;
   }
@@ -301,7 +329,10 @@ protected:
     return false;
   }
 
-  /// Convert algebraic con to a NLConstraint
+  /// Convert algebraic con to a \a NLConstraint,
+  /// if \a NLConstraint's are accepted. Otherwise,
+  /// explicify the expression and convert to
+  /// \a LinConLE/EQ/GE/Range.
   template <class Body, class RhsOrRange>
   void ConvertToNLCon(
       const AlgebraicConstraint<Body, RhsOrRange>& con, int i) {
@@ -315,7 +346,6 @@ protected:
     int exprResVar = -1;
     if (exprTerm.GetArguments().is_variable()) {
       exprResVar = exprTerm.GetArguments().get_representing_variable();
-      // assert( !MPCD( IsProperVar(exprResVar) ) );     // is an expr
     } else {
       assert( !exprTerm.GetArguments().empty() );     // has more terms, or coef != 1.0
       exprTerm.AddContext(                            // Context is compulsory
@@ -325,13 +355,28 @@ protected:
               : Context::CTX_NEG);
       exprResVar = MPD( AssignResultVar2Args(std::move(exprTerm)) );
     }
-    if (!MPCD(VarHasMarking(exprResVar)))           // mark as expr if new
+    if (!MPCD(VarHasMarking(exprResVar)))             // mark as expr if new
       MPD( MarkAsExpression(exprResVar) );
+    if ( !MPCD( ModelAPIAcceptsAndRecommends((const NLConstraint*)nullptr) ) )
+      MPD( MarkAsResultVar(exprResVar) );
     /// Exists and marked a variable
-    else if (MPCD( IsProperVar(exprResVar) )) {     // Not an expression after all
+    if (MPCD( IsProperVar(exprResVar) )) {            // Not an expression after all
       lt.add_term(1.0, exprResVar);
-      exprResVar = -1;                              // no expression
       lt.sort_terms();
+      if (lt.size()>1) {                              // have other variables
+        if (MPCD( ModelAPIAcceptsAndRecommends(       // Accepts LinCon..
+                (const AlgebraicConstraint<LinTerms, RhsOrRange>*)nullptr) )) {
+          AlgebraicConstraint<LinTerms, RhsOrRange> lc {lt, con.GetRhsOrRange(), false};
+          MPD( AddConstraint( std::move(lc) ) );
+          return;
+        } else {
+          assert( MPCD( ModelAPIAcceptsAndRecommends((const NLConstraint*)nullptr) ) );
+        }
+      } else {         // single variable, its expression will be explicified
+        MPD( NarrowVarBounds(exprResVar, rng.lb(), rng.ub()) );
+        return;
+      }
+      exprResVar = -1;                                // no expression
     }  // else, stays as -1
     NLConstraint nlc{lt, exprResVar, rng, false};     // no sorting
     MPD( AddConstraint( std::move(nlc) ) );
@@ -481,13 +526,12 @@ protected:
     auto alscope = MPD( MakeAutoLinker( con, i ) );       // link from \a con
     assert(!con.GetContext().IsNone());
     auto resvar = con.GetResultVar();
-    AlgConRange rng {-INFINITY, 0.0};                     // ctx-: var >= expr(var)
     if (con.GetContext().IsMixed())
-      rng = {0.0, 0.0};
+      MPD( AddConstraint(NLAssignEQ(resvar)) );
     else if (con.GetContext().HasPositive())
-      rng = {0.0, INFINITY};
-    MPD( AddConstraint(                                   // -var + expr (in) rng
-        NLConstraint{ { {-1.0}, {resvar} }, resvar, rng } ) );
+      MPD( AddConstraint(NLAssignLE(resvar)) );
+    else
+      MPD( AddConstraint(NLAssignGE(resvar)) );
   }
 
   /// Add expr = var assignment for logical expression (NLEquivalence, NLImpl, NLRImpl).

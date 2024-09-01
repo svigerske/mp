@@ -3,6 +3,7 @@
 
 #include <cmath>
 
+#include "mp/flat/preprocess.h"
 #include "mp/flat/model_api_base.h"
 #include "mp/utils-file.h"
 
@@ -40,6 +41,9 @@ public:
 
   /// Set context of contraint \a i
   virtual void SetContext(int i, Context ctx) = 0;
+
+  /// Propagate expression result of constraint \a i bottom-up
+  virtual void PreprocessConstraint(int i, PreprocessInfoStd& preinfo) = 0;
 
   /// Propagate expression result of constraint \a i top-down
   virtual void PropagateResult(BasicFlatConverter& cvt,

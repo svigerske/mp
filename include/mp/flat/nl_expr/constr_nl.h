@@ -11,7 +11,7 @@ namespace mp {
 
 /// Class NLConstraint.
 /// Algebraic range constraint with a linear part
-/// and an expression term.
+/// and an expression term: `lb <= a'x + expr <= ub`.
 /// LinConRange is a member to avoid overloading
 /// when deriving from an existing constraint type.
 class NLConstraint
@@ -92,6 +92,64 @@ inline void WriteModelItem(Writer& wrt,
 }
 
 
+/// Syntax sugar for the assignment: var <=/==/>= expr.
+/// Can have special meaning in certain solvers.
+/// Sense: equality (0), >= (1), <= (-1).
+/// Can be implemented as == for all senses (e.g., GRBaddgenconstrNL),
+/// the inequalities can be used to preserve convexity.
+/// This is a static constraint.
+template <int sense>
+class NLBaseAssign
+    : public BasicConstraint, public NumericFunctionalConstraintTraits {
+public:
+  /// Constraint type name
+  static const char* GetTypeName() {
+    if (0==sense) return "NLAssignEQ";
+    if (-1==sense) return "NLAssignLE";
+    if (1==sense) return "NLAssignGE";
+    MP_RAISE("NLBaseAssign: unknown sense");
+  }
+
+  /// Construct
+  NLBaseAssign(int b) : bvar_(b) { }
+
+  /// Get var
+  int GetVar() const { return bvar_; }
+
+  /// Throw - should not be used
+  VarArray1 GetArguments() const { MP_RAISE("No marking for NL items"); }
+
+  // Compute violation... Should be 0
+
+private:
+  int bvar_ {-1};
+};
+
+
+/// Typedef NLAssignEQ
+using NLAssignEQ = NLBaseAssign<0>;
+/// Typedef NLAssignLE
+using NLAssignLE = NLBaseAssign<-1>;
+/// Typedef NLAssignGE
+using NLAssignGE = NLBaseAssign<1>;
+
+/// Write a Reification
+template <int sense>
+inline void WriteJSON(JSONW jw,
+                      const NLBaseAssign<sense>& reif) {
+  jw["var_explicit_assign"] = reif.GetVar();
+  jw["sense"] = sense;
+}
+
+/// Write RhsCon without name.
+template <class Writer, int sense, class Names>
+inline void WriteModelItem(Writer& wrt,
+                           const NLBaseAssign<sense>& nlr,
+                           const Names& vnam) {
+  wrt << "EXPLICIT ASSIGN var: " << vnam.at(nlr.GetVar());
+}
+
+
 /// NLComplementarity
 /// TODO extra class, to enable ACCEPT_CONSTRAINT
 using NLComplementarity = ComplementarityConstraint<AffineExpr>;
@@ -142,7 +200,7 @@ inline void WriteModelItem(Writer& wrt,
 
 
 /// Syntax sugar for reification: b==1 <==> expr(b)==1.
-/// Sense: equivalence (0), impl(1), rimpl (-1).
+/// Sense: equivalence (0), impl(-1), rimpl (1).
 /// This is a static constraint.
 template <int sense>
 class NLReification
@@ -151,8 +209,8 @@ public:
   /// Constraint type name
   static const char* GetTypeName() {
     if (0==sense) return "NLEquivalence";
-    if (-1==sense) return "NLRimpl";
-    if (1==sense) return "NLImpl";
+    if (-1==sense) return "NLImpl";
+    if (1==sense) return "NLRimpl";
     MP_RAISE("NLReif: unknown sense");
   }
 
@@ -175,15 +233,15 @@ private:
 /// Typedef NLEquivalence
 using NLEquivalence = NLReification<0>;
 /// Typedef NLImpl
-using NLImpl = NLReification<1>;
+using NLImpl = NLReification<-1>;
 /// Typedef NLRImpl
-using NLRimpl = NLReification<-1>;
+using NLRimpl = NLReification<1>;
 
 /// Write a Reification
 template <int sense>
 inline void WriteJSON(JSONW jw,
                       const NLReification<sense>& reif) {
-  jw["var_explicit"] = reif.GetBVar();
+  jw["var_explicit_reif"] = reif.GetBVar();
   jw["sense"] = sense;
 }
 
@@ -192,7 +250,7 @@ template <class Writer, int sense, class Names>
 inline void WriteModelItem(Writer& wrt,
                            const NLReification<sense>& nlr,
                            const Names& vnam) {
-  wrt << "EXPLICIT var: " << vnam.at(nlr.GetBVar());
+  wrt << "EXPLICIT REIF var: " << vnam.at(nlr.GetBVar());
 }
 
 }  // namespace mp

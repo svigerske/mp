@@ -92,9 +92,9 @@ protected:
     GetMC().AddConstraint(
           LinConEQ{ {weights, lambda}, {1.0} });
     weights.assign(points_.y_.begin()+i0, points_.y_.begin()+i1+1);
-    GetMC().RedefineVariable(y,        // Could just add constraint
-                             LinearFunctionalConstraint{
-                               {{weights, lambda}, 0.0} });
+    LinearFunctionalConstraint funccon{ {{weights, lambda}, 0.0} };
+    funccon.SetContext( GetMC().GetInitExprContext(y) );
+    GetMC().RedefineVariable(y, std::move(funccon));
     weights.assign(points_.x_.begin()+i0, points_.x_.begin()+i1+1);
     weights.push_back(-1.0);
     lambda.push_back(x);

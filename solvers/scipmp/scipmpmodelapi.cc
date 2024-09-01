@@ -306,6 +306,40 @@ void ScipModelAPI::AddConstraint( const NLConstraint& nlc ) {
         getPROBDATA()->vars[ GetLinVar(nlc, i) ], GetLinCoef(nlc, i)) );
 }
 
+void ScipModelAPI::AddConstraint( const NLAssignEQ& nlae ) {
+  getPROBDATA()->nlconss.push_back(nullptr);
+
+  SCIP_CCALL( SCIPcreateConsBasicNonlinear(
+      getSCIP(), &getPROBDATA()->nlconss.back(), nlae.GetName(),
+      GetExpression(nlae), 0.0, 0.0) );
+  SCIP_CCALL( SCIPaddCons(getSCIP(), getPROBDATA()->nlconss.back()) );
+  SCIP_CCALL( SCIPaddLinearVarNonlinear(
+      getSCIP(), getPROBDATA()->nlconss.back(),
+      getPROBDATA()->vars[ GetVariable(nlae) ], -1.0) );
+}
+void ScipModelAPI::AddConstraint( const NLAssignLE& nlae ) {
+  getPROBDATA()->nlconss.push_back(nullptr);
+
+  SCIP_CCALL( SCIPcreateConsBasicNonlinear(
+      getSCIP(), &getPROBDATA()->nlconss.back(), nlae.GetName(),
+      GetExpression(nlae), 0.0, Infinity()) );
+  SCIP_CCALL( SCIPaddCons(getSCIP(), getPROBDATA()->nlconss.back()) );
+  SCIP_CCALL( SCIPaddLinearVarNonlinear(
+      getSCIP(), getPROBDATA()->nlconss.back(),
+      getPROBDATA()->vars[ GetVariable(nlae) ], -1.0) );
+}
+void ScipModelAPI::AddConstraint( const NLAssignGE& nlae ) {
+  getPROBDATA()->nlconss.push_back(nullptr);
+
+  SCIP_CCALL( SCIPcreateConsBasicNonlinear(
+      getSCIP(), &getPROBDATA()->nlconss.back(), nlae.GetName(),
+      GetExpression(nlae), MinusInfinity(), 0.0) );
+  SCIP_CCALL( SCIPaddCons(getSCIP(), getPROBDATA()->nlconss.back()) );
+  SCIP_CCALL( SCIPaddLinearVarNonlinear(
+      getSCIP(), getPROBDATA()->nlconss.back(),
+      getPROBDATA()->vars[ GetVariable(nlae) ], -1.0) );
+}
+
 void ScipModelAPI::AddConstraint( const NLLogical& nll ) {
   getPROBDATA()->nlconss.push_back(nullptr);
 

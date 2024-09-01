@@ -429,7 +429,7 @@ protected:
   /// so that the cone is ... >= sqrt(sum{ (coef_i * var*i)^2 })
   ConeArgs CheckNorm2(int res_var) {
     if (MC().HasInitExpression(res_var)) {
-      auto init_expr = MC().GetInitExpression(res_var);
+      const auto& init_expr = MC().GetInitExpression(res_var);
       if (MC().template IsConInfoType<PowConstraint>(init_expr))
         return CheckNorm2_Pow(init_expr, res_var);
       if (MC().template IsConInfoType<AbsConstraint>(init_expr))
@@ -447,7 +447,7 @@ protected:
     const auto arg_pow = con_pow.GetArguments()[0];
     if (0.5 == con_pow.GetParameters()[0] &&     // sqrt(arg_pow)
         MC().HasInitExpression(arg_pow)) {
-      auto ie_pow = MC().GetInitExpression(arg_pow);
+      const auto& ie_pow = MC().GetInitExpression(arg_pow);
       if (MC().template                          // arg_pow := QFC(...)
           IsConInfoType<QuadraticFunctionalConstraint>(ie_pow)) {
         const auto& con_qdc = MC().template
@@ -495,7 +495,7 @@ protected:
   /// xN, xM >= 0.
   ConeArgs CheckSqrtXnXmNonneg(int res_var) {
     ConeArgs result;
-    if (auto pConPow = MC().template
+    if (const auto& pConPow = MC().template
         GetInitExpressionOfType<PowConstraint>(res_var)) {
       if (0.5 == pConPow->GetParameters()[0]) {     // sqrt(arg_pow)
         const auto arg_pow = pConPow->GetArguments()[0];
