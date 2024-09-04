@@ -7,9 +7,9 @@
 
 namespace mp {
 
-class ScipModelAPI :
-                     public ScipCommon, public EnvKeeper,
-                     public BasicExprModelAPI<ScipModelAPI, SCIP_EXPR*>
+class ScipModelAPI
+    : public ScipCommon, public EnvKeeper,
+      public BasicExprModelAPI<ScipModelAPI, SCIP_EXPR*>
 {
   using BaseModelAPI = BasicExprModelAPI<ScipModelAPI, SCIP_EXPR*>;
 
@@ -25,7 +25,8 @@ public:
   /// Class name
   static const char* GetTypeName() { return "ScipModelAPI"; }
 
-  /// If any driver options added from here
+  /// If any driver options added from the ModelAPI
+  /// (usually only in the Backend)
   void InitCustomOptions() { }
 
   /// Called before problem input.
@@ -43,26 +44,31 @@ public:
   void SetQuadraticObjective(int iobj, const QuadraticObjective& qo);
 
   //////////////////////////// GENERAL CONSTRAINTS ////////////////////////////
+  /// Handle flat constraints: inherit basic API
   USE_BASE_CONSTRAINT_HANDLERS(BaseModelAPI)
 
   //////////////////////////// EXPRESSION TREES ////////////////////////////
+  /// Hanlde expression trees: inherit basic API
   USE_BASE_EXPRESSION_HANDLERS(BaseModelAPI)
+
+  /// ACCEPT_EXPRESSION_INTERFACE():
   /// 'NotAccepted' or
-  /// 'AcceptedButNotRecommended' would outline each expression
-  /// with an auxiliary variable,
-  /// but the latter option would enable option acc:_expr,
-  /// which when set to 1 switches on the expression trees.
-  /// When expressions are off, only flat constraints are used,
+  /// 'AcceptedButNotRecommended' would resort to flat constraints uniformly
+  /// which outline each expression with an auxiliary variable:
   /// e.g., ExpConstraint(a, b), meaning a = exp(b), with a, b variables.
+  /// But the latter option would enable the solver option acc:_expr,
+  /// which, when set to 1, switches on the expression trees.
   ///
   /// See also per-expression and per-constraint type switches
   /// (ACCEPT_EXPRESSION and ACCEPT_CONSTRAINT.)
   /// When both are enabled for certain function
-  /// (e.g., ExpExpression and ExpConstraint),
-  /// option acc:exp allows switching between them.
+  /// (e.g., CosExpression and CosConstraint),
+  /// solver option acc:cos allows switching between them.
   ///
   /// Expression trees are submitted to the solver via
-  /// the high-level constraints NLConstraint, NLComplementarity,
+  /// the high-level constraints
+  /// NLConstraint, NLAssignLE, NLAssignEQ, NLAssignGE,
+  /// NLComplementarity,
   /// NLLogical, NLEquivalence, NLImpl, NLRimpl, and NLObjective.
   ACCEPT_EXPRESSION_INTERFACE(Recommended);
 
@@ -150,7 +156,7 @@ public:
   /// NLAssignEQ: algebraic expression expicifier.
   /// Meaning: var == expr.
   ///
-  /// @note Should be 'Recommended'.
+  /// @note Should be 'Recommended' for expression solvers.
   /// @note Example: GRBaddgenconstrNL in Gurobi 12.
   ///   In other API types can be implemented using
   ///   NL algebraic constraint.
@@ -161,7 +167,7 @@ public:
   /// NLAssignLE: algebraic expression expicifier in positive context.
   /// Meaning: var <= expr.
   ///
-  /// @note Should be 'Recommended'.
+  /// @note Should be 'Recommended' in expression solvers.
   /// @note Can be implemented as NLAssignEQ,
   ///   but this may lose convexity.
   /// @note Accessors: GetExpression(nle), GetVariable(nle).
@@ -170,7 +176,7 @@ public:
   /// NLAssignGE: algebraic expression expicifier in negative context.
   /// Meaning: var >= expr.
   ///
-  /// @note Should be 'Recommended'.
+  /// @note Should be 'Recommended' in expression solvers.
   /// @note Can be implemented as NLAssignEQ,
   ///   but this may lose convexity.
   /// @note Accessors: GetExpression(nle), GetVariable(nle).
@@ -217,7 +223,7 @@ public:
   /// via NLConstraint, subexpressions might be submitted via
   /// LinExpression and QuadExpression.
 
-  /// LinExpression.
+  /// @brief LinExpression.
   /// @note Use accessors, not methods;
   /// - GetLinSize(le), GetLinCoef(le, i), GetLinTerm(le, i);
   ///   GetConstTerm(le).
@@ -233,13 +239,16 @@ public:
   ACCEPT_EXPRESSION(QuadExpression, Recommended);
   SCIP_EXPR* AddExpression(const QuadExpression& le);
 
-  /// Each expression can be accpeted as a proper expression,
-  /// or a flat constraint var == expr (with var arguments).
+  /// Each expression can be accepted as a proper expression,
+  /// or as a flat functional constraint var <=/==/>= expr
+  /// (in this case, with variables as arguments).
+  /// The uequality/inqeuality type of the flat constraint is
+  /// determied by GetContext().
   ///
-  /// For each expression,
+  /// @note For each expression,
   /// say ACCEPT_EXPRESSION(Recommended)
   /// and/or ACCEPT_EXPRESSION(AcceptedButNotRecommended).
-  /// This can be user-configured via options 'acc:exp' etc.
+  /// This can be user-configured via solver options 'acc:exp' etc.
   ///
   /// @note Use accessor: GetArgExpression(ee, 0)
   /// - don't ExpExpression's methods.
@@ -251,7 +260,7 @@ public:
   /// For each flat constraint type,
   /// say ACCEPT_CONSTRAINT(Recommended)
   /// and/or ACCEPT_CONSTRAINT(AcceptedButNotRecommended).
-  /// This can be user-configured via options 'acc:exp' etc.
+  /// This can be user-configured via solver options 'acc:exp' etc.
   ACCEPT_CONSTRAINT(AbsConstraint, Recommended, CG_General)
   void AddConstraint(const AbsConstraint& absc);
 
@@ -269,6 +278,9 @@ public:
   /// auxiliary constraints for logical conditions.
   /// If not handled, the compared expressions need
   /// deducible finite bounds for a big-M redefinition.
+  ///
+  /// @note Indicators 'AcceptedButNotRecommended':
+  ///   not sure about performance (vs big-M) as of SCIP 9.
   ACCEPT_CONSTRAINT(IndicatorConstraintLinLE, AcceptedButNotRecommended, CG_General)
   void AddConstraint(const IndicatorConstraintLinLE& mc);
   ACCEPT_CONSTRAINT(IndicatorConstraintLinEQ, AcceptedButNotRecommended, CG_General)
@@ -282,8 +294,8 @@ public:
 
   /// SOS constraints can be used by AMPL for redefinition of
   /// piecewise-linear expressions.
-  /// Set ``option pl_linearize 0;`` in AMPL if the solver
-  /// supports PL natively.
+  /// @note Set ``option pl_linearize 0;`` in AMPL if the solver
+  ///   supports PL natively.
   ACCEPT_CONSTRAINT(SOS1Constraint, Recommended, CG_SOS)
   void AddConstraint(const SOS1Constraint& cc);
   ACCEPT_CONSTRAINT(SOS2Constraint, AcceptedButNotRecommended, CG_SOS)
