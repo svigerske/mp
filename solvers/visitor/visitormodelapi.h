@@ -7,6 +7,9 @@
 
 namespace mp {
 
+/// VisitorModelAPI.
+/// @note For expression tree solvers,
+///   see existing drivers, such as scipmp and mp2nl.
 class VisitorModelAPI :
     public VisitorCommon, public EnvKeeper,
     public BasicFlatModelAPI
@@ -129,12 +132,11 @@ public:
   ACCEPT_CONSTRAINT(SOS2Constraint, Recommended, CG_SOS)
   void AddConstraint(const SOS2Constraint& cc);
 
+
+  /// Some non linear constraints.
+  /// See constr_std.h for more.
   ACCEPT_CONSTRAINT(PLConstraint, Recommended, CG_General)
   void AddConstraint(const PLConstraint& cc);
-
-
-
-  // Non linear constraints
   ACCEPT_CONSTRAINT(MaxConstraint, Recommended, CG_General)
     void AddConstraint(const MaxConstraint& mc);
   ACCEPT_CONSTRAINT(MinConstraint, Recommended, CG_General)

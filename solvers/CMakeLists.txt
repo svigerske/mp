@@ -274,6 +274,9 @@ add_ampl_backend(cplex DLL_RUNTIME SHARED_LIB MODULE CPLEX
 add_ampl_backend(xpress DLL_RUNTIME SHARED_LIB MODULE XPRESS
                       LIBRARIES ${xpress_LIBS} ${CMAKE_DL_LIBS})
 
+                    add_ampl_backend(mp2nl DLL_RUNTIME SHARED_LIB
+                    LIBRARIES nlw2 ${CMAKE_DL_LIBS})
+
 
 set(GRBSRC gurobibackend.cc gurobibackend.h
             gurobicommon.cc gurobicommon.h

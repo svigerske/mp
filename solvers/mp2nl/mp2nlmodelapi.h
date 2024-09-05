@@ -1,29 +1,45 @@
-#ifndef SCIPMODELAPI_H
-#define SCIPMODELAPI_H
+#ifndef MP2NLMODELAPI_H
+#define MP2NLMODELAPI_H
 
 #include "mp/env.h"
-#include "scipmpcommon.h"
+#include "mp2nlcommon.h"
 #include "mp/flat/nl_expr/model_api_base.h"
 
 namespace mp {
 
-class ScipModelAPI
-    : public ScipCommon, public EnvKeeper,
-      public BasicExprModelAPI<ScipModelAPI, SCIP_EXPR*>
-{
-  using BaseModelAPI = BasicExprModelAPI<ScipModelAPI, SCIP_EXPR*>;
-
-protected:
-  void linearHelper(const int* pvars, const double* pcoefs, const size_t size, const char* name, const double lb, const double ub);
-  void helpIndicatorLin(const int* pvars, const double* pcoefs, const size_t size, const char* name, const double rhs, const int binary_var, const int binary_value, SCIP_Bool lessthanineq);
-  void helpQuad(const char* name, const int* lt_pvars, const double* lt_pcoefs, const size_t lt_size, const int* qt_pvars1, const int* qt_pvars2, const double* qt_pcoefs, const size_t qt_size, const double lb, const double ub);
-
+/// Expression ID for MP2NLModelAPI
+class MP2NL_Expr {
 public:
   /// Construct
-  ScipModelAPI(Env& e) : EnvKeeper(e) { }
+  MP2NL_Expr(int e=0) : id_(e) { }
+
+  /// Assign
+  MP2NL_Expr& operator=(const MP2NL_Expr& ) = default;
+
+	/// Get the expr ID
+	int GetID() const { return id_; }
+
+private:
+	int id_ {0};
+};
+
+
+/// MP2NLModelAPI.
+/// MP2NL is to be used as a meta-driver,
+/// performing reformulations for the final NL solver.
+class MP2NLModelAPI
+		: public MP2NLCommon, public EnvKeeper,
+			public BasicExprModelAPI<MP2NLModelAPI, MP2NL_Expr>
+{
+public:
+  using BaseModelAPI = BasicExprModelAPI<MP2NLModelAPI, MP2NL_Expr>;
+	using Expr = MP2NL_Expr;
+
+  /// Construct
+	MP2NLModelAPI(Env& e) : EnvKeeper(e) { }
 
   /// Class name
-  static const char* GetTypeName() { return "ScipModelAPI"; }
+	static const char* GetTypeName() { return "MP2NLModelAPI"; }
 
   /// If any driver options added from the ModelAPI
   /// (usually only in the Backend)
@@ -40,7 +56,7 @@ public:
   void SetLinearObjective( int iobj, const LinearObjective& lo );
   /// Whether accepting quadratic objectives:
   /// 0 - no, 1 - convex, 2 - nonconvex
-  static int AcceptsQuadObj() { return 0; }
+	static int AcceptsQuadObj() { return 2; }
   void SetQuadraticObjective(int iobj, const QuadraticObjective& qo);
 
   //////////////////////////// GENERAL CONSTRAINTS ////////////////////////////
@@ -74,18 +90,18 @@ public:
 
   /// Whether accepts NLObjective.
   /// No, as of SCIP 9.1.
-  static int AcceptsNLObj() { return 0; }
+	static int AcceptsNLObj() { return 1; }
 
   /// Once expressions are supported, need the following
   /// helper methods.
   ///
   /// GetVarExpression(\a i): expression representing variable 0<=i<n_var.
   /// Only called for 'nonlinear' variables.
-  SCIP_EXPR* GetVarExpression(int i);
+	Expr GetVarExpression(int i);
 
   /// GetZeroExpr(): constant 0.0 expression.
   /// Can be used to represent empty expression in an NLConstraint.
-  SCIP_EXPR* GetZeroExpression();
+	Expr GetZeroExpression();
 
   /// For each supported top-level constraint type,
   /// add the ACCEPT_CONSTRAINT macro
@@ -102,12 +118,13 @@ public:
   /// Below are high-level flat algebraic constraints.
 
   /// The linear range constraint, if fully supported with basis info etc.
+	/// NL format supports this.
   ACCEPT_CONSTRAINT(LinConRange, Recommended, CG_Linear)
   void AddConstraint(const LinConRange& lc);
 
   /// LinCon(LE/EQ/GE) should have 'Recommended' for all non-expression backends
   /// and have an implementation,
-  /// or a conversion rule is needed in a derived FlatConverter.
+  /// or a conversion rule is needed in a derived FlatConverter
   /// Even for expression backends, they can be implemented for efficiency.
   ACCEPT_CONSTRAINT(LinConLE, Recommended, CG_Linear)
   void AddConstraint(const LinConLE& lc);
@@ -120,20 +137,17 @@ public:
   static constexpr bool AcceptsNonconvexQC() { return true; }
 
   /// QuadConRange is optional.
-  ACCEPT_CONSTRAINT(QuadConRange, Recommended, CG_Quadratic)
-  void AddConstraint(const QuadConRange& qc);
+	/// No pure variable-quadratics for NL format.
+	ACCEPT_CONSTRAINT(QuadConRange, NotAccepted, CG_Quadratic)
 
   /// If using quadratics,
   /// QuadCon(LE/EQ/GE) should have 'Recommended'
   /// and have an implementation.
   /// Even for expression backends, they can be implemented for efficiency,
   /// if the solver supports pure variable-quadratics.
-  ACCEPT_CONSTRAINT(QuadConLE, Recommended, CG_Quadratic)
-  void AddConstraint(const QuadConLE& qc);
-  ACCEPT_CONSTRAINT(QuadConEQ, Recommended, CG_Quadratic)
-  void AddConstraint(const QuadConEQ& qc);
-  ACCEPT_CONSTRAINT(QuadConGE, Recommended, CG_Quadratic)
-  void AddConstraint(const QuadConGE& qc);
+  ACCEPT_CONSTRAINT(QuadConLE, NotAccepted, CG_Quadratic)
+	ACCEPT_CONSTRAINT(QuadConEQ, NotAccepted, CG_Quadratic)
+	ACCEPT_CONSTRAINT(QuadConGE, NotAccepted, CG_Quadratic)
 
   /// If NLConstraint is accepted, with expression trees,
   /// then top-level nonlinear algebraic constraints
@@ -231,7 +245,7 @@ public:
   /// - GetLinSize(le), GetLinCoef(le, i), GetLinTerm(le, i);
   ///   GetConstTerm(le).
   ACCEPT_EXPRESSION(LinExpression, Recommended);
-  SCIP_EXPR* AddExpression(const LinExpression& le);
+  Expr AddExpression(const LinExpression& le);
 
   /// QuadExpression.
   /// @note Use accessors, not methods;
@@ -240,7 +254,7 @@ public:
   ///   GetQuadTerm1(le, i), GetQuadTerm2(le, i);
   ///   GetConstTerm(le).
   ACCEPT_EXPRESSION(QuadExpression, Recommended);
-  SCIP_EXPR* AddExpression(const QuadExpression& le);
+  Expr AddExpression(const QuadExpression& le);
 
   /// Each expression can be accepted as a proper expression,
   /// or as a flat functional constraint var <=/==/>= expr
@@ -258,42 +272,43 @@ public:
   ///
   /// Similar for other expression types.
   ACCEPT_EXPRESSION(AbsExpression, Recommended)
-  SCIP_EXPR* AddExpression(const AbsExpression& absc);
+  Expr AddExpression(const AbsExpression& absc);
 
   /// For each flat constraint type,
   /// say ACCEPT_CONSTRAINT(Recommended)
   /// and/or ACCEPT_CONSTRAINT(AcceptedButNotRecommended).
   /// This can be user-configured via solver options 'acc:exp' etc.
-  ACCEPT_CONSTRAINT(AbsConstraint, Recommended, CG_General)
-  void AddConstraint(const AbsConstraint& absc);
+  ACCEPT_CONSTRAINT(AbsConstraint, NotAccepted, CG_General)
 
-  // SCIP 9 has AND/OR as constraints only:
-  // ACCEPT_EXPRESSION(AndExpression, AcceptedButNotRecommended)
-  // void AddExpression(const AndExpression& cc);
-  // ACCEPT_EXPRESSION(OrExpression, Recommended)
-  // void AddExpression(const OrExpression& dc);
-  ACCEPT_CONSTRAINT(AndConstraint, AcceptedButNotRecommended, CG_General)
-  void AddConstraint(const AndConstraint& cc);
-  ACCEPT_CONSTRAINT(OrConstraint, Recommended, CG_General)
-  void AddConstraint(const OrConstraint& dc);
+  ACCEPT_EXPRESSION(AndExpression, Recommended)
+  MP2NL_Expr AddExpression(const AndExpression& cc);
+  ACCEPT_EXPRESSION(OrExpression, Recommended)
+  MP2NL_Expr AddExpression(const OrExpression& dc);
+  // ACCEPT_CONSTRAINT(AndConstraint, AcceptedButNotRecommended, CG_General)
+  // void AddConstraint(const AndConstraint& cc);
+  // ACCEPT_CONSTRAINT(OrConstraint, Recommended, CG_General)
+  // void AddConstraint(const OrConstraint& dc);
 
   /// Linear indicator constraints can be used as
   /// auxiliary constraints for logical conditions.
   /// If not handled, the compared expressions need
   /// deducible finite bounds for a big-M redefinition.
   ///
-  /// @note Indicators 'AcceptedButNotRecommended':
-  ///   not sure about performance (vs big-M) as of SCIP 9.
-  ACCEPT_CONSTRAINT(IndicatorConstraintLinLE, AcceptedButNotRecommended, CG_General)
+  /// @note Need them in NL format output? Currently seems yes,
+  ///   several reformulations produce it.
+  ///   As long as the target solver accepts.
+  /// @todo But if ever there appears a solver that only accepts
+  ///   Cond(Lin/Quad)..., we should produce them instead.
+  /// Mosek???
+  ACCEPT_CONSTRAINT(IndicatorConstraintLinLE, Recommended, CG_General)
   void AddConstraint(const IndicatorConstraintLinLE& mc);
-  ACCEPT_CONSTRAINT(IndicatorConstraintLinEQ, AcceptedButNotRecommended, CG_General)
+  ACCEPT_CONSTRAINT(IndicatorConstraintLinEQ, Recommended, CG_General)
   void AddConstraint(const IndicatorConstraintLinEQ& mc);
-  ACCEPT_CONSTRAINT(IndicatorConstraintLinGE, AcceptedButNotRecommended, CG_General)
+  ACCEPT_CONSTRAINT(IndicatorConstraintLinGE, Recommended, CG_General)
   void AddConstraint(const IndicatorConstraintLinGE& mc);
 
   /// Cones
-	ACCEPT_CONSTRAINT(QuadraticConeConstraint, AcceptedButNotRecommended, CG_Conic)
-	void AddConstraint(const QuadraticConeConstraint& qc);
+  ACCEPT_CONSTRAINT(QuadraticConeConstraint, NotAccepted, CG_Conic)
 
   /// SOS constraints can be used by AMPL for redefinition of
   /// piecewise-linear expressions.
@@ -301,37 +316,23 @@ public:
   ///   supports PL natively.
   ACCEPT_CONSTRAINT(SOS1Constraint, Recommended, CG_SOS)
   void AddConstraint(const SOS1Constraint& cc);
-  ACCEPT_CONSTRAINT(SOS2Constraint, AcceptedButNotRecommended, CG_SOS)
+  ACCEPT_CONSTRAINT(SOS2Constraint, Recommended, CG_SOS)
   void AddConstraint(const SOS2Constraint& cc);
 
   /// SCIP nonlinear general constraints and expressions.
 
   ACCEPT_EXPRESSION(ExpExpression, Recommended)
-  SCIP_EXPR* AddExpression(const ExpExpression& );
-  ACCEPT_CONSTRAINT(ExpConstraint, Recommended, CG_General)
-  void AddConstraint(const ExpConstraint& cc);
-
+  Expr AddExpression(const ExpExpression& );
   ACCEPT_EXPRESSION(LogExpression, Recommended)
-  SCIP_EXPR* AddExpression(const LogExpression& );
-  ACCEPT_CONSTRAINT(LogConstraint, Recommended, CG_General)
-  void AddConstraint(const LogConstraint& cc);
-
+  Expr AddExpression(const LogExpression& );
   /// @note Use accessor: GetParameter(pe, 0)
   ///   - don't use PowExpression's methods.
   ACCEPT_EXPRESSION(PowExpression, Recommended)
-  SCIP_EXPR* AddExpression(const PowExpression& );
-  ACCEPT_CONSTRAINT(PowConstraint, Recommended, CG_General)
-  void AddConstraint(const PowConstraint& cc);
-
+  Expr AddExpression(const PowExpression& );
   ACCEPT_EXPRESSION(SinExpression, Recommended)
-  SCIP_EXPR* AddExpression(const SinExpression& );
-  ACCEPT_CONSTRAINT(SinConstraint, Recommended, CG_General)
-  void AddConstraint(const SinConstraint& cc);
-
-  ACCEPT_EXPRESSION(CosExpression, AcceptedButNotRecommended)  //pretty slow in SCIP 8/9
-  SCIP_EXPR* AddExpression(const CosExpression& );
-  ACCEPT_CONSTRAINT(CosConstraint, AcceptedButNotRecommended, CG_General)
-  void AddConstraint(const CosConstraint& cc);
+  Expr AddExpression(const SinExpression& );
+  ACCEPT_EXPRESSION(CosExpression, Recommended)
+  Expr AddExpression(const CosExpression& );
 
   // TODO Div; PowVarVar;
   // CondLin... - not really, reader_nl.cpp only handles bool args
@@ -339,4 +340,4 @@ public:
 
 } // namespace mp
 
-#endif // SCIPMODELAPI_H
+#endif // MP2NLMODELAPI_H
