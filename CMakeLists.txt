@@ -525,7 +525,8 @@ if (BUILD_EXAMPLES OR NLW2_LIB)
   set(NLW2_DOC_SRC ${NLW2_SRC})
   # Export library target names
   # for a calling CMake project
-	set(NLW2_LIB_NAME ${NLW2_LIB_NAME} PARENT_SCOPE)
+  set(NLW2_INCLUDE_PATH ${NLW2_INCLUDE_PATH} PARENT_SCOPE)
+  set(NLW2_LIB_NAME ${NLW2_LIB_NAME} PARENT_SCOPE)
 	set(NLW2_C_API_LIB_NAME ${NLW2_C_API_LIB_NAME} PARENT_SCOPE)
   # Add to folders to better organize project in IDEs
   add_to_folder(${MP_FOLDER_PREFIX}nlw nlw2 nlw2_c_api nl-writer-example-c nl-writer-example-cpp)

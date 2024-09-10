@@ -172,9 +172,14 @@ public:
   /// Whether accepts NLObjective (relevant in BasicExprModelAPI)
   static int AcceptsNLObj() { return 0; }
 
+
   /// Placeholder for SetQuadraticObjective()
   void SetQuadraticObjective(int , const QuadraticObjective& ) {
     MP_UNSUPPORTED("FlatModelAPI::SetQuadraticObjective()");
+  }
+  /// Placeholder for SetNLObjective()
+  void SetNLObjective(int , const NLObjective& ) {
+    MP_UNSUPPORTED("FlatModelAPI::SetNLObjective()");
   }
 
   /// Placeholder for AddConstraint<>()

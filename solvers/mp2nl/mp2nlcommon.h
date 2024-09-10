@@ -19,10 +19,12 @@ private:
 };
 
 
-/// Common API for Scip classes
+/// Common API for MP2NL classes
 class MP2NLCommon :
 		public Backend2ModelAPIConnector<MP2NLCommonInfo> {
 public:
+  static constexpr double Infinity() { return INFINITY; }
+  static constexpr double MinusInfinity() { return -INFINITY; }
 
 protected:
   void OpenSolver();

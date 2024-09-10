@@ -168,6 +168,10 @@ protected:
   template <class Index, class Value>
   class SparseVectorWriter {
   public:
+    /// Index type
+    using index_type = Index;
+    /// Value type
+    using value_type = Value;
     /// Construct
     SparseVectorWriter() { }
     /// Not construct(const&)
@@ -216,6 +220,12 @@ protected:
   template <class Index, class Value>
   class SingleSparseVecWrtFactory {
   public:
+    /// Index type
+    using index_type = Index;
+    /// Value type
+    using value_type = Value;
+    /// Vector writer type
+    using writer_type = SparseVectorWriter<Index, Value>;
     /// Construct.
     /// @param fmt: format string for printf()
     ///  containing %d for the number of sparse elements
@@ -551,7 +561,7 @@ protected:
     /// Start writing an int-valued suffix.
     SuffixIntWriter StartIntSuffix(
         const char* name, int kind, int nnz);
-    /// Start writing an dbl-valued suffix.
+    /// Start writing a dbl-valued suffix.
     SuffixDblWriter StartDblSuffix(
         const char* name, int kind, int nnz);
 

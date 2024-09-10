@@ -397,6 +397,7 @@ protected:
     /// Push variables
     if (var_names_storage_.size() > 0) {
       // Convert names to c-str if needed
+      var_names_.reserve(var_names_storage_.size());
       for (const std::string& s : var_names_storage_)
         var_names_.push_back(s.c_str());
       backend.AddVariables({ var_lb_subm_, var_ub_subm_, var_type_, var_names_ });
@@ -436,7 +437,9 @@ public:
   template <class Backend>
   void SetObjectiveTo(
       Backend& backend, int i, const QuadraticObjective& obj) const {
-    if (obj.GetQPTerms().size())
+    if (obj.HasExpr())
+      backend.SetNLObjective(i, obj);
+    else if (obj.GetQPTerms().size())
       backend.SetQuadraticObjective(i, obj);
     else
       backend.SetLinearObjective(i, obj);

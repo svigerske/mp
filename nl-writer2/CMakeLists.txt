@@ -33,8 +33,8 @@ set(NLW2_INC_FILES
 	${NLW2_INCLUDE_PATH}/mp/nl-model.h
 	${NLW2_INCLUDE_PATH}/mp/nl-solver.h
 	${NLW2_INCLUDE_PATH}/mp/nl-solver.hpp
-	${NLW2_INCLUDE_PATH}/mp/nl-feeder.h
-	${NLW2_INCLUDE_PATH}/mp/nl-writer2.h
+  ${NLW2_INCLUDE_PATH}/mp/nl-feeder.h
+  ${NLW2_INCLUDE_PATH}/mp/nl-writer2.h
 	${NLW2_INCLUDE_PATH}/mp/nl-writer2.hpp
 	${NLW2_INCLUDE_PATH}/mp/nl-writer2-misc.h
   ${NLW2_INCLUDE_PATH}/mp/nl-utils.h

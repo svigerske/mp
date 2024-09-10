@@ -1,9 +1,8 @@
 /*
- mp::NLFeeder.
- Interface for a model feeder into mp::NLWriter2.
- mp::NLWriter2 is a zero-overhead NL model writer
- implemented with inline template code. In particular,
- it does not store any intermediate model representation.
+ mp::NLFeederAbstract.
+ Abstract-type interface for mp::NLFeeder.
+ This interface is more flexible to use in a dynamically dispatched
+ implementation.
 
  NL is a format for representing optimization problems such as linear,
  quadratic, nonlinear, complementarity and constraint programming problems
@@ -11,22 +10,10 @@
  "Writing .nl Files" (http://www.cs.sandia.gov/~dmgay/nlwrite.pdf).
 
  Usage: recommended via mp::NLSOL class.
+ See the MP2NL driver for example implementation.
 
- If you need the NL writing part only, proceed as follows:
 
-   MyNLFeeder feeder;
-   mp::NLUtils nlutils;
-   auto result = mp::WriteNLFile("model", feeder, nlutils);
-   if (mp::WriteNL_OK != result.first) {
-     ...
-   }
-
- where feeder is an object that provides information on model
- components. Below is an interface for such a feeder.
-
- See also mp::NLReader and mp::NLHandler classes.
-
- Copyright (C) 2023 AMPL Optimization, Inc.
+ Copyright (C) 2024 AMPL Optimization, Inc.
 
  Permission to use, copy, modify, and distribute this software and its
  documentation for any purpose and without fee is hereby granted,
@@ -45,22 +32,28 @@
  Author: Gleb Belov
  */
 
-#ifndef NLFeeder_H
-#define NLFeeder_H
+#ifndef NLFEEDERABSTRACT_H
+#define NLFEEDERABSTRACT_H
 
-#include <algorithm>
-#include <cassert>
-
-#include "mp/nl-header.h"
+#include "mp/nl-feeder.h"
+#include "mp/nl-feeder-abstract-defs.h"
 
 
 namespace mp {
 
 /**
     \rst
-    NLFeeder: writes model details on request
+    NLFeederAbstract: writes model details on request
     via provided callback objects.
-    See the examples folder.
+    Abstract-type interface for mp::NLFeeder.
+    This interface is more flexible to use in a dynamically dispatched
+    implementation.
+
+    Implement methods listed in the 1st part, if needed.
+
+    Usage: recommended via mp::NLSOL class.
+    See the MP2NL driver for example implementation.
+
 
     For the NL format, variables and constraints must have certain order.
 
@@ -72,31 +65,27 @@ namespace mp {
       first algebraic (including complementarity), then logical.
     Some solvers might require nonlinear constraints first.
 
-    `~mp::NLFeeder` can be used as a base class for other feeders,
-    or just be an interface prototype.
-
-    **Subclassed interfaces and examples:**
-      - Simplified (MI)QP interface via `~mp::NLModel`,
-        `~mp::NLFeeder_Easy`
-      - C API implementation class `~mp::NLW2_NLFeeder_C_Impl`
-      - Smaller examples/tests, e.g., see the example folder.
-      - MP2NL is a meta-driver interfacing the MP library
-        to external NL solvers.
-
     @param: *Impl* is the final CRTP type
-    derived from `~mp::NLFeeder`. Currently unused.
+    derived from `~mp::NLFeederAbstract`.
 
     @param: *ExprType* is a type storing expressions from
-    methods such as `~mp::NLFeeder::FeedExpr`. If not used,
+    methods such as `~FeedExpr`. If not used,
     it can be any default-constructible type.
     \endrst
  */
 template <typename Impl, typename ExprType>
-class NLFeeder {
+class NLFeederAbstract
+    : public NLFeeder<Impl, ExprType> {
 public:
-  /** The expression type. */
-  typedef ExprType Expr;
+  /** Base class. */
+  using BaseClass = NLFeeder<Impl, ExprType>;
 
+  /** The expression type. */
+  using typename BaseClass::Expr;
+
+  ///////////////////////////////////////////////////////////////////////
+  /// Methods which can/should be implemented in the derived class.
+  ///////////////////////////////////////////////////////////////////////
 
   ///////////////////// 1. NL HEADER AND OPTIONS /////////////////
   /** Provide NLHeader.
@@ -154,13 +143,12 @@ public:
    *
    *  Implementation skeleton:
    *      if (obj_grad[i].size()) {
-   *        auto svw = svwf.MakeVectorWriter(obj_grad[i].size());
+   *        auto& svw = svwf.MakeVectorWriter(obj_grad[i].size());
    *        for (size_t j=0; j<obj_grad.size(); ++j)
    *          svw.Write(obj_grad[j].var_index, obj_grad[j].coef);
    *      }
    */
-  template <class ObjGradWriterFactory>
-  void FeedObjGradient(int i, ObjGradWriterFactory& ) { }
+  void FeedObjGradient(int i, BasicSparseDblVecWrtFactory& ) { }
 
   /** Feed nonlinear expression of objective \a i.
    *
@@ -169,10 +157,8 @@ public:
    *
    *  Implementation example:
    *      ew.EPut(obj_root_expr[i]);
-   *
-   *  Details of ObjExprWriter: see NLWriter2. */
-  template <class ObjExprWriter>
-  void FeedObjExpression(int , ObjExprWriter& ew)
+   */
+  void FeedObjExpression(int , BasicNLExprWriter<Expr>& ew)
   { ew.NPut(0.0); }
 
 
@@ -207,16 +193,15 @@ public:
    *      for (int dvar_index: dvar_indexes[i]) {
    *        auto dv = dvw.StartDefVar(dvar_index, lin_nnz, name_or_comment);
    *        /////////// Write the linear part:
-   *        auto linw = dv.GetLinExprWriter();
+   *        auto& linw = dv.GetLinExprWriter();
    *        for (int i=0; i<lin_nnz; ++i)
    *          linw.Write(linexp_var[i], linexp_coef[i]);
    *        /////////// Write the expression tree:
-   *        auto ew = dv.GetExprWriter();
+   *        auto& ew = dv.GetExprWriter();
    *        ew.EPut(root_expr);
    *      }
      */
-  template <class DefVarWriterFactory>
-  void FeedDefinedVariables(int i, DefVarWriterFactory& ) { }
+  void FeedDefinedVariables(int i, BasicNLDefVarWriterFactory<Expr>& ) { }
 
 
   ///////////////////// 4. VARIABLE BOUNDS /////////////////////
@@ -229,8 +214,7 @@ public:
    *      for (int i = 0; i < hdr.num_vars; i++)
    *        vbw.WriteLbUb(lb[i], ub[i]);
    */
-  template <class VarBoundsWriter>
-  void FeedVarBounds(VarBoundsWriter& ) { }
+  void FeedVarBounds(BasicNLVarBndWriter& ) { }
 
 
   ///////////////// 5. CONSTRAINT BOUNDS & COMPLEMENTARITY ///////
@@ -288,10 +272,6 @@ public:
   ///					-2 <= Compl2$cvar <= 13;
   ///
   /// \endrst
-  struct AlgConRange {
-    double L{}, U{};
-    int k{0}, cvar{0};    // k>0 means complementarity to cvar
-  };
 
   /** Bounds/complementarity for all algebraic constraints
    *  (\a num_algebraic_cons).
@@ -315,8 +295,7 @@ public:
    *        cbw.WriteAlgConRange(bnd);
    *      }
    */
-  template <class ConBoundsWriter>
-  void FeedConBounds(ConBoundsWriter& ) { }
+  void FeedConBounds(BasicNLConBndWriter& ) { }
 
 
   ///////////////////// 6. CONSTRAINTS /////////////////////
@@ -332,13 +311,12 @@ public:
     *
     *  Implementation skeleton:
     *      if (con_grad[i].size()) {
-    *        auto sv = svw.MakeVectorWriter(con_grad[i].size());
+    *        auto& sv = svw.MakeVectorWriter(con_grad[i].size());
     *        for (size_t j=0; j<con_grad.size(); ++j)
     *          sv.Write(con_grad[j].var_index, con_grad[j].coef);
     *      }
     */
-  template <class ConLinearExprWriterFactory>
-  void FeedLinearConExpr(int i, ConLinearExprWriterFactory& ) { }
+  void FeedLinearConExpr(int i, BasicSparseDblVecWrtFactory& ) { }
 
   /** Feed nonlinear expression of constraint \a i.
      *  Algebraic constraints (num_algebraic_cons)
@@ -346,8 +324,7 @@ public:
      *  For linear constraints, the expression should be
    *  constant 0, which is implemented as default.
      */
-  template <class ConExprWriter>
-  void FeedConExpression(int , ConExprWriter& ew)
+  void FeedConExpression(int , BasicNLExprWriter<Expr>& ew)
   { ew.NPut(0.0); }
 
 
@@ -356,11 +333,8 @@ public:
      *  This method is recursively called from NLWriter,
      *  when Feeder uses ExprWriter::EPut().
      *  Feeder should not call this method itself.
-     *
-     *  Details of ExprWriter: see NLWriter2.
    */
-  template <class ExprWriter>
-  void FeedExpr(Expr e, ExprWriter& ) { }
+  void FeedExpr(Expr e, BasicNLExprWriter<Expr>& ) { }
 
 
   ///////////////////// 8. PL-SOS CONSTRAINTS ////////////
@@ -386,30 +360,21 @@ public:
      *    deleted if the solver accepts SOS natively.
    *
    *  Implementation:
-   *      auto sosv = plsos.StartSOSVars(nvsos);
+   *      auto& sosv = plsos.StartSOSVars(nvsos);
    *      for (int i=0; i<nvsos; ++i)
    *        sosv.Write(i, vsos[i]);
    *      if (ncsos) {
-   *        auto sosc = plsos.StartSOSCons(ncsos);
+   *        auto& sosc = plsos.StartSOSCons(ncsos);
    *        for ....
    *      }
-   *      auto sosrefv = plsos.StartSOSREFVars(ac->nsosref);
+   *      auto& sosrefv = plsos.StartSOSREFVars(ac->nsosref);
    *      ....
     */
-  template <class PLSOSWriter>
-  void FeedPLSOS(PLSOSWriter& ) { }
+  void FeedPLSOS(BasicPLSOSWriter& ) { }
 
 
-  ///////////////////// 9. FUNCTIONS /////////////////////
   /** Function definition. */
-  struct FuncDef {
-    const char* Name() { return ""; }
-    int NumArgs() { return 0; }
-    /** Function type.
-         *  0 - numeric;
-         *  1 - symbolic. */
-    int Type() { return 0; }
-  };
+  using typename BaseClass::FuncDef;
 
   /** Provide definition
    *  of function \a i, i=0..num_funcs-1. */
@@ -419,26 +384,8 @@ public:
   ///////////////////// 10. RANDOM VARIABLES /////////////////////
   /// Random variables.
   /// Undocumented feature. SNL2006.
-  /// Example:
-  /// var z >= 0;
-  ///	let z.stage := 1;
-  ///	var x{0..1, 0..1} random := Uniform(0,2);
-  ///	for {i in 0..1, j in 0..1} {let x[i,j].stage := 1;};
-  ///	display z.stage, x.stage;
-  ///	c: z * sum{i in 0..1, j in 0..1} x[i,j] <= 3 + Sample(Uniform(0,2));
-  ///
-  /// Feed random variables.
-  /// Indexes: num_vars+num_common_exprs
-  ///   .. num_vars+num_common_exprs+num_rand_vars-1.
-  ///
-  /// Implementation skeleton:
-  ///     for(j = num_vars+num_common_exprs;
-  ///         j < num_vars+num_common_exprs+num_rand_vars; j++) {
-  ///       auto ew = rvw.StartRandVar(j, rand_var_comment(j));
-  ///       ew.EPut(rand_var_root_expr(j));
-  ///     }
-  template <class RandVarWriterFactory>
-  void FeedRandomVariables(RandVarWriterFactory& ) { }
+  /// @note Not adapting this one.
+  using BaseClass::FeedRandomVariables;
 
 
   ///////////////////// 11. COLUMN SIZES /////////////////////
@@ -454,8 +401,7 @@ public:
    *        for (int i=0; i < num_vars+num_rand_vars-1; ++i)
    *          csw.Write(col_size[i]);
    */
-  template <class ColSizeWriter>
-  void FeedColumnSizes(ColSizeWriter& ) { }
+  void FeedColumnSizes(BasicNLColSizeWriter& ) { }
 
 
   ///////////////////// 12. INITIAL GUESSES /////////////////////
@@ -468,12 +414,10 @@ public:
    *          ig.Write(ini_guess[i].index_, ini_guess[i].value_);
    *      }
    */
-  template <class IGWriter>
-  void FeedInitialGuesses(IGWriter& ) { }
+  void FeedInitialGuesses(BasicSparseDblVecWrtFactory& ) { }
 
   /** Initial dual guesses. */
-  template <class IDGWriter>
-  void FeedInitialDualGuesses(IDGWriter& ) { }
+  void FeedInitialDualGuesses(BasicSparseDblVecWrtFactory& ) { }
 
 
   ///////////////////// 13. SUFFIXES /////////////////////
@@ -490,8 +434,7 @@ public:
    *          sw.Write(index[i], value[i]);
    *      }
      */
-  template <class SuffixWriterFactory>
-  void FeedSuffixes(SuffixWriterFactory& ) { }
+  void FeedSuffixes(BasicNLSuffixWriterFactory& ) { }
 
 
   //////////////////// 14. ROW/COLUMN NAMES ETC /////////////////////
@@ -502,22 +445,18 @@ public:
    *  Implementation:
    *      if ((output_desired) && wrt)
    *        for (i: ....)
-   *          wrt << name[i].c_str();
+   *          wrt.Write( name[i].c_str() );
      */
-  template <class RowObjNameWriter>
-  void FeedRowAndObjNames(RowObjNameWriter& wrt) { }
+  void FeedRowAndObjNames(BasicNLNameFileWriter& wrt) { }
 
   /** Provide deleted row names.*/
-  template <class DelRowNameWriter>
-  void FeedDelRowNames(DelRowNameWriter& ) { }
+  void FeedDelRowNames(BasicNLNameFileWriter& ) { }
 
   /** Provide variable names. */
-  template <class ColNameWriter>
-  void FeedColNames(ColNameWriter& ) { }
+  void FeedColNames(BasicNLNameFileWriter& ) { }
 
   /** Provide unused variable names. */
-  template <class UnusedVarNameWriter>
-  void FeedUnusedVarNames(UnusedVarNameWriter& ) { }
+  void FeedUnusedVarNames(BasicNLNameFileWriter& ) { }
 
   /** Provide {fixed variable, extra info} pairs.
      *  This includes defined eliminated variables.
@@ -525,25 +464,112 @@ public:
    *  Implementation:
    *      if ((output_desired) && wrt)
    *        for (....)
-   *          wrt << typename Writer::StrStrValue
-     *          { name[i].c_str(), comment[i].c_str() };
+   *          wrt.Write( name[i].c_str(), comment[i].c_str() );
      */
-  template <class FixedVarNameWriter>
-  void FeedFixedVarNames(FixedVarNameWriter& ) { }
+  void FeedFixedVarNames(BasicNLNameFileWriter& ) { }
 
   /** Provide {obj name, constant term} pairs.
    *
    *  Implementation:
    *      if (wrt)
    *        for (....)
-   *          wrt << typename Writer::StrDblValue
-     *          { name[i].c_str(), (double)obj_offset[i] };
+   *          wrt.Write( name[i].c_str(), (double)obj_offset[i] );
      */
+  void FeedObjAdj(BasicNLNameFileWriter& ) { }
+
+
+  ///////////////////////////////////////////////////////////////////////
+  /// Methods which normally should not be reimplemented.
+  ///////////////////////////////////////////////////////////////////////
+
+  /// Dispatcher method
+  template <class ObjGradWriterFactory>
+  void FeedObjGradient(int i, ObjGradWriterFactory& );
+
+  /// Dispatcher method
+  template <class ObjExprWriter>
+  void FeedObjExpression(int , ObjExprWriter& ew);
+
+
+  /// Dispatcher method
+  template <class DefVarWriterFactory>
+  void FeedDefinedVariables(int i, DefVarWriterFactory& );
+
+
+  /// Dispatcher method
+  template <class VarBoundsWriter>
+  void FeedVarBounds(VarBoundsWriter& );
+
+
+  /// Dispatcher method
+  template <class ConBoundsWriter>
+  void FeedConBounds(ConBoundsWriter& );
+
+
+  /// Dispatcher method
+  template <class ConLinearExprWriterFactory>
+  void FeedLinearConExpr(int i, ConLinearExprWriterFactory& );
+
+  /// Dispatcher method
+  template <class ConExprWriter>
+  void FeedConExpression(int , ConExprWriter& ew);
+
+
+  /// Dispatcher method
+  template <class ExprWriter>
+  void FeedExpr(Expr e, ExprWriter& );
+
+
+  /// Dispatcher method
+  template <class PLSOSWriter>
+  void FeedPLSOS(PLSOSWriter& );
+
+
+  /// Dispatcher method
+  template <class ColSizeWriter>
+  void FeedColumnSizes(ColSizeWriter& );
+
+
+  /// Dispatcher method
+  template <class IGWriter>
+  void FeedInitialGuesses(IGWriter& );
+
+  /// Dispatcher method
+  template <class IDGWriter>
+  void FeedInitialDualGuesses(IDGWriter& );
+
+
+  /// Dispatcher method
+  template <class SuffixWriterFactory>
+  void FeedSuffixes(SuffixWriterFactory& );
+
+
+  /// Dispatcher method
+  template <class RowObjNameWriter>
+  void FeedRowAndObjNames(RowObjNameWriter& wrt);
+
+  /// Dispatcher method
+  template <class DelRowNameWriter>
+  void FeedDelRowNames(DelRowNameWriter& );
+
+  /// Dispatcher method
+  template <class ColNameWriter>
+  void FeedColNames(ColNameWriter& );
+
+  /// Dispatcher method
+  template <class UnusedVarNameWriter>
+  void FeedUnusedVarNames(UnusedVarNameWriter& );
+
+  /// Dispatcher method
+  template <class FixedVarNameWriter>
+  void FeedFixedVarNames(FixedVarNameWriter& );
+
+  /// Dispatcher method
   template <class ObjOffsetWriter>
-  void FeedObjAdj(ObjOffsetWriter& ) { }
+  void FeedObjAdj(ObjOffsetWriter& );
 
 };
 
 }  // namespace mp
 
-#endif  // NLFeeder_H
+#endif // NLFEEDERABSTRACT_H
