@@ -246,7 +246,7 @@ private:
   std::unique_ptr<NLHeader> p_nlheader_;
   NLModel::PreprocessData pd_;
 
-  std::string err_msg_;
+  std::string err_msg_ {"Solving not attempted"};    // We don't check if empty
   NLW2_WriteNLResultCode nl_result_
   {NLW2_WriteNL_Unset};
   NLW2_SOLReadResultCode sol_result_

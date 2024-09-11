@@ -1,6 +1,7 @@
 #include "mp2nlmodelapi.h"
 #include "mp/nl-solver.hpp"
 #include "mp/nl-opcodes.h"
+#include "mp/sol-handler.h"
 
 
 namespace mp {
@@ -326,23 +327,205 @@ NLHeader MP2NLModelAPI::DoMakeHeader() {
 }
 
 
-void CreateNLS() {
-  Env env;
-  MP2NLModelAPI nlf(env);
-  SOLHandler esolh;
-  mp::NLUtils utils;
+/// Implement NLSolverIntf
+class MP2NLSolverImpl
+    : public MP2NLSolverIntf,
+      public SOLHandler {
+public:
+  /// Construct
+  MP2NLSolverImpl(MP2NLModelAPI& mapi) : mapi_(mapi) { }
 
-  mp::NLSolver nlsol(&utils);
-
-  std::string solver = "minos";
-  std::string sopts = "";
-
-  if (!nlsol.Solve(nlf, esolh, solver, sopts)) {
-    printf("%s\n", nlsol.GetErrorMessage());
-  } else {
+  /// Solve
+  void Solve(const char* solver, const char* sopts) override {
+    if_solve_attempted_ = true;
+    if_solve_ok_ = nlsol_.Solve(mapi_, *this, solver, sopts);
   }
-}
 
+  /// AMPL solve result code
+  int GetSolveResult() const override {
+    return (if_solve_ok_ || !if_solve_attempted_)
+        ? sresult_ : 500;             // 500: failure
+  }
+
+  /// Solve result message or error message
+  const char* GetSolveMessage() const override {
+    if (if_solve_ok_)
+      solve_message_final_ = solve_message_;
+    else {
+      solve_message_final_ = nlsol_.GetErrorMessage();
+      if (solve_message_.size()) {
+        solve_message_final_ +=
+            "\nOriginal solve message: ";
+        solve_message_final_ += solve_message_;
+      }
+    }
+    return solve_message_final_.c_str();
+  }
+
+  /// Number of backspaces to print
+  /// if printing the solve message right here,
+  /// or skip so many symbols first.
+  int GetSolveMessageNbs() const override { return nbs_; }
+
+  /// Stub file used
+  const char* GetFileStub() const override
+  { return nlsol_.GetFileStub().c_str(); }
+
+  /// Objno used
+  int GetObjnoUsed() const override { return objno_used_; }
+
+  /// Primal solution
+  ArrayRef<double> GetX() const override { return primals_; }
+
+  /// Dual solution
+  ArrayRef<double> GetY() const override { return duals_; }
+
+  /// @todo + Suffixes... Pull or push?
+  /// ..
+
+  /////////////////////////////////////////////////////////////////////////
+  //////////////////////// SOLHandler implementation //////////////////////
+  /////////////////////////////////////////////////////////////////////////
+public:
+  /** The NLHeader used to write the NL file. */
+  NLHeader Header() const { return mapi_.Header(); }
+
+  /** Receive solve message.
+   *  The message always ends with '\n'.
+   *
+   *  @param nbs: number of backspaces
+   *  in the original solve message.
+   *  So many characters should be skipped
+   *  from the message if printed straightaway.
+   *  AMPL solver drivers can supply the message
+   *  with initial backspaces to indicate
+   *  that so many characters should be skipped
+   *  when printing. For example, if the driver prints
+   *  MINOS 5.51:
+   *  and exits, and the message starts with that again,
+   *  this part should be skipped.
+   */
+  void OnSolveMessage(const char* s, int nbs) {
+    solve_message_ = s;
+    nbs_ = nbs;
+  }
+
+  /**
+   * Can be ignored by external systems.
+   * @return non-zero to stop solution input.
+   */
+  int OnAMPLOptions(const AMPLOptions& ) { return 0; }
+
+  /**
+   * Dual values for algebraic constraints,
+   * if provided in the solution.
+   * Number of values <= NumAlgCons().
+   * Implementation:
+   *
+   *   duals.reserve(rd.Size());
+   *   while (rd.Size())
+   *     duals.push_back(rd.ReadNext());
+   */
+  template <class VecReader>
+  void OnDualSolution(VecReader& rd) {
+    duals_.clear();
+    duals_.reserve(rd.Size());
+    while (rd.Size())
+      duals_.push_back( rd.ReadNext() );
+  }
+
+  /**
+   * Variable values, if provided.
+   * Number of values <= NumVars().
+   */
+  template <class VecReader>
+  void OnPrimalSolution(VecReader& rd) {
+    primals_.clear();
+    primals_.reserve(rd.Size());
+    while (rd.Size())
+      primals_.push_back( rd.ReadNext() );
+  }
+
+  /**
+   * Receive notification of the objective index
+   * used by the driver (solver option 'objno'-1).
+   */
+  void OnObjno(int objno) { objno_used_ = objno; }
+
+  /**
+   * Receive notification of the solve code.
+   * Solve result codes docu:
+   * https://mp.ampl.com/features-guide.html#solve-result-codes
+   */
+  void OnSolveCode(int sr) { sresult_ = sr; }
+
+  /**
+   * OnIntSuffix().
+   *
+   * For constraints, can include values for
+   * logical constraints (after algebraic.)
+   * Sparse representation - can be empty
+   * (i.e., all values zero.)
+   *
+   * const auto& si = sr.SufInfo();
+   * int kind = si.Kind();
+   * int nmax = nitems_max[kind & 3];
+   * const std::string& name = si.Name();
+   * const std::string& table = si.Table();
+   * while (sr.Size()) {
+   *   std::pair<int, int> val = sr.ReadNext();
+   *   if (val.first<0 || val.first>=nmax) {
+   *     sr.SetError(NLW2_SOLRead_Bad_Suffix,
+   *       "bad suffix element index");
+   *     return;
+   *   }
+   *   suf[val.first] = val.second;
+   * }
+   * if (NLW2_SOLRead_OK == sr.ReadResult())    // Can check
+   *   RegisterSuffix(kind, name, table, suf);
+   */
+  template <class SuffixReader>
+  void OnIntSuffix(SuffixReader& sr) {
+    while (sr.Size())
+      sr.ReadNext();       // read & forget by default
+  }
+
+  /**
+   * Same as OnIntSuffix(), but
+   * sr.ReadNext() returns pair<int, double>
+   */
+  template <class SuffixReader>
+  void OnDblSuffix(SuffixReader& sr) {
+    while (sr.Size())
+      sr.ReadNext();       // read & forget by default
+  }
+
+
+private:
+  MP2NLModelAPI& mapi_;
+
+  mp::NLUtils utils_;
+
+  mp::NLSolver nlsol_ { &utils_ };
+
+
+  /// Solution
+  bool if_solve_attempted_ {};
+  bool if_solve_ok_ {};     // return NLSolver's error message if not
+  std::string solve_message_;
+  mutable std::string solve_message_final_;
+  int nbs_ {};
+  std::vector<double> duals_,
+      primals_;
+  int objno_used_ {-1},
+      sresult_ {-1};
+};
+
+
+void MP2NLModelAPI::CreateInterfaces() {
+  p_nls_ = std::make_unique<MP2NLSolverImpl>(*this);
+  this->MP2NLCommonInfo::p_nlsi_ = p_nls_.get();
+}
 
 
 } // namespace mp

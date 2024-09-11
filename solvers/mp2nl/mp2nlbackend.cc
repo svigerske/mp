@@ -38,6 +38,7 @@ MP2NLBackend::MP2NLBackend() {
   SetMM( std::move( data ) );
   SetValuePresolver(pPre);
 
+  p_nlsi_ = get_other()->p_nlsi_;    // before copying
   /// Copy env/lp to ModelAPI
   copy_common_info_to_other();
 }
@@ -59,23 +60,19 @@ std::string MP2NLBackend::set_external_libs() {
 }
 
 ArrayRef<double> MP2NLBackend::PrimalSolution() {
-  int num_vars = NumVars();
-  std::vector<double> x(num_vars);
-  return x;
+  return GetNLSolver().GetX();
 }
 
 pre::ValueMapDbl MP2NLBackend::DualSolution() {
-  return {{ { CG_Linear, DualSolution_LP() } }};
+  return {{ { CG_Algebraic, DualSolution_LP() } }};
 }
 
 ArrayRef<double> MP2NLBackend::DualSolution_LP() {
-  int num_cons = NumLinCons();
-  std::vector<double> pi(num_cons);
-  return pi;
+  return GetNLSolver().GetY();
 }
 
 double MP2NLBackend::ObjectiveValue() const {
-  return 0.0;
+  return -DBL_MAX/1.01;                        // SOL does not provide one
 }
 
 double MP2NLBackend::NodeCount() const {
@@ -95,10 +92,13 @@ void MP2NLBackend::ExportModel(const std::string &file) {
 
 
 void MP2NLBackend::SetInterrupter(mp::Interrupter *inter) {
+  // TODO
 }
 
 void MP2NLBackend::Solve() {
-  // TODO
+  GetNLSolver().Solve(
+      storedOptions_.solver_.c_str(),
+      storedOptions_.solver_options_.c_str());
   WindupMP2NLSolve();
 }
 
@@ -141,16 +141,12 @@ void MP2NLBackend::ReportMP2NLPool() {
 
 
 void MP2NLBackend::AddMP2NLMessages() {
-  AddToSolverMessage(
-          fmt::format("{} simplex iterations\n", SimplexIterations()));
-  if (auto nbi = BarrierIterations())
-    AddToSolverMessage(
-          fmt::format("{} barrier iterations\n", nbi));
 }
 
 std::pair<int, std::string> MP2NLBackend::GetSolveResult() {
-  namespace sol = mp::sol;
-  return { sol::UNKNOWN, "not solved" };
+  return {
+          GetNLSolver().GetSolveResult(),
+      GetNLSolver().GetSolveMessage() };
 }
 
 
@@ -182,21 +178,31 @@ void MP2NLBackend::InitCustomOptions() {
     "To set these options, assign a string specifying their values to the "
     "AMPL option ``mp2nl_options``. For example::\n"
     "\n"
-    "  ampl: option mp2nl_options 'mipgap=1e-6';\n");
+    "  ampl: option mp2nl_options 'solver=baron solver_options=\"outlev=1 iisfind=1\"';\n");
 
   AddStoredOption("tech:outlev outlev",
-    "0*/1: Whether to write MP2NL log lines (chatter) to stdout and to file.",
+    "0*/1: Verbosity for the MP2NL driver. For the underlying solver, use tech:solver_options.",
     storedOptions_.outlev_);
 
-  AddStoredOption("tech:logfile logfile",
-    "Log file name.",
-    storedOptions_.logFile_);
+  // AddStoredOption("tech:logfile logfile",
+  //                 "Log file name.",
+  //                 storedOptions_.logFile_);
 
+  AddStoredOption("tech:solver solver",
+                  "Underlying AMPL solver.",
+                  storedOptions_.solver_);
+
+  AddStoredOption("tech:solver_options solver_options slv_opts",
+                  "Underlying solver options.",
+                  storedOptions_.solver_options_);
+
+  /// Enforce time limit?
   // AddSolverOption("lim:time timelim timelimit time_limit",
   //   "Limit on solve time (in seconds; default: 1e+20).",
   //   "limits/time", 0.0, 1e+20);
 
 
+  /// Custom infinity value?
   // AddSolverOption("num:infinity infinity",
   //   "Values larger than this are considered infinity (default: 1e+20)",
   //   "numerics/infinity", 1e+10, DBL_MAX);

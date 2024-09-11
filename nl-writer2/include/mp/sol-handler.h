@@ -132,6 +132,9 @@ public:
   /**
    * Receive notification of the objective index
    * used by the driver (solver option 'objno'-1).
+   *
+   * @note AMPL .sol file does not provide
+   *   objective values, only in the solve message if at all.
    */
   void OnObjno(int ) { }
 

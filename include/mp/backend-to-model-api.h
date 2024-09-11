@@ -17,7 +17,9 @@ public:
   // Retrieve the other object
   CommonInfo* get_other() { assert(other_); return other_; }
   /// Set the other object.
-  /// This is standardly called from CreateModelManagerWithModelAPI()
+  /// This is standardly called from CreateModelManagerWithModelAPI(),
+  /// thus, after construction of both
+  /// (Solver)Backend and (Solver)ModelAPI.
   void set_other(CommonInfo* other) { other_ = other; }
 
   /// Copy into the other object.

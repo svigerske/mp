@@ -56,7 +56,7 @@ public:
  * MULTISOL support
  * No API, see ReportIntermediateSolution()
 **/
-  ALLOW_STD_FEATURE(MULTISOL, true)
+  ALLOW_STD_FEATURE(MULTISOL, false)
 
   /**
   * Get/Set AMPL var/con statii
@@ -84,7 +84,7 @@ public:
   /**
   * EXPORT PROBLEM
   **/
-  ALLOW_STD_FEATURE(WRITE_PROBLEM, true)
+  ALLOW_STD_FEATURE(WRITE_PROBLEM, false)
   void DoWriteProblem(const std::string& name) override;
 
 
@@ -93,7 +93,7 @@ public:
   **/
   // return MIP gap
   // (adds option mip:return_gap)
-  ALLOW_STD_FEATURE(RETURN_MIP_GAP, true)
+  ALLOW_STD_FEATURE(RETURN_MIP_GAP, false)
   double MIPGap() override;
   double MIPGapAbs() override;
   /**
@@ -101,7 +101,7 @@ public:
   **/
   // return the best dual bound value
   // (adds option mip:bestbound)
-  ALLOW_STD_FEATURE(RETURN_BEST_DUAL_BOUND, true)
+  ALLOW_STD_FEATURE(RETURN_BEST_DUAL_BOUND, false)
   double BestDualBound() override;
 
   /////////////////////////// Model attributes /////////////////////////
@@ -162,11 +162,10 @@ protected:
 private:
   /// These options are stored in the class
   struct Options {
-    std::string logFile_, paramRead_;
-    int concurrent_ = 0;
-    int heuristics_ = 0;
-    int cuts_ = 0;
-    int presolvings_ = 0;
+    std::string solver_,
+        solver_options_;
+    std::string logFile_,
+        nlstub_;
     int outlev_ = 0;
   };
   Options storedOptions_;

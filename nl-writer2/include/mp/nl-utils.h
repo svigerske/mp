@@ -59,7 +59,7 @@ public:
     f_ = nullptr;
   }
 
-  /// Printf
+  /// Printf into the file
   void Printf(const char* format, ...);
 
   /// Obtain handler

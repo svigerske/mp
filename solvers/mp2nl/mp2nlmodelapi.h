@@ -44,7 +44,9 @@ public:
   using BaseNLFeeder = NLFeeder<MP2NLModelAPI, MP2NL_Expr>;
 
   /// Construct
-	MP2NLModelAPI(Env& e) : EnvKeeper(e) { }
+  MP2NLModelAPI(Env& e) : EnvKeeper(e) {
+    CreateInterfaces();
+  }
 
   /// Class name
 	static const char* GetTypeName() { return "MP2NLModelAPI"; }
@@ -610,19 +612,19 @@ public:
     for (size_t i=0; i<alg_con_info_.size(); ++i) {          // no constraint permutations
       switch (alg_con_info_[i].GetStaticTypeID()) {
       case StaticItemTypeID::ID_LinConRange: {
-        const auto& lcon = *((LinConRange*)(obj_info_[i].GetPItem()));
+        const auto& lcon = *((LinConRange*)(alg_con_info_[i].GetPItem()));
         cbw.WriteAlgConRange( AlgConRange{lcon.lb(), lcon.ub()} );
       } break;
       case StaticItemTypeID::ID_LinConLE: {
-        const auto& lcon = *((LinConLE*)(obj_info_[i].GetPItem()));
+        const auto& lcon = *((LinConLE*)(alg_con_info_[i].GetPItem()));
         cbw.WriteAlgConRange( AlgConRange{lcon.lb(), lcon.ub()} );
       } break;
       case StaticItemTypeID::ID_LinConEQ: {
-        const auto& lcon = *((LinConEQ*)(obj_info_[i].GetPItem()));
+        const auto& lcon = *((LinConEQ*)(alg_con_info_[i].GetPItem()));
         cbw.WriteAlgConRange( AlgConRange{lcon.lb(), lcon.ub()} );
       } break;
       case StaticItemTypeID::ID_LinConGE: {
-        const auto& lcon = *((LinConGE*)(obj_info_[i].GetPItem()));
+        const auto& lcon = *((LinConGE*)(alg_con_info_[i].GetPItem()));
         cbw.WriteAlgConRange( AlgConRange{lcon.lb(), lcon.ub()} );
       } break;
       default:
@@ -654,16 +656,16 @@ public:
   void FeedLinearConExpr(int i, ConLinearExprWriterFactory& svwf) {
     switch (alg_con_info_[i].GetStaticTypeID()) {
     case StaticItemTypeID::ID_LinConRange: {
-      FeedLinearConExpr( *((LinConRange*)(obj_info_[i].GetPItem())), svwf);
+      FeedLinearConExpr( *((LinConRange*)(alg_con_info_[i].GetPItem())), svwf);
     } break;
     case StaticItemTypeID::ID_LinConLE: {
-      FeedLinearConExpr( *((LinConLE*)(obj_info_[i].GetPItem())), svwf);
+      FeedLinearConExpr( *((LinConLE*)(alg_con_info_[i].GetPItem())), svwf);
     } break;
     case StaticItemTypeID::ID_LinConEQ: {
-      FeedLinearConExpr( *((LinConEQ*)(obj_info_[i].GetPItem())), svwf);
+      FeedLinearConExpr( *((LinConEQ*)(alg_con_info_[i].GetPItem())), svwf);
     } break;
     case StaticItemTypeID::ID_LinConGE: {
-      FeedLinearConExpr( *((LinConGE*)(obj_info_[i].GetPItem())), svwf);
+      FeedLinearConExpr( *((LinConGE*)(alg_con_info_[i].GetPItem())), svwf);
     } break;
     default:
       MP_RAISE("Unknown algebraic constraint type");
@@ -1105,11 +1107,11 @@ protected:
     /// Construct
     ItemInfo (BasicItemDispatcher& disp,
              void* pitem, StaticItemTypeID iid, ExpressionTypeID eid)
-        : disp_(disp), pitem_(pitem), itemID_(iid), exprID_(eid) { }
+        : disp_(disp), p_item_(pitem), itemID_(iid), exprID_(eid) { }
     /// Get dispatcher
     BasicItemDispatcher& GetDispatcher() const { return disp_; }
     /// Get &item
-    void* GetPItem() const { return pitem_; }
+    void* GetPItem() const { return p_item_; }
     /// Get static item type ID, if any
     StaticItemTypeID GetStaticTypeID() const { return itemID_; }
     /// Get expression type ID, if any
@@ -1117,7 +1119,7 @@ protected:
 
   private:
     BasicItemDispatcher& disp_;
-    void* pitem_;
+    void* p_item_;
     StaticItemTypeID itemID_ {StaticItemTypeID::ID_None};
     ExpressionTypeID exprID_ {ExpressionTypeID::ID_None};
   };
@@ -1134,6 +1136,8 @@ protected:
     return { GetItemDispatcher<Item>(), (void*)&i, StaticItemTypeID::ID_None, eid };
   }
 
+  /// Create implementations of interfaces of NLSolver
+  void CreateInterfaces();
 
 private:
   /// References to the model data.
@@ -1150,6 +1154,7 @@ private:
 
 
   ItemMarkingData mark_data_;
+  std::unique_ptr<MP2NLSolverIntf> p_nls_;
 
 };
 
