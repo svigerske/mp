@@ -33,11 +33,12 @@ public:
   Solution GetSolution() override {
     auto x = PrimalSolution();
     auto y = DualSolution();
+    auto objs = GetObjectiveValues();
     auto fKnownInfeasOrUnb = BaseBackend::IsProblemInfeasible();
     auto mv = GetValuePresolver().PostsolveSolution(
           { x,
             y,
-            GetObjectiveValues(),
+            objs,
          (void*)fKnownInfeasOrUnb } );
     auto x1 = std::move(mv.GetVarValues()());
     if (x.empty())
@@ -45,9 +46,12 @@ public:
     auto y1 = std::move(mv.GetConValues()());
     if (y.Empty())
         y1.clear();      // don't send dual values
-    return{ x1,
-            y1,
-            mv.GetObjValues()() };
+    auto objs1 = std::move(mv.GetObjValues()());
+    if (objs.empty())    // e.g., MP2NL
+      objs1.clear();
+    return{ std::move(x1),
+            std::move(y1),
+            std::move(objs1) };
   }
 
   /// Redeclare GetObjectiveValues()

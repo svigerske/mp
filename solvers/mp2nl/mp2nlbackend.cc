@@ -72,7 +72,7 @@ ArrayRef<double> MP2NLBackend::DualSolution_LP() {
 }
 
 double MP2NLBackend::ObjectiveValue() const {
-  return -DBL_MAX/1.01;                        // SOL does not provide one
+  return 0.0;                        // SOL does not provide one
 }
 
 double MP2NLBackend::NodeCount() const {
@@ -211,15 +211,14 @@ void MP2NLBackend::InitCustomOptions() {
 
 
 double MP2NLBackend::MIPGap() {
-  return AMPLInf();
+  return 0.0;
 }
 double MP2NLBackend::BestDualBound() {
   return 0.0;
 }
 
 double MP2NLBackend::MIPGapAbs() {
-  double gapabs = std::fabs(ObjectiveValue() - BestDualBound());
-  return gapabs<AMPLInf() ? gapabs : AMPLInf();
+  return 0.0;
 }
 
 

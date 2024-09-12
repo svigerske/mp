@@ -117,9 +117,9 @@ public:  // public for static polymorphism
   /// otherwise/finally via ReportResults()
   void Solve() override;
 
-  /// Default impl of GetObjValues()
+  /// SOL does not return an obj value
   ArrayRef<double> GetObjectiveValues() override
-  { return std::vector<double>{ObjectiveValue()}; }
+  { return {}; }
 
   double Infinity() const { return AMPLInf(); }
 
