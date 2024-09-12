@@ -1020,6 +1020,23 @@ class CbcMPSolver(MPDirectSolver):
                  }
         super().__init__(exeName, timeout, nthreads, otherOptions, stags)
 
+class MP2NLSolver(MPDirectSolver):
+            def _getAMPLOptionsName(self):
+                return "mp2nl"
+
+            def _setNThreads(self, threads):
+                return ""
+
+            def __init__(self, exeName, timeout=None, nthreads=None, otherOptions=None):
+                stags = {ModelTags.continuous, ModelTags.integer, ModelTags.binary,
+#                         ModelTags.quadratic_obj, ModelTags.sos,
+
+#                         ModelTags.writelp, ModelTags.writesol,
+
+                         }
+                super().__init__(exeName, timeout, nthreads, otherOptions, stags)
+
+
 class SCIPSolver(MPDirectSolver):
     def _getAMPLOptionsName(self):
         return "scip"

@@ -197,9 +197,9 @@ void MP2NLBackend::InitCustomOptions() {
                   storedOptions_.solver_options_);
 
   /// Enforce time limit?
-  // AddSolverOption("lim:time timelim timelimit time_limit",
-  //   "Limit on solve time (in seconds; default: 1e+20).",
-  //   "limits/time", 0.0, 1e+20);
+  AddStoredOption("lim:time timelim timelimit time_limit",
+    "Enforce limit on solve time (in seconds; default: 1e+20). DOES NOTHING CURRENTLY.",
+    storedOptions_.tilim_);
 
 
   /// Custom infinity value?

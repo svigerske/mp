@@ -44,6 +44,7 @@ def addStdSolvers(solvers: SolverCollection, binPath=""):
     solvers.addSolver(Solver.MindoptSolver(path.join(binPath,"mindoptampl")))
     solvers.addSolver(Solver.HighsSolver(path.join(binPath,"highs")), aliases=["highsmp"])
     solvers.addSolver(Solver.KnitroSolver(path.join(binPath,"knitro")))
+    solvers.addSolver(Solver.MP2NLSolver(path.join(binPath,"mp2nl")))
     solvers.addSolver(Solver.XpressSolver(path.join(binPath,"xpressasl")))
     solvers.addSolver(Solver.XPRESSDirectSolver(path.join(binPath,"xpress")))
     solvers.addSolver(Solver.MosekSolver(path.join(binPath,"mosek")))

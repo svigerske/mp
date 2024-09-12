@@ -167,6 +167,8 @@ private:
     std::string logFile_,
         nlstub_;
     int outlev_ = 0;
+
+    double tilim_ = 1e20;
   };
   Options storedOptions_;
 

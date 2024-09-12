@@ -854,7 +854,13 @@ public:
 
   /** Provide variable names. */
   template <class ColNameWriter>
-  void FeedColNames(ColNameWriter& ) { }
+  void FeedColNames(ColNameWriter& wrt) {
+    if (var_names_.size() && wrt) {
+      assert(var_names_.size() == var_lbs_.size());
+      for (size_t i=0; i<var_names_.size(); ++i)
+        wrt << var_names_[ GetOldVarIndex(i) ];
+    }
+  }
 
   /** Provide unused variable names. */
   template <class UnusedVarNameWriter>
@@ -882,6 +888,14 @@ public:
      */
   template <class ObjOffsetWriter>
   void FeedObjAdj(ObjOffsetWriter& ) { }
+
+
+public:
+  /// Get new var index for an old var index
+  int GetNewVarIndex(int i) const { return mark_data_.var_order_21_[i]; }
+
+  /// Get old var index for a new var index
+  int GetOldVarIndex(int i) const { return mark_data_.var_order_12_[i]; }
 
 
 protected:
@@ -918,13 +932,6 @@ protected:
 
     std::vector<int> col_sizes_orig_;                       // column sizes for original sorting
   };
-
-
-  /// Get new var index for an old var index
-  int GetNewVarIndex(int i) const { return mark_data_.var_order_21_[i]; }
-
-  /// Get old var index for a new var index
-  int GetOldVarIndex(int i) const { return mark_data_.var_order_12_[i]; }
 
 
   /// Parameters passed when submitting a con/obj to the "solver"
@@ -1154,6 +1161,9 @@ private:
 
 
   ItemMarkingData mark_data_;
+  bool hdr_is_current_ {};
+  NLHeader hdr_;
+
   std::unique_ptr<MP2NLSolverIntf> p_nls_;
 
 };

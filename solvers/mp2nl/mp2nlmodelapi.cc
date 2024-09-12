@@ -19,7 +19,8 @@ void MP2NLModelAPI::AddVariables(const VarArrayDef& vad) {
   var_lbs_ = {vad.plb(), (size_t)vad.size()};
   var_ubs_ = {vad.pub(), (size_t)vad.size()};
   var_types_ = {vad.ptype(), (size_t)vad.size()};
-  var_names_ = {vad.pnames(), (size_t)vad.size()};
+  if (vad.pnames())
+    var_names_ = {vad.pnames(), (size_t)vad.size()};
   mark_data_.col_sizes_orig_.resize(var_lbs_.size());
 }
 
@@ -156,8 +157,12 @@ void MP2NLModelAPI::FinishProblemModificationPhase() {
 
 
 NLHeader MP2NLModelAPI::Header() {
-  PrepareModel();
-  return DoMakeHeader();
+  if (!hdr_is_current_) {
+    PrepareModel();
+    hdr_ = DoMakeHeader();
+    hdr_is_current_ = true;
+  }
+  return hdr_;
 }
 
 void MP2NLModelAPI::PrepareModel() {
@@ -168,6 +173,8 @@ void MP2NLModelAPI::PrepareModel() {
 
 void MP2NLModelAPI::MarkVars() {
   mark_data_.var_prior_.resize(var_lbs_.size());
+  mark_data_.n_var_lin_bin_ = 0;
+  mark_data_.n_var_lin_int_ = 0;
   for (auto i=var_lbs_.size(); i--; ) {
     mark_data_.var_prior_[i].second = i;
     if (var::Type::INTEGER == var_types_[i]) {
@@ -429,9 +436,21 @@ public:
   template <class VecReader>
   void OnDualSolution(VecReader& rd) {
     duals_.clear();
-    duals_.reserve(rd.Size());
-    while (rd.Size())
-      duals_.push_back( rd.ReadNext() );
+    if (int nac_sol = rd.Size()) {
+      auto n_alg_cons = Header().num_algebraic_cons;
+      if (nac_sol > n_alg_cons) {
+        mapi_.GetEnv().AddWarning(
+            "MP2NL_subsolver_solution_more_alg_cons",
+            "The subsolver reported more duals than algebraic constraints");
+      } else if (nac_sol < n_alg_cons) {
+        mapi_.GetEnv().AddWarning(
+            "MP2NL_subsolver_solution_fewer_alg_cons",
+            "The subsolver reported fewer duals than algebraic constraints");
+      }
+      duals_.reserve(nac_sol);
+      while (rd.Size())
+        duals_.push_back( rd.ReadNext() );                  // no cperm
+    }
   }
 
   /**
@@ -441,9 +460,25 @@ public:
   template <class VecReader>
   void OnPrimalSolution(VecReader& rd) {
     primals_.clear();
-    primals_.reserve(rd.Size());
-    while (rd.Size())
-      primals_.push_back( rd.ReadNext() );
+    if (int nv_sol = rd.Size()) {
+      auto n_vars = Header().num_vars;
+      if (nv_sol > n_vars) {
+        mapi_.GetEnv().AddWarning(
+            "MP2NL_subsolver_solution_more_vars",
+            "The subsolver reported more variables");
+      } else if (nv_sol < n_vars) {
+        mapi_.GetEnv().AddWarning(
+            "MP2NL_subsolver_solution_fewer_vars",
+            "The subsolver reported fewer variables");
+      }
+      primals_.resize(n_vars);
+      int j=0;
+      for ( ; rd.Size(); ++j ) {
+        int j0 = mapi_.GetOldVarIndex(j);
+        assert(j0>=0 && j0 < n_vars);
+        primals_[j0] = rd.ReadNext();
+      }
+    }
   }
 
   /**
