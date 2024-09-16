@@ -65,6 +65,8 @@ protected:
     GetMM().HandleFeasibleSolution(solve_code, msg, x, y, obj);
   }
 
+
+public:
   /// Variables' initial values
   virtual ArrayRef<double> InitialValues() {
     return GetMM().InitialValues();
@@ -84,6 +86,10 @@ protected:
   }
 
 
+  /// Get suffix names
+  std::set<std::string> GetSuffixNames() {
+    return GetMM().GetSuffixNames();
+  }
 
   /// Read unpresolved suffix
   template <class N>
@@ -95,8 +101,11 @@ protected:
     return GetMM().ReadSuffix(suf);
   }
 
-  virtual ArrayRef<double> ReadDblSuffix(const SuffixDef<double>& suf) {
-    return GetMM().ReadSuffix(suf);
+  /// @param fint: if not NULL,
+  ///   is set to 1 iff the suffix was integer.
+  virtual ArrayRef<double> ReadDblSuffix(
+      const SuffixDef<double>& suf, int *fint=nullptr) {
+    return GetMM().ReadSuffix(suf, fint);
   }
 
   virtual size_t GetSuffixSize(int kind) {

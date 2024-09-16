@@ -29,6 +29,63 @@ std::unique_ptr<BasicModelManager>
 CreateMP2NLModelMgr(MP2NLCommon&, Env&, pre::BasicValuePresolver*&);
 
 
+/// Implement MP2NLSolverQueryCallbacks
+class MP2NLSolverQueryCallbacksImpl
+    : public MP2NLSolverQueryCallbacks {
+public:
+  /// Construct
+  MP2NLSolverQueryCallbacksImpl(MP2NLBackend& be) : be_(be) { }
+
+  /// Suffix names.
+  std::set<std::string> GetSuffixNames() override {
+    std::set<std::string> suf_skip {
+      "sosno", "ref", "sos", "sosref"          // AMPL SOS constraints
+    };
+    auto result = be_.GetSuffixNames();
+    for (const auto& k2: suf_skip)
+      result.erase(k2);
+    return result;
+  }
+
+  /// Get model suffix with given name
+  MP2NLModelSuffix GetModelSuffix(
+      const std::string& name) override {
+    MP2NLModelSuffix result;
+    assert(internal::NUM_SUFFIX_KINDS == result.values_.size());
+    result.name_ = name;
+    int ni=0, nd=0;
+    for (int kind=0; kind<internal::NUM_SUFFIX_KINDS; ++kind) {
+      // ReadDblSuffix also reads int if that's the case
+      int fint=0;
+      result.values_[kind] = be_.ReadDblSuffix({name, kind}, &fint);
+      ni += fint;
+      nd += (result.values_[kind].size() != 0);
+    }
+    if (nd>ni)
+      result.flags_ |= suf::FLOAT;            // it's really real-valued
+    else {
+      assert(nd==ni);
+    }
+    // Treating all suffixes as 'solution',
+    // with range constraints this should work for .status
+    auto suf_pre = be_.GetValuePresolver().PresolveSolution({
+        result.values_[0],
+        result.values_[1],
+        result.values_[2]
+    });
+    result.values_[0] = suf_pre.GetVarValues()();
+    result.values_[2] = suf_pre.GetObjValues()();
+    result.values_[1] = suf_pre.GetConValues()(CG_Algebraic);
+    const auto& suf_log = suf_pre.GetConValues()(CG_Logical);
+    result.values_[1].insert(result.values_[1].end(),
+                                    suf_log.begin(), suf_log.end());
+    return result;
+  }
+private:
+  MP2NLBackend& be_;
+};
+
+
 MP2NLBackend::MP2NLBackend() {
   OpenSolver();
 
@@ -41,6 +98,9 @@ MP2NLBackend::MP2NLBackend() {
   p_nlsi_ = get_other()->p_nlsi_;    // before copying
   /// Copy env/lp to ModelAPI
   copy_common_info_to_other();
+
+  p_qc_ = std::make_unique<MP2NLSolverQueryCallbacksImpl>(*this);
+  p_nlsi_->ProvideQueryCallbacks(*p_qc_.get());
 }
 
 MP2NLBackend::~MP2NLBackend() {

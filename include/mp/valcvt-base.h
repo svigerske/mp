@@ -456,6 +456,7 @@ protected:
     pPresolver_ = pPre;
   }
 
+public:
   const pre::BasicValuePresolver& GetValuePresolver() const
   { assert(pPresolver_); return *pPresolver_; }
   pre::BasicValuePresolver& GetValuePresolver()

@@ -43,10 +43,16 @@ public:
   /// User-provided dual solution: sparsity
   virtual ArrayRef<int> InitialDualValuesSparsity() = 0;
 
+  /// Get suffix names
+  virtual std::set<std::string> GetSuffixNames() = 0;
+
   /// Read integer suffix
   virtual ArrayRef<int> ReadSuffix(const SuffixDef<int>& suf) = 0;
   /// Read double suffix
-  virtual ArrayRef<double> ReadSuffix(const SuffixDef<double>& suf) = 0;
+  /// @param fint: if not NULL,
+  ///   is set to 1 iff the suffix was integer.
+  virtual ArrayRef<double> ReadSuffix(
+      const SuffixDef<double>& suf, int *fint=nullptr) = 0;
 
   /// Report integer suffix
   virtual void ReportSuffix(const SuffixDef<int>& suf,

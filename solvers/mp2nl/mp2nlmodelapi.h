@@ -832,7 +832,7 @@ public:
    *      }
      */
   template <class SuffixWriterFactory>
-  void FeedSuffixes(SuffixWriterFactory& ) { }
+  void FeedSuffixes(SuffixWriterFactory& );
 
 
   //////////////////// 14. ROW/COLUMN NAMES ETC /////////////////////

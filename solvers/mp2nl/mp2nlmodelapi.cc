@@ -334,6 +334,54 @@ NLHeader MP2NLModelAPI::DoMakeHeader() {
 }
 
 
+/** Feed suffixes.
+     *
+     *  For constraints, assume ordering:
+     *  first algebraic, then logical.
+   *
+   *  Implementation: write all non-0 entries (0 is the default.)
+   *      while (....) {
+   *        auto sw = swf.StartIntSuffix(  // or ...DblSuffix
+   *          suf_name, kind, n_nonzeros);
+   *        for (int i=0; i<n_nonzeros; ++i)
+   *          sw.Write(index[i], value[i]);
+   *      }
+     */
+template <class SuffixWriterFactory>
+void MP2NLModelAPI::FeedSuffixes(SuffixWriterFactory& swf) {
+  auto p_qc = p_nlsi_->GetCallbacks();
+  auto suffixnames = p_qc->GetSuffixNames();
+  auto write1suf = [this](auto& sw, int kind, const auto& vals) {
+    for (size_t i=0; i<vals.size(); ++i) {
+      if (auto val = vals[i]) {
+        int i0=i;
+        if (suf::VAR==kind)
+          i0 = this->GetNewVarIndex(i);
+        sw.Write(i0, val);
+      }
+    }
+  };
+  for (const auto& sufname: suffixnames) {
+    auto modelsuffix = p_qc->GetModelSuffix(sufname);
+    for (int kind=0; kind<modelsuffix.values_.size(); ++kind) {
+      auto nnz = std::count_if(modelsuffix.values_[kind].begin(),
+                               modelsuffix.values_[kind].end(),
+                               [](auto n){ return bool(n); });
+      if (nnz) {
+        if (modelsuffix.flags_ & suf::FLOAT) {
+          auto sw = swf.StartDblSuffix(sufname.c_str(),
+                                       kind | suf::FLOAT, nnz);
+          write1suf(sw, kind, modelsuffix.values_[kind]);
+        } else {
+          auto sw = swf.StartIntSuffix(sufname.c_str(), kind, nnz);
+          write1suf(sw, kind, modelsuffix.values_[kind]);
+        }
+      }
+    }
+  }
+}
+
+
 /// Implement NLSolverIntf
 class MP2NLSolverImpl
     : public MP2NLSolverIntf,

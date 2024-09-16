@@ -1211,7 +1211,8 @@ public:
     return suf.get_values();
   }
 
-  /// Read integer suffix
+  /// Read integer suffix.
+  /// Fails if the suffix as available as double.
   ArrayRef<int> ReadIntSuffix(const SuffixDef<int>& sufdef) {
     auto suf_int = ReadSuffix_OneTypeOnly(sufdef);
     if (!suf_int) {
@@ -1227,11 +1228,18 @@ public:
 
   /// Read double suffix.
   /// If absent but an integer suffix with the same name exists,
-  /// take that
-  ArrayRef<double> ReadDblSuffix(const SuffixDef<double>& sufdef) {
+  /// take that.
+  /// @param fint: if not NULL,
+  ///   is set to 1 iff the suffix was integer.
+  ArrayRef<double> ReadDblSuffix(
+      const SuffixDef<double>& sufdef, int* fint=nullptr) {
     auto suf_dbl = ReadSuffix_OneTypeOnly(sufdef);
+    if (fint)
+      *fint = 0;
     if (!suf_dbl) {
       auto suf_int = ReadSuffix_OneTypeOnly(sufdef.to_type<int>());
+      if (fint)
+        *fint = int(bool(suf_int));
       if (suf_int)
         return std::vector<double>(suf_int.begin(), suf_int.end());
     }

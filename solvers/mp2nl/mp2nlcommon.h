@@ -2,6 +2,7 @@
 #define MP2NLCOMMON_H
 
 #include <vector>
+#include <set>
 #include <string>
 
 #include "mp/arrayref.h"
@@ -12,14 +13,37 @@
 
 namespace mp {
 
+/// A (MP2NL)ModelSuffix has
+/// all suffixes with given name,
+/// for all kinds provided.
+/// The reason we send them together is that
+/// FlatConverter pre-/postsolves them together,
+/// see FlatBackend::ReadModelSuffix().
+///
+/// We store all suffixes as double's,
+/// but transmit as int's if originally so.
+struct MP2NLModelSuffix {
+  std::string name_;
+  int flags_ {};       // suf::FLOAT for float-valued
+  std::string table_;
+  /// Values for each kind.
+  std::array< std::vector<double>, 4 > values_;
+};
 
-/// interface for quesry callbacks
+
+/// Interface for query callbacks
+/// from ModelAPI into Backend
 class MP2NLSolverQueryCallbacks {
 public:
   /// Virtual destruct
   virtual ~MP2NLSolverQueryCallbacks() { }
 
-  /// ...
+  /// Suffix names.
+  virtual std::set<std::string> GetSuffixNames() = 0;
+
+  /// Get model suffix with given name
+  virtual MP2NLModelSuffix GetModelSuffix(
+      const std::string& name) = 0;
 };
 
 
@@ -35,13 +59,14 @@ struct MP2NLSolverNLParams {
 
 
 /// Interface for NLSolver
+/// to be used from Backend
 class MP2NLSolverIntf {
 public:
   /// Virtual destruct
   virtual ~MP2NLSolverIntf() { }
 
   /// Provide query callback (e.g., for suffixes)
-  void ProvideQuaryCallbacks(MP2NLSolverQueryCallbacks& qc)
+  void ProvideQueryCallbacks(MP2NLSolverQueryCallbacks& qc)
   { p_nlsq_ = &qc; }
 
   void ProvideNLParams(MP2NLSolverNLParams prm) { prm_ = prm; }
@@ -76,7 +101,7 @@ public:
 
   /// @todo + Suffixes... Pull or push?
   /// ..
-protected:
+public:
   MP2NLSolverQueryCallbacks* GetCallbacks()
   { assert(p_nlsq_); return p_nlsq_; }
   const MP2NLSolverNLParams& GetParams() const { return prm_; }
@@ -92,8 +117,6 @@ private:
 struct MP2NLCommonInfo {
   /// MP2NLSolver
   MP2NLSolverIntf* p_nlsi_ {};
-  /// Query cb
-  MP2NLSolverQueryCallbacks* p_qc_ {};
 private:
 };
 

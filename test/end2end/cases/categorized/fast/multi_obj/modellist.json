@@ -250,7 +250,7 @@
     }
   },
   {
-    "name" : "obj_abs_01",
+    "name" : "obj_abs_01 multiobj=1",
     "tags" : ["linear", "integer", "multiobj"],
     "options": {
       "ANYSOLVER_options": "multiobj=1"
@@ -275,7 +275,7 @@
     }
   },
   {
-    "name" : "obj_abs_02",
+    "name" : "obj_abs_02 multiobj=1",
     "tags" : ["linear", "integer", "multiobj"],
     "options": {
       "ANYSOLVER_options": "multiobj=1"

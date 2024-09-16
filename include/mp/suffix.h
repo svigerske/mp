@@ -519,6 +519,18 @@ class SuffixManager {
     Check(kind);
     return suffixes_[kind];
   }
+
+  /// Returns the set of suffix names for all kinds
+  std::set<std::string> suffixnames() const {
+    std::set<std::string> result;
+    for (int kind=0; kind<internal::NUM_SUFFIX_KINDS; ++kind) {
+      const auto& sufset = suffixes((suf::Kind)kind);
+      for (const auto& isuf: sufset) {
+        result.insert(isuf.name());
+      }
+    }
+    return result;
+  }
 };
 
 
@@ -544,7 +556,7 @@ public:
 };
 
 
-/// Description of a suffix that can exist for several itme types
+/// Description of a suffix that can exist for several item types
 /// (vars, cons, objs, problem).
 /// The \a kind parameter should be a bitwise OR of suf::Kind::..._BIT's.
 template <class T>

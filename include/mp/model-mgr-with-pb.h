@@ -263,11 +263,19 @@ protected:
     return GetModel().InitialDualValuesSparsity();
   }
 
+  /// Get suffix names
+  std::set<std::string> GetSuffixNames() override {
+    return GetModel().suffixnames();
+  }
+
   ArrayRef<int> ReadSuffix(const SuffixDef<int>& suf) override {
     return GetModel().ReadIntSuffix(suf);
   }
-  ArrayRef<double> ReadSuffix(const SuffixDef<double>& suf) override {
-    return GetModel().ReadDblSuffix(suf);
+  /// @param fint: if not NULL,
+  ///   is set to 1 iff the suffix was integer.
+  ArrayRef<double> ReadSuffix(
+      const SuffixDef<double>& suf, int *fint=nullptr) override {
+    return GetModel().ReadDblSuffix(suf, fint);
   }
 
   void ReportSuffix(const SuffixDef<int>& suf,

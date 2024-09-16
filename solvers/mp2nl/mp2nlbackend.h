@@ -172,7 +172,7 @@ private:
   };
   Options storedOptions_;
 
-
+  std::unique_ptr<MP2NLSolverQueryCallbacks> p_qc_;
 };
 
 }  // namespace mp
