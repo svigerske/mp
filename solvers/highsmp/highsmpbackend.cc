@@ -395,7 +395,9 @@ std::pair<int, std::string> HighsBackend::GetSolveResult() {
       return { sol::UNBOUNDED_FEAS, "unbounded problem, feasible solution" };
     return { sol::UNBOUNDED_NO_FEAS, "unbounded problem, no solution" };
   case kHighsModelStatusUnboundedOrInfeasible:
-    return { sol::LIMIT_INF_UNB, "unbounded or infeasible" };
+    return { sol::LIMIT_INF_UNB, "unbounded or infeasible. "
+                                "Disable dual reductions "
+                                "or run IIS finder for definitive answer." };
   case kHighsModelStatusModelError:
   case kHighsModelStatusLoadError:
     if (kHighsSolutionStatusInfeasible == primal_solution_status)   // HiGHS 7

@@ -280,7 +280,9 @@ std::pair<int, std::string> CoptBackend::GetSolveResult() {
     case COPT_MIPSTATUS_INFEASIBLE:
       return { sol::INFEASIBLE, "infeasible problem" };
     case COPT_MIPSTATUS_INF_OR_UNB:
-      return { sol::INF_OR_UNB, "infeasible or unbounded problem" };
+      return { sol::INF_OR_UNB, "infeasible or unbounded problem. "
+                               "Disable dual reductions "
+                               "or run IIS finder for definitive answer." };
     case COPT_MIPSTATUS_UNBOUNDED:
       if (solstatus)
         return { sol::UNBOUNDED_FEAS, "unbounded problem, feasible solution" };

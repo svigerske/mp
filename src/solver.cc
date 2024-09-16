@@ -770,7 +770,9 @@ SolveResultRegistry::SolveResultRegistry()
       "limit, feasible: "
       "stopped, e.g., on iterations or Ctrl-C " },
 { sol::LIMIT_INF_UNB, sol::LIMIT_INF_UNB_LAST,
-      "limit, problem is either infeasible or unbounded " },
+      "limit, problem is either infeasible or unbounded. "
+          "Disable dual reductions "
+          "or run IIS finder for definitive answer."         },
 { sol::LIMIT_NO_FEAS, sol::LIMIT_NO_FEAS_LAST,
       "limit, no solution returned " },
 { sol::FAILURE, sol::FAILURE_LAST,

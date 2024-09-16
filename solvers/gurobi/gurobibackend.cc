@@ -1259,7 +1259,9 @@ std::pair<int, std::string> GurobiBackend::GetSolveResult() {
   case GRB_INFEASIBLE:
     return { sol::INFEASIBLE, "infeasible problem" };
   case GRB_INF_OR_UNBD:
-    return { sol::LIMIT_INF_UNB, "infeasible or unbounded problem" };
+    return { sol::LIMIT_INF_UNB, "infeasible or unbounded problem. "
+                                "Set dualreductions=0 "
+                                "or iis=1 for definitive answer."    };
   case GRB_UNBOUNDED:
     if (has_sol)
       return { sol::UNBOUNDED_FEAS, "unbounded problem, feasible solution" };

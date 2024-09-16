@@ -715,7 +715,9 @@ std::pair<int, std::string> CplexBackend::GetSolveResult() {
   case CPX_STAT_INForUNBD:
   case CPXMIP_INForUNBD:
   case CPX_STAT_MULTIOBJ_INForUNBD:
-    return { sol::LIMIT_INF_UNB, "infeasible or unbounded problem" };
+    return { sol::LIMIT_INF_UNB, "infeasible or unbounded problem. "
+                                "Disable dual reductions "
+                                "or run IIS finder for definitive answer." };
   case CPX_STAT_UNBOUNDED:
   case CPXMIP_UNBOUNDED:
   case CPX_STAT_MULTIOBJ_UNBOUNDED:
