@@ -756,8 +756,8 @@ SolveResultRegistry::SolveResultRegistry()
   : registry_ {
 {   // Adding standard solver codes a priori
 { sol::SOLVED, sol::SOLVED_LAST,
-      "solved: optimal for an optimization problem, "
-      "feasible for a satisfaction problem " },
+      "solved: optimal for an optimization problem,\n"
+      "\t\tfeasible for a satisfaction problem " },
 { sol::UNCERTAIN, sol::UNCERTAIN_LAST,
       "solved? solution candidate returned but error likely " },
 { sol::INFEASIBLE, sol::INFEASIBLE_LAST,
@@ -770,8 +770,8 @@ SolveResultRegistry::SolveResultRegistry()
       "limit, feasible: "
       "stopped, e.g., on iterations or Ctrl-C " },
 { sol::LIMIT_INF_UNB, sol::LIMIT_INF_UNB_LAST,
-      "limit, problem is either infeasible or unbounded. "
-          "Disable dual reductions "
+      "limit, problem is either infeasible or unbounded.\n"
+          "\t\tDisable dual reductions "
           "or run IIS finder for definitive answer."         },
 { sol::LIMIT_NO_FEAS, sol::LIMIT_NO_FEAS_LAST,
       "limit, no solution returned " },
