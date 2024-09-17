@@ -364,17 +364,17 @@ void MP2NLModelAPI::FeedSuffixes(SuffixWriterFactory& swf) {
   for (const auto& sufname: suffixnames) {
     auto modelsuffix = p_qc->GetModelSuffix(sufname);
     for (int kind=0; kind<modelsuffix.values_.size(); ++kind) {
-      auto nnz = std::count_if(modelsuffix.values_[kind].begin(),
-                               modelsuffix.values_[kind].end(),
-                               [](auto n){ return bool(n); });
-      if (nnz) {
+      const auto& vals = modelsuffix.values_[kind];
+      if (vals.size()) {                 // even all-0 suffixes
+        auto nnz = std::count_if(vals.begin(), vals.end(),
+                                 [](auto n){ return bool(n); });
         if (modelsuffix.flags_ & suf::FLOAT) {
           auto sw = swf.StartDblSuffix(sufname.c_str(),
                                        kind | suf::FLOAT, nnz);
-          write1suf(sw, kind, modelsuffix.values_[kind]);
+          write1suf(sw, kind, vals);
         } else {
           auto sw = swf.StartIntSuffix(sufname.c_str(), kind, nnz);
-          write1suf(sw, kind, modelsuffix.values_[kind]);
+          write1suf(sw, kind, vals);
         }
       }
     }
