@@ -66,9 +66,9 @@ public:
     else {
       assert(nd==ni);
     }
-    // Treating all suffixes as 'solution',
+    // Treating all suffixes generically,
     // with range constraints this should work for .status
-    auto suf_pre = be_.GetValuePresolver().PresolveSolution({
+    auto suf_pre = be_.GetValuePresolver().PresolveGenericDbl({
         result.values_[0],
         result.values_[1],
         result.values_[2]
@@ -185,10 +185,10 @@ void MP2NLBackend::ReportModelSuffix(
   auto n_alg_cons = GetNLSolver().GetNumAlgCons();
   assert(modelsuf.values_[1].empty()
          || n_alg_cons <= modelsuf.values_[1].size());
-  // Treating all suffixes as 'solution',
+  // Treating all suffixes generically,
   // with range constraints this should work for .status.
   // @todo adapted handling of basis, etc.
-  auto suf_post = GetValuePresolver().PostsolveSolution(
+  auto suf_post = GetValuePresolver().PostsolveGenericDbl(
       {
           modelsuf.values_[0],
           modelsuf.values_[1].empty() ? pre::ValueMapDbl{} :
