@@ -141,6 +141,8 @@ protected:
   void ReportResults() override;
   void ReportMP2NLResults();
 
+  void ReportSuffixes() override;
+  void ReportModelSuffix(const MP2NLModelSuffix& modelsuf);
   void ReportMP2NLPool();
 
   std::vector<double> getPoolSolution(int i);

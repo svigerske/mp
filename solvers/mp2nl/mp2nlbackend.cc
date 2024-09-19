@@ -169,6 +169,54 @@ void MP2NLBackend::ReportResults() {
   BaseBackend::ReportResults();
 }
 
+void MP2NLBackend::ReportSuffixes() {
+  auto sufnames = GetNLSolver().GetSuffixNames();
+  // We pass all suffixes currently.
+  // To control them, now the subsolver's options should be used.
+  // @todo adapt them for each target subsolver (basis, etc.)
+  for (const auto& sufname: sufnames) {
+    ReportModelSuffix( GetNLSolver().GetModelSuffix(sufname) );
+  }
+}
+
+void MP2NLBackend::ReportModelSuffix(
+    const MP2NLModelSuffix& modelsuf) {
+  assert(internal::NUM_SUFFIX_KINDS == modelsuf.values_.size());
+  auto n_alg_cons = GetNLSolver().GetNumAlgCons();
+  assert(modelsuf.values_[1].empty()
+         || n_alg_cons <= modelsuf.values_[1].size());
+  // Treating all suffixes as 'solution',
+  // with range constraints this should work for .status.
+  // @todo adapted handling of basis, etc.
+  auto suf_post = GetValuePresolver().PostsolveSolution(
+      {
+          modelsuf.values_[0],
+          modelsuf.values_[1].empty() ? pre::ValueMapDbl{} :
+              pre::ValueMapDbl{{
+                  { CG_Algebraic,
+                   { modelsuf.values_[1].begin(), modelsuf.values_[1].begin()+n_alg_cons } },
+                  { CG_Logical,
+                   { modelsuf.values_[1].begin()+n_alg_cons, modelsuf.values_[1].end() } }
+              }},
+          modelsuf.values_[2]
+      });
+  if (modelsuf.values_[0].size())           // Only if presolved values were supplied
+    ReportSuffix(modelsuf.name_,
+                 0 | modelsuf.flags_, suf_post.GetVarValues()(),
+                 modelsuf.table_);
+  if (modelsuf.values_[1].size())
+    ReportSuffix(modelsuf.name_,
+                 1 | modelsuf.flags_, suf_post.GetConValues()(),
+                 modelsuf.table_);
+  if (modelsuf.values_[2].size())
+    ReportSuffix(modelsuf.name_,
+                 2 | modelsuf.flags_, suf_post.GetObjValues()(),
+                 modelsuf.table_);
+  ReportSuffix(modelsuf.name_,
+               3 | modelsuf.flags_, modelsuf.values_[3],
+               modelsuf.table_);
+}
+
 void MP2NLBackend::ReportMP2NLResults() {
   SetStatus( GetSolveResult() );
   AddMP2NLMessages();

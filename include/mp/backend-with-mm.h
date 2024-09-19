@@ -119,14 +119,33 @@ public:
                     ArrayRef<int> values) {
     GetMM().ReportSuffix(suf, values);
   }
+  /// Report dbl suffix
   virtual void ReportSuffix(const SuffixDef<double>& suf,
                     ArrayRef<double> values) {
     GetMM().ReportSuffix(suf, values);
   }
+
+  /// Report int or dbl suffix from int or dbl data.
+  /// kind & suf::FLOAT determines the resulting kind.
+  template <class Array>
+  void ReportSuffix(const std::string& name,
+                    int kind,
+                    const Array& vals,
+                    const std::string& suf_table = {}) {
+    if (kind & suf::FLOAT) {
+      ReportDblSuffix( {name, kind, suf_table}, vals);
+    } else {
+      ReportIntSuffix( {name, kind, suf_table},
+                      std::vector<int>{ vals.begin(), vals.end() });
+    }
+  }
+
+  /// Report int suffix
   virtual void ReportIntSuffix(const SuffixDef<int>& suf,
                        ArrayRef<int> values) {
     GetMM().ReportSuffix(suf, values);
   }
+  /// Report dbl suffix
   virtual void ReportDblSuffix(const SuffixDef<double>& suf,
                        ArrayRef<double> values) {
     GetMM().ReportSuffix(suf, values);

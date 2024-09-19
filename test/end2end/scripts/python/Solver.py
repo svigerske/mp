@@ -1029,9 +1029,35 @@ class MP2NLSolver(MPDirectSolver):
 
             def __init__(self, exeName, timeout=None, nthreads=None, otherOptions=None):
                 stags = {ModelTags.continuous, ModelTags.integer, ModelTags.binary,
-#                         ModelTags.quadratic_obj, ModelTags.sos,
+#                ModelTags.plinear,
+#                ModelTags.quadratic,
+#                ModelTags.quadratic_obj,
+#                ModelTags.quadraticnonconvex,
 
-#                         ModelTags.writelp, ModelTags.writesol,
+#                ModelTags.socp,      ## MP transforms cones to quadratics
+#                ModelTags.socp_hard_to_recognize,
+
+#                ModelTags.nonlinear, ModelTags.log, ModelTags.trigonometric,
+
+                ModelTags.unbdd,
+                ModelTags.qcpdual,
+#                ModelTags.return_mipgap,
+#                ModelTags.sos, ModelTags.presosenc,
+                ModelTags.sens,
+                ModelTags.lazy_user_cuts,
+#                ModelTags.funcpieces,
+#                ModelTags.integralityfocus,
+
+                ModelTags.relax, ModelTags.warmstart, ModelTags.mipstart,
+
+#                ModelTags.multiobj,
+                ModelTags.obj_priority,
+#                ModelTags.multisol,
+                ModelTags.sstatus,
+#                ModelTags.fixmodel,
+ #               ModelTags.iis, ModelTags.iisforce, ModelTags.feasrelax,
+
+#                ModelTags.writelp, ModelTags.writesol,
 
                          }
                 super().__init__(exeName, timeout, nthreads, otherOptions, stags)

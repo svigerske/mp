@@ -435,8 +435,24 @@ public:
   /// Dual solution
   ArrayRef<double> GetY() const override { return duals_; }
 
-  /// @todo + Suffixes... Pull or push?
-  /// ..
+  /// Suffix names
+  std::set<std::string> GetSuffixNames() override {
+    std::set<std::string> result;
+    for (const auto& suf: suf_map_)
+      result.insert(suf.first);
+    return result;
+  }
+
+  /// Get model suffix with given name
+  const MP2NLModelSuffix& GetModelSuffix(
+      const std::string& name) override {
+    return suf_map_.at(name);
+  }
+
+  /// Num alg cons
+  int GetNumAlgCons() const override {
+    return n_alg_con_;
+  }
 
   /////////////////////////////////////////////////////////////////////////
   //////////////////////// SOLHandler implementation //////////////////////
@@ -469,7 +485,10 @@ public:
    * Can be ignored by external systems.
    * @return non-zero to stop solution input.
    */
-  int OnAMPLOptions(const AMPLOptions& ) { return 0; }
+  int OnAMPLOptions(const AMPLOptions& ) {
+    suf_map_.clear();              // clear for new solution
+    return 0;
+  }
 
   /**
    * Dual values for algebraic constraints,
@@ -569,8 +588,7 @@ public:
    */
   template <class SuffixReader>
   void OnIntSuffix(SuffixReader& sr) {
-    while (sr.Size())
-      sr.ReadNext();       // read & forget by default
+    OnSuffix(sr);
   }
 
   /**
@@ -579,8 +597,55 @@ public:
    */
   template <class SuffixReader>
   void OnDblSuffix(SuffixReader& sr) {
-    while (sr.Size())
-      sr.ReadNext();       // read & forget by default
+    OnSuffix(sr);
+  }
+
+
+protected:
+  template <class SuffixReader>
+  void OnSuffix(SuffixReader& sr) {
+    if (!if_suf_data_registered_) {
+      if_suf_data_registered_ = true;
+      RegisterSuffixData();
+    }
+    const auto& si = sr.SufInfo();
+    int kind = si.Kind();
+    int nmax = nitems_[kind & 3];
+    const std::string& name = si.Name();
+    const std::string& table = si.Table();
+    auto& modelsuf = suf_map_[name];
+    modelsuf.name_ = name;
+    // set to FLOAT if at least one
+    modelsuf.flags_ |= (kind & suf::FLOAT);
+    if (modelsuf.table_.size() < table.size())
+      modelsuf.table_ = table;
+    auto& suf = modelsuf.values_.at(kind & 3);
+    suf.clear();
+    suf.resize(nitems_[kind & 3]);
+    while (sr.Size()) {
+      auto sparse_entry = sr.ReadNext();
+      if (sparse_entry.first<0 || sparse_entry.first>=nmax) {
+        sr.SetError(NLW2_SOLRead_Bad_Suffix,
+                    "bad suffix element index");
+        return;
+      }
+      int i0 = sparse_entry.first;
+      if (0 == (kind & 4))                   // variable suffix
+        i0 = mapi_.GetOldVarIndex(i0);
+      suf[i0] = sparse_entry.second;
+    }
+  }
+
+  /// Register some data for suffix reporting
+  void RegisterSuffixData() {
+    const auto& hdr = Header();
+
+    nitems_[0] = hdr.num_vars;
+    nitems_[1] = hdr.num_algebraic_cons + hdr.num_logical_cons;
+    nitems_[2] = hdr.num_objs;
+    nitems_[3] = 1;            // N problems
+
+    n_alg_con_ = hdr.num_algebraic_cons;
   }
 
 
@@ -591,6 +656,11 @@ private:
 
   mp::NLSolver nlsol_ { &utils_ };
 
+  bool if_suf_data_registered_ {};
+  std::array<int, 4> nitems_ {};
+  int n_alg_con_ {};               // For Backend to split alg + log cons
+
+  std::unordered_map<std::string, MP2NLModelSuffix> suf_map_;
 
   /// Solution
   bool if_solve_attempted_ {};

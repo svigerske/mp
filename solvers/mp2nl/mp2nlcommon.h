@@ -99,8 +99,15 @@ public:
   /// Dual solution
   virtual ArrayRef<double> GetY() const = 0;
 
-  /// @todo + Suffixes... Pull or push?
-  /// ..
+  /// Suffix names
+  virtual std::set<std::string> GetSuffixNames() = 0;
+
+  /// Get model suffix with given name
+  virtual const MP2NLModelSuffix& GetModelSuffix(
+      const std::string& name) = 0;
+
+  /// Number of algebraic cons
+  virtual int GetNumAlgCons() const = 0;
 public:
   MP2NLSolverQueryCallbacks* GetCallbacks()
   { assert(p_nlsq_); return p_nlsq_; }
