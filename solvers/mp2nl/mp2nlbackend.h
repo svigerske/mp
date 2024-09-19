@@ -70,14 +70,14 @@ public:
   * General warm start, e.g.,
   * set primal/dual initial guesses for continuous case
   **/
-  ALLOW_STD_FEATURE( WARMSTART, false )
+  ALLOW_STD_FEATURE( WARMSTART, true )
   void AddPrimalDualStart(Solution sol) override;
   /**
   * MIP warm start
   **/
   // If MIP warm start is supported, implement the function below
   // to set a non-presolved starting solution
-  ALLOW_STD_FEATURE(MIPSTART, false)
+  ALLOW_STD_FEATURE(MIPSTART, true)
   void AddMIPStart(ArrayRef<double> x0,
 									 ArrayRef<int> sparsity) override;
 
@@ -123,6 +123,13 @@ public:  // public for static polymorphism
 
   double Infinity() const { return AMPLInf(); }
 
+  /// Get ini guess
+  ArrayRef< std::pair<int, double> > GetInitialGuess()
+  { return x0_; }
+
+  /// Get ini dual guess
+  ArrayRef<double> GetInitialDualGuess()
+  { return y0_; }
 
   //////////////////// [[ Implementation details ]] //////////////////////
   ///////////////////////////////////////////////////////////////////////////////
@@ -175,6 +182,9 @@ private:
   Options storedOptions_;
 
   std::unique_ptr<MP2NLSolverQueryCallbacks> p_qc_;
+
+  std::vector< std::pair<int, double> > x0_;   // presolved ini guess
+  std::vector<double> y0_;  // presolved dual ini guess, dense
 };
 
 }  // namespace mp

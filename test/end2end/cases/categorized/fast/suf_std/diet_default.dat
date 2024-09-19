@@ -1,0 +1,18 @@
+## Provide  solution to check initial guess passing
+
+data;
+
+var   Buy['BEEF']    0;
+var   Buy['CHK']     0;
+var   Buy['FISH']    0;
+var   Buy['HAM']     0;
+var   Buy['MCH']    46.6667;
+var   Buy['MTL']     0;
+var   Buy['SPG']     0;
+var   Buy['TUR']     0;
+
+
+var   Diet['A']    0;
+var   Diet['B1']   0;
+var   Diet['B2']   0.126;
+var   Diet['C']    0;

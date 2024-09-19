@@ -334,6 +334,39 @@ NLHeader MP2NLModelAPI::DoMakeHeader() {
 }
 
 
+/** Initial primal guesses.
+   *
+   *  Implementation: write all meaningfuls entries (incl. zeros.)
+   *      if (ini_guess.size()) {
+   *        auto ig = igw.MakeVectorWriter(ini_guess.size());
+   *        for (size_t i=0; i<ini_guess.size(); ++i)
+   *          ig.Write(ini_guess[i].index_, ini_guess[i].value_);
+   *      }
+   */
+template <class IGWriter>
+void MP2NLModelAPI::FeedInitialGuesses(IGWriter& igw) {
+  auto x0 = GetNLSolver().GetCallbacks()->GetInitialGuesses();
+  if (x0.size()) {
+    auto ig = igw.MakeVectorWriter(x0.size());
+    for (size_t i=0; i<x0.size(); ++i) {
+      ig.Write(GetNewVarIndex(x0[i].first), x0[i].second);
+    }
+  }
+}
+
+/** Initial dual guesses. */
+template <class IDGWriter>
+void MP2NLModelAPI::FeedInitialDualGuesses(IDGWriter& igw) {
+  auto y0 = GetNLSolver().GetCallbacks()->GetInitialDualGuesses();
+  if (y0.size()) {
+    auto ig = igw.MakeVectorWriter(y0.size());
+    for (size_t i=0; i<y0.size(); ++i) {
+      ig.Write(i, y0[i]);
+    }
+  }
+}
+
+
 /** Feed suffixes.
      *
      *  For constraints, assume ordering:

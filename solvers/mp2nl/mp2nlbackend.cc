@@ -36,6 +36,17 @@ public:
   /// Construct
   MP2NLSolverQueryCallbacksImpl(MP2NLBackend& be) : be_(be) { }
 
+
+  /// Get initial X
+  ArrayRef< std::pair<int, double> > GetInitialGuesses() override {
+    return be_.GetInitialGuess();
+  }
+
+  /// Get initial Y
+  ArrayRef<double> GetInitialDualGuesses() override {
+    return be_.GetInitialDualGuess();
+  }
+
   /// Suffix names.
   std::set<std::string> GetSuffixNames() override {
     std::set<std::string> suf_skip {
@@ -301,7 +312,11 @@ void MP2NLBackend::InitCustomOptions() {
                   storedOptions_.solver_);
 
   AddStoredOption("tech:solver_options solver_options slv_opts",
-                  "Underlying solver options.",
+                  "Underlying solver options.\n\n"
+                  "This way is for convenience; the preferred and "
+                  "dominating way is to use the <subsolver>_options "
+                  "environment variable (which can be set in AMPL "
+                  "in the usual way as 'option <subsolver>_options \"...\";')",
                   storedOptions_.solver_options_);
 
   /// Enforce time limit?
@@ -490,10 +505,32 @@ void MP2NLBackend::AddPrimalDualStart(Solution sol)
   auto mv = GetValuePresolver().PresolveSolution(
         { sol.primal, sol.dual } );
   auto x0 = mv.GetVarValues()();
-	auto pi0 = mv.GetConValues()(CG_Linear);
+  y0_ = mv.GetConValues()(CG_Algebraic);
+  auto ms = GetValuePresolver().PresolveGenericInt(
+      { sol.spars_primal } );
+  auto s0 = ms.GetVarValues()();
+  x0_.clear();
+  x0_.reserve(x0.size());
+  for (int i=0; i<(int)x0.size(); ++i) {
+    if (s0[i]) {
+      x0_.push_back( {i, x0[i]} );
+    }
+  }
 }
 
-void MP2NLBackend::AddMIPStart(ArrayRef<double> x0, ArrayRef<int> sparsity) {
+void MP2NLBackend::AddMIPStart(
+    ArrayRef<double> x0_unpres, ArrayRef<int> s0_unpres) {
+  auto mv = GetValuePresolver().PresolveSolution( { x0_unpres } );
+  auto ms = GetValuePresolver().PresolveGenericInt( { s0_unpres } );
+  auto x0 = mv.GetVarValues()();
+  auto s0 = ms.GetVarValues()();
+  x0_.clear();
+  x0_.reserve(x0.size());
+  for (int i=0; i<(int)x0.size(); ++i) {
+    if (s0[i]) {
+      x0_.push_back( {i, x0[i]} );
+    }
+  }
 }
 
 void MP2NLBackend::DoWriteProblem(const std::string& name) {

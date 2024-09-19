@@ -810,11 +810,11 @@ public:
    *      }
    */
   template <class IGWriter>
-  void FeedInitialGuesses(IGWriter& ) { }
+  void FeedInitialGuesses(IGWriter& );
 
   /** Initial dual guesses. */
   template <class IDGWriter>
-  void FeedInitialDualGuesses(IDGWriter& ) { }
+  void FeedInitialDualGuesses(IDGWriter& );
 
 
   ///////////////////// 13. SUFFIXES /////////////////////

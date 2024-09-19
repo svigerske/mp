@@ -75,6 +75,19 @@
     }
   },
   {
+    "name" : "diet ini guesses",
+    "objective" : 88.2,
+    "tags" : ["linear", "continuous", "sstatus"],
+    "files" : ["diet.mod", "diet.dat", "diet_default.dat"],
+    "comment": "Check that the initial guesses are passed, including by mp2nl",
+    "values": {
+      "Buy['BEEF'].sstatus": "low",
+      "Buy['MCH'].sstatus":  "bas",
+      "Buy['CHK'].sstatus":  "low",
+      "sum {i in NUTR} Diet[i]*(if 'upp'==Diet[i].sstatus then n_max[i] else if 'low'==Diet[i].sstatus then n_min[i])": 88.2
+    }
+  },
+  {
     "name" : "diet_statuses preset incomplete",
     "objective" : 88.2,
     "tags" : ["linear", "continuous", "sstatus"],

@@ -38,6 +38,12 @@ public:
   /// Virtual destruct
   virtual ~MP2NLSolverQueryCallbacks() { }
 
+  /// Get initial X
+  virtual ArrayRef< std::pair<int, double> > GetInitialGuesses() = 0;
+
+  /// Get initial Y
+  virtual ArrayRef<double> GetInitialDualGuesses() = 0;
+
   /// Suffix names.
   virtual std::set<std::string> GetSuffixNames() = 0;
 
