@@ -224,23 +224,23 @@ public:
 
   /// Moreover, once algebraic expressions are accepted
   /// via NLConstraint, subexpressions might be submitted via
-  /// LinExpression and QuadExpression.
+  /// NLAffineExpr and NLQuadExpr.
 
-  /// @brief LinExpression.
+  /// @brief NLAffineExpr.
   /// @note Use accessors, not methods;
   /// - GetLinSize(le), GetLinCoef(le, i), GetLinTerm(le, i);
   ///   GetConstTerm(le).
-  ACCEPT_EXPRESSION(LinExpression, Recommended);
-  SCIP_EXPR* AddExpression(const LinExpression& le);
+  ACCEPT_EXPRESSION(NLAffineExpr, Recommended);
+  SCIP_EXPR* AddExpression(const NLAffineExpr& le);
 
-  /// QuadExpression.
+  /// NLQuadExpr.
   /// @note Use accessors, not methods;
   /// - GetLinSize(le), GetLinCoef(le, i), GetLinTerm(le, i);
   ///   GetQuadSize(le), GetQuadCoef(le, i),
   ///   GetQuadTerm1(le, i), GetQuadTerm2(le, i);
   ///   GetConstTerm(le).
-  ACCEPT_EXPRESSION(QuadExpression, Recommended);
-  SCIP_EXPR* AddExpression(const QuadExpression& le);
+  ACCEPT_EXPRESSION(NLQuadExpr, Recommended);
+  SCIP_EXPR* AddExpression(const NLQuadExpr& le);
 
   /// Each expression can be accepted as a proper expression,
   /// or as a flat functional constraint var <=/==/>= expr

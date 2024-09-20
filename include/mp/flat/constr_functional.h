@@ -216,8 +216,9 @@ public:
 };
 
 
-/// Typedef LinExpression
-using LinExpression = ExprWrapper<LinearFunctionalConstraint>;
+/// Typedef NLAffineExpr.
+/// Like AffineExpr, but arguments are expressions.
+using NLAffineExpr = ExprWrapper<LinearFunctionalConstraint>;
 
 /// Write LFC without name.
 template <class Writer>
@@ -288,8 +289,9 @@ public:
 };
 
 
-/// Typedef LinExpression
-using QuadExpression = ExprWrapper<QuadraticFunctionalConstraint>;
+/// Typedef NLQuadExpr.
+/// Like QuadExpr, but arguments are expressions.
+using NLQuadExpr = ExprWrapper<QuadraticFunctionalConstraint>;
 
 /// Shortcut to make an LFC from linear body and constant
 inline LinearFunctionalConstraint

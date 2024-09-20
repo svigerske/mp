@@ -109,11 +109,11 @@ void MP2NLModelAPI::AddConstraint(const SOS2Constraint& sos)
 { sos_info_.push_back(MakeItemInfo(sos, StaticItemTypeID::ID_SOS2Constraint)); }
 
 
-MP2NL_Expr MP2NLModelAPI::AddExpression(const LinExpression &le) {
+MP2NL_Expr MP2NLModelAPI::AddExpression(const NLAffineExpr &le) {
   return {};
 }
 
-MP2NL_Expr MP2NLModelAPI::AddExpression(const QuadExpression &qe) {
+MP2NL_Expr MP2NLModelAPI::AddExpression(const NLQuadExpr &qe) {
   return {};
 }
 
