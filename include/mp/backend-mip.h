@@ -546,9 +546,12 @@ protected:
 
     if (IMPL_HAS_STD_FEATURE( RAYS ))
       AddStoredOption("alg:rays rays",
-                      "Whether to return suffix .unbdd if the objective is unbounded "
-                      "or suffix .dunbdd if the constraints are infeasible:\n"
-                      "\n.. value-table::\n",
+                      "Whether to return suffix .unbdd (unbounded ray) "
+                      "if the objective is unbounded "
+                      "or suffix .dunbdd (Farkas dual) if the constraints "
+                      "are infeasible:\n"
+                      "\n.. value-table::\n\n"
+                      "Only concerns LP models.",
                       GetMIPOptions().rays_, values_rays_);
 
     if (IMPL_HAS_STD_FEATURE( IIS ))

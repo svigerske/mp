@@ -42,14 +42,6 @@ void MP2NLModelAPI::SetNLObjective( int iobj, const NLObjective& nlo ) {
 }
 
 
-MP2NL_Expr MP2NLModelAPI::GetVarExpression(int i) {
-  return {i+1};    // ?
-}
-
-MP2NL_Expr MP2NLModelAPI::GetZeroExpression() {
-  return {};
-}
-
 void MP2NLModelAPI::AddConstraint(const LinConRange& lc)
 { alg_con_info_.push_back(MakeItemInfo(lc, StaticItemTypeID::ID_LinConRange)); }
 
@@ -109,49 +101,65 @@ void MP2NLModelAPI::AddConstraint(const SOS2Constraint& sos)
 { sos_info_.push_back(MakeItemInfo(sos, StaticItemTypeID::ID_SOS2Constraint)); }
 
 
-MP2NL_Expr MP2NLModelAPI::AddExpression(const NLAffineExpr &le) {
-  return {};
+template <class Expr>
+MP2NL_Expr MP2NLModelAPI::AddExpression(
+    const Expr &expr, ExpressionTypeID eid) {
+  // Only should visit such arguments
+  // which are true expressions, i.e.,
+  // not the pure-variable parts.
+  // Thus, need to specialize for NLDefVar.
+  VisitArguments(expr, [this](MP2NL_Expr mp2nle){
+    RegisterExpression(mp2nle);
+  });
+  return StoreMP2NLExprID(expr, eid);
 }
 
-MP2NL_Expr MP2NLModelAPI::AddExpression(const NLQuadExpr &qe) {
-  return {};
+template <class Expr>
+MP2NL_Expr MP2NLModelAPI::StoreMP2NLExprID(
+    const Expr &expr, ExpressionTypeID eid) {
+  expr_info_.push_back(MakeItemInfo(expr, eid));
+  expr_counter_.push_back(0);
+  return MakeExprID( int(expr_info_.size()-1) );
+}
+
+void MP2NLModelAPI::RegisterExpression(MP2NL_Expr expr) {
+  CountExpression(expr);
+}
+
+/// Count expression depending on its kind.
+void MP2NLModelAPI::CountExpression(MP2NL_Expr expr) {
+  if (expr.IsExpression()) {
+    auto index = expr.GetExprIndex();
+    assert(index >=0 && index < expr_counter_.size()
+           && index < expr_info_.size());
+    ++expr_counter_[index];
+  }   // @todo here also variable usage dep. on top-level item?
 }
 
 
-MP2NL_Expr MP2NLModelAPI::AddExpression(const AbsExpression &abse) {
-  return {};
-}
+MP2NL_Expr MP2NLModelAPI::AddExpression(const NLAffineExpr &expr)
+{ return AddExpression(expr, ExpressionTypeID::ID_NLAffine); }
+MP2NL_Expr MP2NLModelAPI::AddExpression(const NLQuadExpr &expr)
+{ return AddExpression(expr, ExpressionTypeID::ID_NLQuad); }
+MP2NL_Expr MP2NLModelAPI::AddExpression(const AbsExpression &expr)
+{ return AddExpression(expr, ExpressionTypeID::ID_Abs); }
+MP2NL_Expr MP2NLModelAPI::AddExpression(const AndExpression &expr)
+{ return AddExpression(expr, ExpressionTypeID::ID_And); }
+MP2NL_Expr MP2NLModelAPI::AddExpression(const OrExpression &expr)
+{ return AddExpression(expr, ExpressionTypeID::ID_Or); }
+MP2NL_Expr MP2NLModelAPI::AddExpression(const ExpExpression &expr)
+{ return AddExpression(expr, ExpressionTypeID::ID_Exp); }
+MP2NL_Expr MP2NLModelAPI::AddExpression(const LogExpression &expr)
+{ return AddExpression(expr, ExpressionTypeID::ID_Log); }
+MP2NL_Expr MP2NLModelAPI::AddExpression(const PowExpression &expr)
+{ return AddExpression(expr, ExpressionTypeID::ID_Pow); }
+MP2NL_Expr MP2NLModelAPI::AddExpression(const SinExpression &expr)
+{ return AddExpression(expr, ExpressionTypeID::ID_Sin); }
+MP2NL_Expr MP2NLModelAPI::AddExpression(const CosExpression &expr)
+{ return AddExpression(expr, ExpressionTypeID::ID_Cos); }
 
-MP2NL_Expr MP2NLModelAPI::AddExpression(const AndExpression &ee) {
-  return {};
-}
 
-MP2NL_Expr MP2NLModelAPI::AddExpression(const OrExpression &ee) {
-  return {};
-}
-
-MP2NL_Expr MP2NLModelAPI::AddExpression(const ExpExpression &ee) {
-  return {};
-}
-
-MP2NL_Expr MP2NLModelAPI::AddExpression(const LogExpression &ee) {
-  return {};
-}
-
-MP2NL_Expr MP2NLModelAPI::AddExpression(const PowExpression &ee) {
-  return {};
-}
-
-MP2NL_Expr MP2NLModelAPI::AddExpression(const SinExpression &ee) {
-  return {};
-}
-
-MP2NL_Expr MP2NLModelAPI::AddExpression(const CosExpression &ee) {
-  return {};
-}
-
-void MP2NLModelAPI::FinishProblemModificationPhase() {
-}
+void MP2NLModelAPI::FinishProblemModificationPhase() { }
 
 
 
@@ -166,9 +174,19 @@ NLHeader MP2NLModelAPI::Header() {
 }
 
 void MP2NLModelAPI::PrepareModel() {
+  MapExpressions();
   MarkVars();
   SortVars();
   MarkItems();
+}
+
+void MP2NLModelAPI::MapExpressions() {
+  for (const auto& info: obj_info_)
+    MapExprTreeFromItemInfo(info);
+  for (const auto& info: alg_con_info_)
+    MapExprTreeFromItemInfo(info);
+  for (const auto& info: log_con_info_)
+    MapExprTreeFromItemInfo(info);
 }
 
 void MP2NLModelAPI::MarkVars() {
@@ -333,6 +351,108 @@ NLHeader MP2NLModelAPI::DoMakeHeader() {
   return hdr;
 }
 
+int MP2NLModelAPI::ObjType(int i) {
+  switch (obj_info_[i].GetStaticTypeID()) {
+  case StaticItemTypeID::ID_LinearObjective:
+  case StaticItemTypeID::ID_NLObjective:
+    return obj::MIN==((LinearObjective*)(obj_info_[i].GetPItem()))->obj_sense()
+               ? 0 : 1;
+  default:
+    MP_RAISE("Unknown objective type");
+  }
+}
+
+template <class ObjGradWriterFactory>
+void MP2NLModelAPI::FeedObjGradient(int i, ObjGradWriterFactory& svwf) {
+  switch (obj_info_[i].GetStaticTypeID()) {
+  case StaticItemTypeID::ID_LinearObjective:
+  case StaticItemTypeID::ID_NLObjective: {
+    const auto& obj = *((LinearObjective*)(obj_info_[i].GetPItem()));
+    if (obj.num_terms()) {
+      auto svw = svwf.MakeVectorWriter(obj.num_terms());
+      for (int j=0; j<obj.num_terms(); ++j)
+        svw.Write(GetNewVarIndex( obj.GetLinTerms().var(j) ),      // new ordering
+                  obj.GetLinTerms().coef(j));
+    }
+  } break;
+  default:
+    MP_RAISE("Unknown objective type");
+  }
+}
+
+template <class VarBoundsWriter>
+void MP2NLModelAPI::FeedVarBounds(VarBoundsWriter& vbw) {
+  for (size_t i = 0; i < var_lbs_.size(); i++) {
+    auto i_old = GetOldVarIndex(i);
+    vbw.WriteLbUb(var_lbs_[i_old], var_ubs_[i_old]);
+  }
+}
+
+template <class ConBoundsWriter>
+void MP2NLModelAPI::FeedConBounds(ConBoundsWriter& cbw) {
+  for (size_t i=0; i<alg_con_info_.size(); ++i) {          // no constraint permutations
+    switch (alg_con_info_[i].GetStaticTypeID()) {
+    case StaticItemTypeID::ID_LinConRange: {
+      const auto& lcon = *((LinConRange*)(alg_con_info_[i].GetPItem()));
+      cbw.WriteAlgConRange( AlgConRange{lcon.lb(), lcon.ub()} );
+    } break;
+    case StaticItemTypeID::ID_LinConLE: {
+      const auto& lcon = *((LinConLE*)(alg_con_info_[i].GetPItem()));
+      cbw.WriteAlgConRange( AlgConRange{lcon.lb(), lcon.ub()} );
+    } break;
+    case StaticItemTypeID::ID_LinConEQ: {
+      const auto& lcon = *((LinConEQ*)(alg_con_info_[i].GetPItem()));
+      cbw.WriteAlgConRange( AlgConRange{lcon.lb(), lcon.ub()} );
+    } break;
+    case StaticItemTypeID::ID_LinConGE: {
+      const auto& lcon = *((LinConGE*)(alg_con_info_[i].GetPItem()));
+      cbw.WriteAlgConRange( AlgConRange{lcon.lb(), lcon.ub()} );
+    } break;
+    default:
+      MP_RAISE("Unknown algebraic constraint type");
+    }
+  }
+}
+
+template <class ConLinearExprWriterFactory>
+void MP2NLModelAPI::FeedLinearConExpr(int i, ConLinearExprWriterFactory& svwf) {
+  switch (alg_con_info_[i].GetStaticTypeID()) {
+  case StaticItemTypeID::ID_LinConRange: {
+    FeedLinearConExpr( *((LinConRange*)(alg_con_info_[i].GetPItem())), svwf);
+  } break;
+  case StaticItemTypeID::ID_LinConLE: {
+    FeedLinearConExpr( *((LinConLE*)(alg_con_info_[i].GetPItem())), svwf);
+  } break;
+  case StaticItemTypeID::ID_LinConEQ: {
+    FeedLinearConExpr( *((LinConEQ*)(alg_con_info_[i].GetPItem())), svwf);
+  } break;
+  case StaticItemTypeID::ID_LinConGE: {
+    FeedLinearConExpr( *((LinConGE*)(alg_con_info_[i].GetPItem())), svwf);
+  } break;
+  default:
+    MP_RAISE("Unknown algebraic constraint type");
+  }
+}
+
+template <class ConLinearExprWriterFactory, class Body, class RhsOrRange>
+void MP2NLModelAPI::FeedLinearConExpr(
+    const AlgebraicConstraint<Body, RhsOrRange>& algcon,
+    ConLinearExprWriterFactory& svwf) {
+  if (algcon.size()) {
+    auto svw = svwf.MakeVectorWriter(algcon.size());
+    for (int j=0; j<algcon.size(); ++j)
+      svw.Write(GetNewVarIndex( algcon.var(j) ),      // new ordering
+                algcon.coef(j));
+  }
+}
+
+template <class ColSizeWriter>
+void MP2NLModelAPI::FeedColumnSizes(ColSizeWriter& csw) {
+  if (WantColumnSizes())
+    for (int i=0; i < var_lbs_.size()-1; ++i)        // use old ordering
+      csw.Write(mark_data_.col_sizes_orig_[ GetOldVarIndex( i ) ]);
+}
+
 
 /** Initial primal guesses.
    *
@@ -382,6 +502,7 @@ void MP2NLModelAPI::FeedInitialDualGuesses(IDGWriter& igw) {
      */
 template <class SuffixWriterFactory>
 void MP2NLModelAPI::FeedSuffixes(SuffixWriterFactory& swf) {
+  // @todo SOS constraints
   auto p_qc = p_nlsi_->GetCallbacks();
   auto suffixnames = p_qc->GetSuffixNames();
   auto write1suf = [this](auto& sw, int kind, const auto& vals) {
@@ -411,6 +532,15 @@ void MP2NLModelAPI::FeedSuffixes(SuffixWriterFactory& swf) {
         }
       }
     }
+  }
+}
+
+template <class ColNameWriter>
+void MP2NLModelAPI::FeedColNames(ColNameWriter& wrt) {
+  if (var_names_.size() && wrt) {
+    assert(var_names_.size() == var_lbs_.size());
+    for (size_t i=0; i<var_names_.size(); ++i)
+      wrt << var_names_[ GetOldVarIndex(i) ];
   }
 }
 
@@ -707,11 +837,44 @@ private:
       sresult_ {-1};
 };
 
+template <class Lambda>
+void MP2NLModelAPI::DispatchStaticItem(
+    const ItemInfo& info, Lambda lambda) {
+  switch (info.GetStaticTypeID()) {
+  case StaticItemTypeID::ID_None:
+    MP_RAISE("MP2NL static item type not specified");
+  case StaticItemTypeID::ID_LinearObjective:
+    lambda(*(const LinearObjective*)info.GetPItem());
+    break;
+  default:
+    MP_RAISE("MP2NL: unknown static item type");
+  }
+        /*
+      ID_NLObjective,
+
+      ID_LinConRange,
+      ID_LinConLE,
+      ID_LinConEQ,
+      ID_LinConGE,
+      ID_NLConstraint,
+      ID_NLAssignLE,
+      ID_NLAssignEQ,
+      ID_NLAssignGE,
+      ID_NLLogical,
+      ID_NLEquivalence,
+      ID_NLImpl,
+      ID_NLRimpl,
+      ID_IndicatorConstraintLinLE,
+      ID_IndicatorConstraintLinEQ,
+      ID_IndicatorConstraintLinGE,
+      ID_SOS1Constraint,
+      ID_SOS2Constraint,
+      ID_NLComplementarity  */
+}
 
 void MP2NLModelAPI::CreateInterfaces() {
   p_nls_ = std::make_unique<MP2NLSolverImpl>(*this);
   this->MP2NLCommonInfo::p_nlsi_ = p_nls_.get();
 }
-
 
 } // namespace mp

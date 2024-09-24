@@ -13,8 +13,10 @@ namespace mp {
 /// Expression ID for MP2NLModelAPI.
 /// Can be
 /// 1. "Empty expression" (0.0),
-/// 2. variable expression (represent a variable),
+/// 2. variable expression (represent a (defined) variable),
 /// 3. normal expression node.
+///
+/// @note To create MP2NL_Expr, use MakeMP2NL_... below.
 class MP2NL_Expr {
 public:
   /// Construct
@@ -23,9 +25,36 @@ public:
 	/// Get the expr ID
 	int GetID() const { return id_; }
 
+  /// Is this an empty expression?
+  bool IsEmptyExpr() const { return !id_; }
+
+  /// Is this expression a variable?
+  bool IsVariable() const { return id_ > 0; }
+
+  /// Get variable index
+  /// (>=num_vars ==> is a defined variable.)
+  int GetVarIndex() const
+  { assert(IsVariable()); return id_-1; }
+
+  /// Is a normal expression?
+  bool IsExpression() const { return id_ < 0; }
+
+  /// Get expression index
+  int GetExprIndex() const
+  { assert(IsExpression()); return -id_ - 1; }
+
 private:
 	int id_ {0};
 };
+
+/// Make an empty expression.
+inline MP2NL_Expr MakeEmptyExpr() { return {0}; }
+
+/// Make an expression representing variable \a v.
+inline MP2NL_Expr MakeVarExpr(int v) { return {v+1}; }
+
+/// Make ID of a normal expression with index \a i.
+inline MP2NL_Expr MakeExprID(int i) { return {-i-1}; }
 
 
 /// MP2NLModelAPI.
@@ -111,11 +140,11 @@ public:
   ///
   /// GetVarExpression(\a i): expression representing variable 0<=i<n_var.
   /// Only called for 'nonlinear' variables.
-	Expr GetVarExpression(int i);
+  Expr GetVarExpression(int i) { return MakeVarExpr(i); }
 
   /// GetZeroExpr(): constant 0.0 expression.
   /// Can be used to represent empty expression in an NLConstraint.
-	Expr GetZeroExpression();
+  Expr GetZeroExpression() { return MakeEmptyExpr(); }
 
   /// For each supported top-level constraint type,
   /// add the ACCEPT_CONSTRAINT macro
@@ -356,8 +385,7 @@ public:
   Expr AddExpression(const CosExpression& );
 
   // TODO Div; PowVarVar;
-  // CondLin... - not really, reader_nl.cpp only handles bool args
-
+  // CondLin...
 
 public:
   ///////////////////////////////////////////////////////////////////
@@ -412,16 +440,7 @@ public:
   /** Provide type of objective \a i.
      *  - 0 - minimization;
      *  - 1 - maximization. */
-  int ObjType(int i) {
-    switch (obj_info_[i].GetStaticTypeID()) {
-    case StaticItemTypeID::ID_LinearObjective:
-    case StaticItemTypeID::ID_NLObjective:
-      return obj::MIN==((LinearObjective*)(obj_info_[i].GetPItem()))->obj_sense()
-          ? 0 : 1;
-    default:
-      MP_RAISE("Unknown objective type");
-    }
-  }
+  int ObjType(int i);
 
   /** Feed gradient for objective \a i.
    *  Should include entries for all potentially
@@ -435,22 +454,7 @@ public:
    *      }
    */
   template <class ObjGradWriterFactory>
-  void FeedObjGradient(int i, ObjGradWriterFactory& svwf) {
-    switch (obj_info_[i].GetStaticTypeID()) {
-    case StaticItemTypeID::ID_LinearObjective:
-    case StaticItemTypeID::ID_NLObjective: {
-      const auto& obj = *((LinearObjective*)(obj_info_[i].GetPItem()));
-      if (obj.num_terms()) {
-        auto svw = svwf.MakeVectorWriter(obj.num_terms());
-        for (int j=0; j<obj.num_terms(); ++j)
-          svw.Write(GetNewVarIndex( obj.GetLinTerms().var(j) ),      // new ordering
-                    obj.GetLinTerms().coef(j));
-      }
-    } break;
-    default:
-      MP_RAISE("Unknown objective type");
-    }
-  }
+  void FeedObjGradient(int i, ObjGradWriterFactory& svwf);
 
   /** Feed nonlinear expression of objective \a i.
    *
@@ -520,12 +524,7 @@ public:
    *        vbw.WriteLbUb(lb[i], ub[i]);
    */
   template <class VarBoundsWriter>
-  void FeedVarBounds(VarBoundsWriter& vbw) {
-    for (size_t i = 0; i < var_lbs_.size(); i++) {
-      auto i_old = GetOldVarIndex(i);
-      vbw.WriteLbUb(var_lbs_[i_old], var_ubs_[i_old]);
-    }
-  }
+  void FeedVarBounds(VarBoundsWriter& vbw);
 
 
   ///////////////// 5. CONSTRAINT BOUNDS & COMPLEMENTARITY ///////
@@ -608,31 +607,7 @@ public:
    *      }
    */
   template <class ConBoundsWriter>
-  void FeedConBounds(ConBoundsWriter& cbw) {
-    for (size_t i=0; i<alg_con_info_.size(); ++i) {          // no constraint permutations
-      switch (alg_con_info_[i].GetStaticTypeID()) {
-      case StaticItemTypeID::ID_LinConRange: {
-        const auto& lcon = *((LinConRange*)(alg_con_info_[i].GetPItem()));
-        cbw.WriteAlgConRange( AlgConRange{lcon.lb(), lcon.ub()} );
-      } break;
-      case StaticItemTypeID::ID_LinConLE: {
-        const auto& lcon = *((LinConLE*)(alg_con_info_[i].GetPItem()));
-        cbw.WriteAlgConRange( AlgConRange{lcon.lb(), lcon.ub()} );
-      } break;
-      case StaticItemTypeID::ID_LinConEQ: {
-        const auto& lcon = *((LinConEQ*)(alg_con_info_[i].GetPItem()));
-        cbw.WriteAlgConRange( AlgConRange{lcon.lb(), lcon.ub()} );
-      } break;
-      case StaticItemTypeID::ID_LinConGE: {
-        const auto& lcon = *((LinConGE*)(alg_con_info_[i].GetPItem()));
-        cbw.WriteAlgConRange( AlgConRange{lcon.lb(), lcon.ub()} );
-      } break;
-      default:
-        MP_RAISE("Unknown algebraic constraint type");
-      }
-    }
-  }
-
+  void FeedConBounds(ConBoundsWriter& cbw);
 
   ///////////////////// 6. CONSTRAINTS /////////////////////
   /** Description of constraint \a i
@@ -653,36 +628,12 @@ public:
     *      }
     */
   template <class ConLinearExprWriterFactory>
-  void FeedLinearConExpr(int i, ConLinearExprWriterFactory& svwf) {
-    switch (alg_con_info_[i].GetStaticTypeID()) {
-    case StaticItemTypeID::ID_LinConRange: {
-      FeedLinearConExpr( *((LinConRange*)(alg_con_info_[i].GetPItem())), svwf);
-    } break;
-    case StaticItemTypeID::ID_LinConLE: {
-      FeedLinearConExpr( *((LinConLE*)(alg_con_info_[i].GetPItem())), svwf);
-    } break;
-    case StaticItemTypeID::ID_LinConEQ: {
-      FeedLinearConExpr( *((LinConEQ*)(alg_con_info_[i].GetPItem())), svwf);
-    } break;
-    case StaticItemTypeID::ID_LinConGE: {
-      FeedLinearConExpr( *((LinConGE*)(alg_con_info_[i].GetPItem())), svwf);
-    } break;
-    default:
-      MP_RAISE("Unknown algebraic constraint type");
-    }
-  }
+  void FeedLinearConExpr(int i, ConLinearExprWriterFactory& svwf);
 
   template <class ConLinearExprWriterFactory, class Body, class RhsOrRange>
   void FeedLinearConExpr(
       const AlgebraicConstraint<Body, RhsOrRange>& algcon,
-      ConLinearExprWriterFactory& svwf) {
-    if (algcon.size()) {
-      auto svw = svwf.MakeVectorWriter(algcon.size());
-      for (int j=0; j<algcon.size(); ++j)
-        svw.Write(GetNewVarIndex( algcon.var(j) ),      // new ordering
-                  algcon.coef(j));
-    }
-  }
+      ConLinearExprWriterFactory& svwf);
 
   /** Feed nonlinear expression of constraint \a i.
      *  Algebraic constraints (num_algebraic_cons)
@@ -792,11 +743,7 @@ public:
    *          csw.Write(col_size[i]);
    */
   template <class ColSizeWriter>
-  void FeedColumnSizes(ColSizeWriter& csw) {
-    if (WantColumnSizes())
-      for (int i=0; i < var_lbs_.size()-1; ++i)        // use old ordering
-        csw.Write(mark_data_.col_sizes_orig_[ GetOldVarIndex( i ) ]);
-  }
+  void FeedColumnSizes(ColSizeWriter& csw);
 
 
   ///////////////////// 12. INITIAL GUESSES /////////////////////
@@ -831,6 +778,7 @@ public:
    *          sw.Write(index[i], value[i]);
    *      }
      */
+  /// @todo SOS constraints
   template <class SuffixWriterFactory>
   void FeedSuffixes(SuffixWriterFactory& );
 
@@ -854,13 +802,7 @@ public:
 
   /** Provide variable names. */
   template <class ColNameWriter>
-  void FeedColNames(ColNameWriter& wrt) {
-    if (var_names_.size() && wrt) {
-      assert(var_names_.size() == var_lbs_.size());
-      for (size_t i=0; i<var_names_.size(); ++i)
-        wrt << var_names_[ GetOldVarIndex(i) ];
-    }
-  }
+  void FeedColNames(ColNameWriter& wrt);
 
   /** Provide unused variable names. */
   template <class UnusedVarNameWriter>
@@ -901,6 +843,9 @@ public:
 protected:
   /// For writing NL
   void PrepareModel();
+
+  /// Map expressions.
+  void MapExpressions();
 
   /// Mark variables.
   /// Now just count binary, integer.
@@ -990,77 +935,9 @@ protected:
   }
 
 
-  /// Dispatch con/obj operations: abstract base
-  class BasicItemDispatcher {
-  public:
-    virtual ~BasicItemDispatcher() { }
-    /// Construct
-    BasicItemDispatcher(MP2NLModelAPI& mapi) : mapi_(mapi) { }
-    const MP2NLModelAPI& GetMAPI() const { return mapi_; }
-    MP2NLModelAPI& GetMAPI() { return mapi_; }
-
-    virtual void MarkItem(void* pitem, ItemMarkingData& vmp) = 0;
-    virtual void WriteBounds(void* pitem, const NLWParams& nlwp) = 0;
-
-  private:
-    MP2NLModelAPI& mapi_;
-  };
-
-
-  /// Dispatch con/obj operations: specialization
-  template <class Item>
-  class ItemDispatcher : public BasicItemDispatcher {
-  public:
-    /// Construct
-    ItemDispatcher(MP2NLModelAPI& mapi)
-        : BasicItemDispatcher(mapi) { }
-    /// Var marking
-    void MarkItem(void* pitem, ItemMarkingData& vmp) override
-    { GetMAPI().MarkItem(*(const Item*)pitem, vmp); }
-    /// Write bounds
-    void WriteBounds(void* pitem, const NLWParams& nlwp) override
-    { GetMAPI().WriteBounds(*(const Item*)pitem, nlwp); }
-  };
-
-
-  /// Placeholder for the dispatcher getter
-  template <class Item>
-  ItemDispatcher<Item>& GetItemDispatcher() { throw 0; }
-
-/// Macro to define an item dispatcher
-#define CREATE_ITEM_DISPATCHER(ItemType) \
-  ItemDispatcher<ItemType> item_dispatcher_ ## ItemType ## _ { *this }; \
-  template <> \
-  ItemDispatcher<ItemType>& GetItemDispatcher<ItemType>() \
-  { return item_dispatcher_ ## ItemType ## _; }
-
-
-  /// Item dispatchers
-  /// for static item types in the NL format
-  CREATE_ITEM_DISPATCHER(LinearObjective)
-  CREATE_ITEM_DISPATCHER(NLObjective)
-
-  CREATE_ITEM_DISPATCHER(LinConRange)
-  CREATE_ITEM_DISPATCHER(LinConLE)
-  CREATE_ITEM_DISPATCHER(LinConEQ)
-  CREATE_ITEM_DISPATCHER(LinConGE)
-  CREATE_ITEM_DISPATCHER(NLConstraint)
-  CREATE_ITEM_DISPATCHER(NLAssignLE)
-  CREATE_ITEM_DISPATCHER(NLAssignEQ)
-  CREATE_ITEM_DISPATCHER(NLAssignGE)
-  CREATE_ITEM_DISPATCHER(NLLogical)
-  CREATE_ITEM_DISPATCHER(NLEquivalence)
-  CREATE_ITEM_DISPATCHER(NLImpl)
-  CREATE_ITEM_DISPATCHER(NLRimpl)
-  CREATE_ITEM_DISPATCHER(IndicatorConstraintLinLE)
-  CREATE_ITEM_DISPATCHER(IndicatorConstraintLinEQ)
-  CREATE_ITEM_DISPATCHER(IndicatorConstraintLinGE)
-  CREATE_ITEM_DISPATCHER(SOS1Constraint)
-  CREATE_ITEM_DISPATCHER(SOS2Constraint)
-  CREATE_ITEM_DISPATCHER(NLComplementarity)
-
-
-  /// We need item type ID for manual dispatch
+  /// We need item type ID for manual dispatch.
+  /// Manual dispatch is necessary to pass new types,
+  /// e.g., from NLWriter.
   enum class StaticItemTypeID {
     ID_None,
     ID_LinearObjective,
@@ -1089,12 +966,12 @@ protected:
 
   /// Expression type IDs for manual dispatch.
   /// These are not NL opcodes:
-  /// correspond to our expressions.
+  /// instead, they correspond to our expressions.
   enum class ExpressionTypeID {
     ID_None,
 
-    ID_Lin,
-    ID_Quad,
+    ID_NLAffine,
+    ID_NLQuad,
 
     ID_Abs,
     ID_And,
@@ -1107,44 +984,233 @@ protected:
   };
 
 
+  /// Normally dispatch con/obj operations: abstract base.
+  /// This kind of dispatch only works
+  /// with known types.
+  /// To pass new types, we'll use manual dispatch.
+  class BasicItemDispatcher {
+  public:
+    virtual ~BasicItemDispatcher() { }
+
+    /// Construct
+    BasicItemDispatcher(MP2NLModelAPI& mapi) : mapi_(mapi) { }
+    const MP2NLModelAPI& GetMAPI() const { return mapi_; }
+    MP2NLModelAPI& GetMAPI() { return mapi_; }
+
+    virtual void MarkItem(void* pitem, ItemMarkingData& vmp) = 0;
+    virtual void WriteBounds(void* pitem, const NLWParams& nlwp) = 0;
+    virtual void MarkExprTree(void* pitem) = 0;
+
+    /// Placeholder for the item category getter:
+    /// static item vs expression
+    virtual bool IsItemTypeStatic() = 0;
+
+    /// Placeholder for the StaticItemTypeID getter
+    virtual StaticItemTypeID GetStaticItemTypeID() = 0;
+
+    /// Placeholder for the ExpressionTypeID getter
+    virtual ExpressionTypeID GetExpressionTypeID() = 0;
+
+  private:
+    MP2NLModelAPI& mapi_;
+  };
+
+
+  /// Dispatch con/obj operations: specialization
+  template <class Item>
+  class ItemDispatcher : public BasicItemDispatcher {
+  public:
+    /// Construct
+    ItemDispatcher(MP2NLModelAPI& mapi)
+        : BasicItemDispatcher(mapi) { }
+
+    /// Var marking
+    void MarkItem(void* pitem, ItemMarkingData& vmp) override
+    { GetMAPI().MarkItem(*(const Item*)pitem, vmp); }
+
+    /// Write bounds
+    void WriteBounds(void* pitem, const NLWParams& nlwp) override
+    { GetMAPI().WriteBounds(*(const Item*)pitem, nlwp); }
+
+    /// Add + mark expressions
+    void MarkExprTree(void* pitem) override
+    { GetMAPI().MapExprTreeFromItem(*(const Item*)pitem); }
+
+    /// Item category getter:
+    /// static item vs expression
+    bool IsItemTypeStatic() override
+    { return MP2NLModelAPI::IsItemTypeStatic<Item>(); }
+
+    /// Placeholder for the StaticItemTypeID getter
+    StaticItemTypeID GetStaticItemTypeID() override
+    { return MP2NLModelAPI::GetStaticItemTypeID<Item>(); }
+
+    /// Placeholder for the ExpressionTypeID getter
+    ExpressionTypeID GetExpressionTypeID() override
+    { return MP2NLModelAPI::GetExpressionTypeID<Item>(); }
+  };
+
+
+  /// Placeholder for the dispatcher getter
+  template <class Item>
+  ItemDispatcher<Item>& GetItemDispatcher() { throw 0; }
+
+  /// Placeholder for the item category getter:
+  /// static item vs expression
+  template <class Item>
+  static bool IsItemTypeStatic() { throw 0; }
+
+  /// Placeholder for the StaticItemTypeID getter
+  template <class Item>
+  static StaticItemTypeID GetStaticItemTypeID() { throw 0; }
+
+  /// Placeholder for the ExpressionTypeID getter
+  template <class Item>
+  static ExpressionTypeID GetExpressionTypeID() { throw 0; }
+
+
+/// Macro to define an item dispatcher
+#define CREATE_STATIC_ITEM_DISPATCHER(ItemType) \
+  ItemDispatcher<ItemType> item_dispatcher_ ## ItemType ## _ { *this }; \
+  template <> \
+  ItemDispatcher<ItemType>& GetItemDispatcher<ItemType>() \
+  { return item_dispatcher_ ## ItemType ## _; } \
+  template <> \
+  bool IsItemTypeStatic<ItemType>() { return true; } \
+  template <> \
+  StaticItemTypeID GetStaticItemTypeID<ItemType>() \
+  { return StaticItemTypeID::ID_ ## ItemType; }
+
+
+  /// Item dispatchers
+  /// for static item types in the NL format
+  CREATE_STATIC_ITEM_DISPATCHER(LinearObjective)
+  CREATE_STATIC_ITEM_DISPATCHER(NLObjective)
+
+  CREATE_STATIC_ITEM_DISPATCHER(LinConRange)
+  CREATE_STATIC_ITEM_DISPATCHER(LinConLE)
+  CREATE_STATIC_ITEM_DISPATCHER(LinConEQ)
+  CREATE_STATIC_ITEM_DISPATCHER(LinConGE)
+  CREATE_STATIC_ITEM_DISPATCHER(NLConstraint)
+  CREATE_STATIC_ITEM_DISPATCHER(NLAssignLE)
+  CREATE_STATIC_ITEM_DISPATCHER(NLAssignEQ)
+  CREATE_STATIC_ITEM_DISPATCHER(NLAssignGE)
+  CREATE_STATIC_ITEM_DISPATCHER(NLLogical)
+  CREATE_STATIC_ITEM_DISPATCHER(NLEquivalence)
+  CREATE_STATIC_ITEM_DISPATCHER(NLImpl)
+  CREATE_STATIC_ITEM_DISPATCHER(NLRimpl)
+  CREATE_STATIC_ITEM_DISPATCHER(IndicatorConstraintLinLE)
+  CREATE_STATIC_ITEM_DISPATCHER(IndicatorConstraintLinEQ)
+  CREATE_STATIC_ITEM_DISPATCHER(IndicatorConstraintLinGE)
+  CREATE_STATIC_ITEM_DISPATCHER(SOS1Constraint)
+  CREATE_STATIC_ITEM_DISPATCHER(SOS2Constraint)
+  CREATE_STATIC_ITEM_DISPATCHER(NLComplementarity)
+
+
+
+
   /// Constraint/objective/expression info.
   /// We rely on the pointers staying valid.
   class ItemInfo {
   public:
     /// Construct
-    ItemInfo (BasicItemDispatcher& disp,
-             void* pitem, StaticItemTypeID iid, ExpressionTypeID eid)
-        : disp_(disp), p_item_(pitem), itemID_(iid), exprID_(eid) { }
+    ItemInfo (BasicItemDispatcher& disp, void* pitem
+             //, StaticItemTypeID iid, ExpressionTypeID eid
+             )
+        : disp_(disp), p_item_(pitem)
+        // no storing, itemID_(iid), exprID_(eid)
+    { }
     /// Get dispatcher
     BasicItemDispatcher& GetDispatcher() const { return disp_; }
     /// Get &item
     void* GetPItem() const { return p_item_; }
+    /// Is a static type?
+    bool IsItemTypeStatic() const
+    { return GetDispatcher().IsItemTypeStatic(); }
     /// Get static item type ID, if any
-    StaticItemTypeID GetStaticTypeID() const { return itemID_; }
+    StaticItemTypeID GetStaticTypeID() const
+    { return GetDispatcher().GetStaticItemTypeID(); }
     /// Get expression type ID, if any
-    ExpressionTypeID GetExprTypeID() const { return exprID_; }
+    ExpressionTypeID GetExprTypeID() const
+    { return GetDispatcher().GetExpressionTypeID(); }
 
   private:
     BasicItemDispatcher& disp_;
     void* p_item_;
-    StaticItemTypeID itemID_ {StaticItemTypeID::ID_None};
-    ExpressionTypeID exprID_ {ExpressionTypeID::ID_None};
+    // StaticItemTypeID itemID_ {StaticItemTypeID::ID_None};
+    // ExpressionTypeID exprID_ {ExpressionTypeID::ID_None};
   };
 
   /// Fill static item info
   template <class Item>
-  ItemInfo MakeItemInfo(const Item& i, StaticItemTypeID sid) {
-    return { GetItemDispatcher<Item>(), (void*)&i, sid, ExpressionTypeID::ID_None };
+  ItemInfo MakeItemInfo(const Item& i, StaticItemTypeID ) {
+    return { GetItemDispatcher<Item>(), (void*)&i
+            // , sid, ExpressionTypeID::ID_None
+    };
   }
 
   /// Fill expression item info
   template <class Item>
-  ItemInfo MakeItemInfo(const Item& i, ExpressionTypeID eid) {
-    return { GetItemDispatcher<Item>(), (void*)&i, StaticItemTypeID::ID_None, eid };
+  ItemInfo MakeItemInfo(const Item& i, ExpressionTypeID ) {
+    return { GetItemDispatcher<Item>(), (void*)&i
+            //, StaticItemTypeID::ID_None, eid
+    };
   }
+
+  /// Manually dispatch a static item
+  /// to a lambda(const auto& item).
+  template <class Lambda>
+  void DispatchStaticItem(const ItemInfo& info, Lambda lambda);
+
+  /// Map expressions from a single item info
+  /// @note needs to be in .h to be instantiated/inlined,
+  ///   at least for Clang 16.
+  void MapExprTreeFromItemInfo(const ItemInfo& info)
+  { info.GetDispatcher().MarkExprTree(info.GetPItem()); }
+
+  /// Map expressions from a single item (type-safe)
+  /// @note needs to be in .h to be instantiated/inlined,
+  ///   at least for Clang 16.
+  template <class Item>
+  void MapExprTreeFromItem(const Item& item) {
+    auto mp2nlexpr
+        = GetExpression(item);   // so that AddExpression() is called
+    RegisterExpression(mp2nlexpr);     // mark the tree root
+  }
+
+  /// Reuse GetExpression()
+  using BaseModelAPI::GetExpression;
+
+  /// Supply empty expression for other types
+  /// @note needs to be in .h to be instantiated/inlined,
+  ///   at least for Clang 16.
+  template <class Item>
+  MP2NL_Expr GetExpression(const Item& )
+  { return GetZeroExpression(); }
 
   /// Create implementations of interfaces of NLSolver
   void CreateInterfaces();
+
+
+protected:
+  /// Every new expression when adding.
+  /// Just counts them.
+  void RegisterExpression(MP2NL_Expr expr);
+
+  /// Count expression depending on its kind.
+  void CountExpression(MP2NL_Expr expr);
+
+  /// Single template code to add any expression
+  /// where eid is provided
+  template <class Expr>
+  MP2NL_Expr AddExpression(
+      const Expr& expr, ExpressionTypeID eid);
+
+
+  /// Make, store and return MP2NL_Expr for a given expession
+  template <class Expr>
+  MP2NL_Expr StoreMP2NLExprID(
+      const Expr& expr, ExpressionTypeID eid);
 
 private:
   /// References to the model data.
@@ -1159,6 +1225,8 @@ private:
   /// @todo still need permutations of NL constraints?
   std::vector<ItemInfo> obj_info_, alg_con_info_, log_con_info_, sos_info_;
 
+  std::vector<ItemInfo> expr_info_;
+  std::vector<int>   expr_counter_;   // usage counter
 
   ItemMarkingData mark_data_;
   bool hdr_is_current_ {};

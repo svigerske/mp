@@ -92,6 +92,17 @@ public:
     return nlc.GetMainCon().var(i);
   }
 
+  /// Get the expression term of an \a NLObjective.
+  /// @note Can return the dummy expression
+  ///   via Impl::GetZeroExpression().
+  ExprType GetExpression(const NLObjective& nlo) {
+    const auto i_expr = nlo.HasExpr()
+    ? nlo.ExprIndex() : -1;
+    if (i_expr<0)
+      return MPD( GetZeroExpression() );
+    return GetInitExpression(i_expr);       // could be explicified
+  }
+
   /// Get the expression term of an \a NLConstraint.
   /// @note Can return the dummy expression
   ///   via Impl::GetZeroExpression().
@@ -145,6 +156,13 @@ public:
   int GetVariable(const NLReification<sense>& nll) {
     assert( nll.GetBVar()>=0 );
     return nll.GetBVar();
+  }
+
+  /// Get the expression term of an \a NLComplementarity.
+  ExprType GetExpression(const NLComplementarity& nlcc) {
+    assert( nlcc.GetExpression().is_variable() );
+    return GetInitExpression(
+        nlcc.GetExpression().get_representing_variable());
   }
 
   /// GetLinSize(le)
@@ -226,7 +244,8 @@ private:
     return expr_stored_[i_expr];  // ...............
   }
 
-  /// Get Expr for the InitExpression().
+  /// Get Expr for the initializing expression of a result variable,
+  /// even the variable is explicit.
   /// Solver expression for the given variable's init expression.
   /// This is called for NLConstraint
   /// and for NLReification. For them, during result explicification,
@@ -247,6 +266,18 @@ private:
       return result;
     }
     return GetInitExpression(i_expr);                     // standard case
+  }
+
+  /// Visit arguments of an item.
+  /// @param FlatItem: underlying flat item
+  /// @param Lambda: to be called on each argument's Expr
+  template <class FlatItem, class Lambda>
+  inline void VisitArguments(
+      const FlatItem& expr, Lambda lambda) {
+    mp::VisitArguments(expr.GetFlatConstraint(),
+                       [this,lambda](int v) {
+                         lambda(GetInitExpression(v));
+                       });
   }
 
 
