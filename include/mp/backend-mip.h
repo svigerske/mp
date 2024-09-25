@@ -550,8 +550,7 @@ protected:
                       "if the objective is unbounded "
                       "or suffix .dunbdd (Farkas dual) if the constraints "
                       "are infeasible:\n"
-                      "\n.. value-table::\n\n"
-                      "Only concerns LP models.",
+                      "\n.. value-table::\n",
                       GetMIPOptions().rays_, values_rays_);
 
     if (IMPL_HAS_STD_FEATURE( IIS ))

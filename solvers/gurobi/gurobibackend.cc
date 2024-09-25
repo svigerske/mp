@@ -1652,8 +1652,10 @@ void GurobiBackend::InitCustomOptions() {
       "| 1-3 - Increasing focus on more stable computations.",
                   GRB_INT_PAR_NUMERICFOCUS, 0, 3);
 
+  AddToOptionDescription("alg:rays",
+                         "Only applies to LP models.");
 
-
+  AddOptionSynonyms_OutOfLine("alg:infunbdinfo infunbdinfo InfUnbdInfo", "alg:rays");
 
   AddSolverOption("bar:convtol barconvtol",
     "Tolerance on the relative difference between the primal and dual objectives "
