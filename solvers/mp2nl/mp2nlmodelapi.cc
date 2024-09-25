@@ -127,6 +127,8 @@ void MP2NLModelAPI::RegisterExpression(MP2NL_Expr expr) {
 }
 
 /// Count expression depending on its kind.
+/// This duplicates the counters in FlatConverter
+///   -- could check equality.
 void MP2NLModelAPI::CountExpression(MP2NL_Expr expr) {
   if (expr.IsExpression()) {
     auto index = expr.GetExprIndex();
@@ -364,7 +366,7 @@ int MP2NLModelAPI::ObjType(int i) {
 
 template <class ObjGradWriterFactory>
 void MP2NLModelAPI::FeedObjGradient(int i, ObjGradWriterFactory& svwf) {
-  switch (obj_info_[i].GetStaticTypeID()) {
+  switch (obj_info_.at(i).GetStaticTypeID()) {
   case StaticItemTypeID::ID_LinearObjective:
   case StaticItemTypeID::ID_NLObjective: {
     const auto& obj = *((LinearObjective*)(obj_info_[i].GetPItem()));
@@ -374,6 +376,25 @@ void MP2NLModelAPI::FeedObjGradient(int i, ObjGradWriterFactory& svwf) {
         svw.Write(GetNewVarIndex( obj.GetLinTerms().var(j) ),      // new ordering
                   obj.GetLinTerms().coef(j));
     }
+  } break;
+  default:
+    MP_RAISE("Unknown objective type");
+  }
+}
+
+template <class ObjExprWriter>
+void MP2NLModelAPI::FeedObjExpression(int iobj, ObjExprWriter& ew) {
+  const auto& obj_info = obj_info_.at(iobj);
+  switch (obj_info.GetStaticTypeID()) {
+  case StaticItemTypeID::ID_LinearObjective:
+    ew.NPut(0.0);
+    break;
+  case StaticItemTypeID::ID_NLObjective: {
+    const auto& obj = *((NLObjective*)(obj_info.GetPItem()));
+    if (obj.HasExpr()) {
+      FeedExpr(GetExpression(obj), ew);
+    } else
+      ew.NPut(0.0);
   } break;
   default:
     MP_RAISE("Unknown objective type");
@@ -445,6 +466,85 @@ void MP2NLModelAPI::FeedLinearConExpr(
                 algcon.coef(j));
   }
 }
+
+template <class ConExprWriter>
+void MP2NLModelAPI::FeedConExpression(
+    int icon, ConExprWriter& ew) {
+  if (icon < (int)alg_con_info_.size())
+    FeedAlgConExpression(icon, ew);
+  else
+    FeedLogicalConExpression(icon - alg_con_info_.size(), ew);
+}
+
+template <class ConExprWriter>
+void MP2NLModelAPI::FeedAlgConExpression(
+    int icon, ConExprWriter& ew) {
+  // We could use a virtual function
+  // to call GetExpression() instead of switch().
+  const auto& con_info = alg_con_info_.at(icon);
+  const auto* pitem = con_info.GetPItem();
+  switch (con_info.GetStaticTypeID()) {
+  case StaticItemTypeID::ID_NLConstraint: {
+    const auto& con = *((NLConstraint*)(pitem));
+    if (con.HasExpr()) {
+      FeedExpr(GetExpression(con), ew);
+    } else
+      ew.NPut(0.0);                   // linear case
+  } break;
+  case StaticItemTypeID::ID_NLAssignLE:
+    FeedExpr(GetExpression(*((NLAssignLE*)(pitem))), ew);
+    break;
+  case StaticItemTypeID::ID_NLAssignEQ:
+    FeedExpr(GetExpression(*((NLAssignEQ*)(pitem))), ew);
+    break;
+  case StaticItemTypeID::ID_NLAssignGE:
+    FeedExpr(GetExpression(*((NLAssignGE*)(pitem))), ew);
+    break;
+  case StaticItemTypeID::ID_NLComplementarity:
+    FeedExpr(GetExpression(*((NLComplementarity*)(pitem))), ew);
+    break;
+  default:
+    ew.NPut(0.0);                     // must be linear constr
+    break;
+  case StaticItemTypeID::ID_NLLogical:
+  case StaticItemTypeID::ID_NLImpl:
+  case StaticItemTypeID::ID_NLEquivalence:
+  case StaticItemTypeID::ID_NLRimpl:
+  case StaticItemTypeID::ID_LinearObjective:
+  case StaticItemTypeID::ID_NLObjective:
+  case StaticItemTypeID::ID_None:
+    MP_RAISE("Unknown algebraic constraint type");
+  }
+}
+
+template <class ConExprWriter>
+void MP2NLModelAPI::FeedLogicalConExpression(
+    int icon, ConExprWriter& ew) {
+  const auto& con_info = log_con_info_.at(icon);
+  const auto* pitem = con_info.GetPItem();
+  switch (con_info.GetStaticTypeID()) {
+  case StaticItemTypeID::ID_NLLogical:
+    FeedExpr(GetExpression(*((NLLogical*)(pitem))), ew);
+    break;
+  case StaticItemTypeID::ID_NLImpl:
+    FeedExpr(GetExpression(*((NLImpl*)(pitem))), ew);
+    break;
+  case StaticItemTypeID::ID_NLEquivalence:
+    FeedExpr(GetExpression(*((NLEquivalence*)(pitem))), ew);
+    break;
+  case StaticItemTypeID::ID_NLRimpl:
+    FeedExpr(GetExpression(*((NLRimpl*)(pitem))), ew);
+    break;
+  default:
+    MP_RAISE("Unknown logical constraint type");
+  }
+}
+
+template <class ExprWriter>
+void MP2NLModelAPI::FeedExpr(Expr e, ExprWriter& ) {
+
+}
+
 
 template <class ColSizeWriter>
 void MP2NLModelAPI::FeedColumnSizes(ColSizeWriter& csw) {

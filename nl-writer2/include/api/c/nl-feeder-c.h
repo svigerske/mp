@@ -353,7 +353,8 @@ typedef struct NLW2_NLFeeder_C {
   /** Feed native expression.
      *  This method is recursively called from NLWriter,
      *  when Feeder uses ExprWriter::EPut().
-     *  Feeder should not call this method itself.
+     *  Feeder should not call this method
+     *  to write subtrees below the root expression.
      *
      *  Details of ExprWriter: see NLWriter2.
    */

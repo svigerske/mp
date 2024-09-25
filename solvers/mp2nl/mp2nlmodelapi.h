@@ -466,8 +466,7 @@ public:
    *
    *  Details of ObjExprWriter: see NLWriter2. */
   template <class ObjExprWriter>
-  void FeedObjExpression(int , ObjExprWriter& ew)
-  { ew.NPut(0.0); }
+  void FeedObjExpression(int , ObjExprWriter& ew);
 
 
   ///////////////////// 3. DEFINED VARIABLES /////////////////////
@@ -642,20 +641,28 @@ public:
    *  constant 0, which is implemented as default.
      */
   template <class ConExprWriter>
-  void FeedConExpression(int , ConExprWriter& ew)
-  { ew.NPut(0.0); }
+  void FeedConExpression(int , ConExprWriter& ew);
+
+  /// Feed alg con expr
+  template <class ConExprWriter>
+  void FeedAlgConExpression(int , ConExprWriter& ew);
+
+  /// Feed logical con expr
+  template <class ConExprWriter>
+  void FeedLogicalConExpression(int , ConExprWriter& ew);
 
 
   ///////////////////// 7. EXPRESSIONS /////////////////////
   /** Feed native expression.
      *  This method is recursively called from NLWriter,
      *  when Feeder uses ExprWriter::EPut().
-     *  Feeder should not call this method itself.
+     *  Feeder should not call this method
+     *  to write subtrees below the root expression.
      *
      *  Details of ExprWriter: see NLWriter2.
    */
   template <class ExprWriter>
-  void FeedExpr(Expr e, ExprWriter& ) { }
+  void FeedExpr(Expr e, ExprWriter& );
 
 
   ///////////////////// 8. PL-SOS CONSTRAINTS ////////////
