@@ -288,6 +288,18 @@ protected:
     /// Destruct. Check that all arguments are written.
     ~ExprArgWriter();
 
+    /// Don't copy-construct
+    ExprArgWriter(const ExprArgWriter& ) = delete;
+    /// Don't assign
+    void operator=(const ExprArgWriter& ) = delete;
+
+    /// Do move-construct
+    ExprArgWriter(ExprArgWriter&& eaw)
+        : nlw_(eaw.nlw_), nargs_(eaw.nargs_) { eaw.nargs_=0; }
+    /// Do move-assign
+    ExprArgWriter& operator=(ExprArgWriter&& eaw)
+    { assert(&nlw_==&eaw.nlw_); std::swap(nargs_, eaw.nargs_); }
+
     /// Write the next arg as Feeder's native expression.
     /// This recursively calls Feeder::FeedExpr().
     void EPut(typename FeederType::Expr e);
@@ -355,6 +367,16 @@ protected:
   public:
     /// Construct
     ExprWriter(NLWriter2& nlw) : nlw_(nlw) { }
+
+    /// Don't copy-construct
+    ExprWriter(const ExprWriter& ) = delete;
+    /// Don't copy-assign
+    void operator=(const ExprWriter& ) = delete;
+
+    /// Do move-construct
+    ExprWriter(ExprWriter&& ) = default;
+    /// Do move-assign
+    ExprWriter& operator=(ExprWriter&& ) = default;
 
     /// Write Feeder's native expression.
     /// This recursively calls Feeder::FeedExpr().
