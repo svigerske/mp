@@ -383,7 +383,7 @@ void ScipModelAPI::AddConstraint( const NLRimpl& nll ) {
       getPROBDATA()->vars[ GetVariable(nll) ], -1.0) );
 }
 
-SCIP_EXPR* ScipModelAPI::AddExpression(const NLAffineExpr &le) {
+SCIP_EXPR* ScipModelAPI::AddExpression(const NLAffineExpression &le) {
   std::vector<SCIP_EXPR*> terms(GetLinSize(le));
   std::vector<double> coefs(GetLinSize(le));
 
@@ -400,7 +400,7 @@ SCIP_EXPR* ScipModelAPI::AddExpression(const NLAffineExpr &le) {
   return sumexpr;
 }
 
-SCIP_EXPR* ScipModelAPI::AddExpression(const NLQuadExpr &qe) {
+SCIP_EXPR* ScipModelAPI::AddExpression(const NLQuadExpression &qe) {
   std::vector<SCIP_EXPR*> terms(GetLinSize(qe) + GetQuadSize(qe));
   std::vector<double> coefs(GetLinSize(qe) + GetQuadSize(qe));
 

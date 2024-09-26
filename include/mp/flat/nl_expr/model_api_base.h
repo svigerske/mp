@@ -160,55 +160,55 @@ public:
 
   /// Get the expression term of an \a NLComplementarity.
   ExprType GetExpression(const NLComplementarity& nlcc) {
-    assert( nlcc.GetExpression().is_variable() );
-    return GetInitExpression(
-        nlcc.GetExpression().get_representing_variable());
+    return MPD( GetZeroExpression() );   // @todo
   }
 
   /// GetLinSize(le)
-  int GetLinSize(const NLAffineExpr& le) const
+  int GetLinSize(const NLAffineExpression& le) const
   { return le.GetFlatConstraint().GetAffineExpr().size(); }
   /// GetLinCoef(le, i)
-  double GetLinCoef(const NLAffineExpr& le, int i) const
+  double GetLinCoef(const NLAffineExpression& le, int i) const
   { return le.GetFlatConstraint().GetAffineExpr().coef(i); }
   /// GetLinTerm(le, i)
-  Expr GetLinTerm(const NLAffineExpr& le, int i)
+  Expr GetLinTerm(const NLAffineExpression& le, int i)
   { return GetInitExpression(le.GetFlatConstraint().GetAffineExpr().var(i)); }
+  /// GetQuadSize() for NLAffineExpression: convenience method
+  int GetQuadSize(const NLAffineExpression& ) const { return 0; }
   /// GetConstTerm(le)
-  double GetConstTerm(const NLAffineExpr& le) const
+  double GetConstTerm(const NLAffineExpression& le) const
   { return le.GetFlatConstraint().GetAffineExpr().constant_term(); }
 
   /// GetLinSize(qe)
-  int GetLinSize(const NLQuadExpr& qe) const
+  int GetLinSize(const NLQuadExpression& qe) const
   { return qe.GetFlatConstraint().GetQuadExpr().GetBody().GetLinTerms().size(); }
   /// GetLinCoef(qe, i)
-  double GetLinCoef(const NLQuadExpr& qe, int i) const
+  double GetLinCoef(const NLQuadExpression& qe, int i) const
   { return qe.GetFlatConstraint().GetQuadExpr().GetBody().GetLinTerms().coef(i); }
   /// GetLinTerm(qe, i)
-  Expr GetLinTerm(const NLQuadExpr& qe, int i)
+  Expr GetLinTerm(const NLQuadExpression& qe, int i)
   { return GetInitExpression(qe.GetFlatConstraint().GetQuadExpr().GetBody().GetLinTerms().var(i)); }
 
   /// GetQuadSize(qe)
-  int GetQuadSize(const NLQuadExpr& qe) const
+  int GetQuadSize(const NLQuadExpression& qe) const
   { return qe.GetFlatConstraint().GetQuadExpr().GetBody().GetQPTerms().size(); }
   /// GetQuadCoef(qe, i)
-  double GetQuadCoef(const NLQuadExpr& qe, int i) const
+  double GetQuadCoef(const NLQuadExpression& qe, int i) const
   { return qe.GetFlatConstraint().GetQuadExpr().GetBody().GetQPTerms().coef(i); }
   /// GetQuadTerm1(qe, i)
-  Expr GetQuadTerm1(const NLQuadExpr& qe, int i)
+  Expr GetQuadTerm1(const NLQuadExpression& qe, int i)
   { return GetInitExpression(qe.GetFlatConstraint().GetQuadExpr().GetBody().GetQPTerms().var1(i)); }
   /// GetQuadTerm2(qe, i)
-  Expr GetQuadTerm2(const NLQuadExpr& qe, int i)
+  Expr GetQuadTerm2(const NLQuadExpression& qe, int i)
   { return GetInitExpression(qe.GetFlatConstraint().GetQuadExpr().GetBody().GetQPTerms().var2(i)); }
 
   /// GetConstTerm(qe)
-  double GetConstTerm(const NLQuadExpr& qe) const
+  double GetConstTerm(const NLQuadExpression& qe) const
   { return qe.GetFlatConstraint().GetQuadExpr().constant_term(); }
 
   /// Get number of arguments
   template <class FlatExpression>
   int GetNumArguments(const FlatExpression& fe)
-  { return GetInitExpression(fe.GetFlatConstraint().GetArguments().size()); }
+  { return fe.GetFlatConstraint().GetArguments().size(); }
 
   /// Get argument expression [\a i]
   template <class FlatExpression>

@@ -87,7 +87,7 @@ DEF_NUMERIC_FUNC_CONSTR_WITH_PRM( LogA,
 
 ////////////////////////////////////////////////////////////////////////
 DEF_NUMERIC_FUNC_CONSTR_WITH_PRM( Pow,
-                  VarArray1, DblParamArray1, "r = v ** a");
+                  VarArray1, DblParamArray1, "r = v ** a (a is constant)");
 
 ////////////////////////////////////////////////////////////////////////
 DEF_NUMERIC_FUNC_CONSTR( Sin, VarArray1,
@@ -216,9 +216,9 @@ public:
 };
 
 
-/// Typedef NLAffineExpr.
+/// Typedef NLAffineExpression.
 /// Like AffineExpr, but arguments are expressions.
-using NLAffineExpr = ExprWrapper<LinearFunctionalConstraint>;
+using NLAffineExpression = ExprWrapper<LinearFunctionalConstraint>;
 
 /// Write LFC without name.
 template <class Writer>
@@ -289,9 +289,9 @@ public:
 };
 
 
-/// Typedef NLQuadExpr.
+/// Typedef NLQuadExpression.
 /// Like QuadExpr, but arguments are expressions.
-using NLQuadExpr = ExprWrapper<QuadraticFunctionalConstraint>;
+using NLQuadExpression = ExprWrapper<QuadraticFunctionalConstraint>;
 
 /// Shortcut to make an LFC from linear body and constant
 inline LinearFunctionalConstraint

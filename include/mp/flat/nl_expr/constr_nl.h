@@ -116,6 +116,13 @@ public:
   /// Get var
   int GetVar() const { return bvar_; }
 
+  /// Imitate an algebraic con
+  int size() const { return 1; }
+  /// Imitate
+  double coef(int i) const { assert(!i); return -1.0; }
+  /// Imitate
+  double var(int i) const { assert(!i); return GetVar(); }
+
   /// Throw - should not be used
   VarArray1 GetArguments() const { MP_RAISE("No marking for NL items"); }
 

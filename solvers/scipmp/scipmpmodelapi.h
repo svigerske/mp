@@ -230,8 +230,8 @@ public:
   /// @note Use accessors, not methods;
   /// - GetLinSize(le), GetLinCoef(le, i), GetLinTerm(le, i);
   ///   GetConstTerm(le).
-  ACCEPT_EXPRESSION(NLAffineExpr, Recommended);
-  SCIP_EXPR* AddExpression(const NLAffineExpr& le);
+  ACCEPT_EXPRESSION(NLAffineExpression, Recommended);
+  SCIP_EXPR* AddExpression(const NLAffineExpression& le);
 
   /// NLQuadExpr.
   /// @note Use accessors, not methods;
@@ -239,8 +239,8 @@ public:
   ///   GetQuadSize(le), GetQuadCoef(le, i),
   ///   GetQuadTerm1(le, i), GetQuadTerm2(le, i);
   ///   GetConstTerm(le).
-  ACCEPT_EXPRESSION(NLQuadExpr, Recommended);
-  SCIP_EXPR* AddExpression(const NLQuadExpr& le);
+  ACCEPT_EXPRESSION(NLQuadExpression, Recommended);
+  SCIP_EXPR* AddExpression(const NLQuadExpression& le);
 
   /// Each expression can be accepted as a proper expression,
   /// or as a flat functional constraint var <=/==/>= expr

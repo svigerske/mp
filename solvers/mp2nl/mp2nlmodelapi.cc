@@ -139,9 +139,9 @@ void MP2NLModelAPI::CountExpression(MP2NL_Expr expr) {
 }
 
 
-MP2NL_Expr MP2NLModelAPI::AddExpression(const NLAffineExpr &expr)
+MP2NL_Expr MP2NLModelAPI::AddExpression(const NLAffineExpression &expr)
 { return AddExpression(expr, ExpressionTypeID::ID_NLAffine); }
-MP2NL_Expr MP2NLModelAPI::AddExpression(const NLQuadExpr &expr)
+MP2NL_Expr MP2NLModelAPI::AddExpression(const NLQuadExpression &expr)
 { return AddExpression(expr, ExpressionTypeID::ID_NLQuad); }
 MP2NL_Expr MP2NLModelAPI::AddExpression(const AbsExpression &expr)
 { return AddExpression(expr, ExpressionTypeID::ID_Abs); }
@@ -429,6 +429,46 @@ void MP2NLModelAPI::FeedConBounds(ConBoundsWriter& cbw) {
       const auto& lcon = *((LinConGE*)(alg_con_info_[i].GetPItem()));
       cbw.WriteAlgConRange( AlgConRange{lcon.lb(), lcon.ub()} );
     } break;
+    case StaticItemTypeID::ID_NLConstraint: {
+      const auto& lcon = *((NLConstraint*)(alg_con_info_[i].GetPItem()));
+      cbw.WriteAlgConRange( AlgConRange{GetLower(lcon), GetUpper(lcon)} );
+    } break;
+    case StaticItemTypeID::ID_NLAssignLE: {  // -resvar + (expr) >= 0
+      const auto& lcon = *((NLAssignLE*)(alg_con_info_[i].GetPItem()));
+      cbw.WriteAlgConRange( AlgConRange{0.0, Infinity()} );
+    } break;
+    case StaticItemTypeID::ID_NLAssignEQ: {
+      const auto& lcon = *((NLAssignEQ*)(alg_con_info_[i].GetPItem()));
+      cbw.WriteAlgConRange( AlgConRange{0.0, 0.0} );
+    } break;
+    case StaticItemTypeID::ID_NLAssignGE: {
+      const auto& lcon = *((NLAssignGE*)(alg_con_info_[i].GetPItem()));
+      cbw.WriteAlgConRange( AlgConRange{MinusInfinity(), 0.0} );
+    } break;
+    case StaticItemTypeID::ID_NLComplementarity: {
+      const auto& lcon = *((NLComplementarity*)(alg_con_info_[i].GetPItem()));
+      AlgConRange bnd;
+      auto j = lcon.GetVariable();
+      auto ct = lcon.GetExpression().constant_term(); // @todo NLExpression?
+      bnd.L = MinusInfinity();
+      bnd.U = Infinity();
+      bnd.k = 0;
+      if (var_lbs_[j] > MinusInfinity()) {
+        bnd.k = 1;
+        bnd.L = -ct;         // empty expr then
+      }
+      if (var_ubs_[j] < Infinity()) {
+        bnd.k |= 2;
+        bnd.U = -ct;
+      }
+      if (3==bnd.k) {
+        bnd.L = MinusInfinity();
+        bnd.U = Infinity();  // expr should be ct.
+      }
+      assert(bnd.k);
+      bnd.cvar = GetNewVarIndex(j);
+      cbw.WriteAlgConRange( bnd );
+    } break;
     default:
       MP_RAISE("Unknown algebraic constraint type");
     }
@@ -437,27 +477,45 @@ void MP2NLModelAPI::FeedConBounds(ConBoundsWriter& cbw) {
 
 template <class ConLinearExprWriterFactory>
 void MP2NLModelAPI::FeedLinearConExpr(int i, ConLinearExprWriterFactory& svwf) {
+  const auto* pitem = alg_con_info_[i].GetPItem();
   switch (alg_con_info_[i].GetStaticTypeID()) {
   case StaticItemTypeID::ID_LinConRange: {
-    FeedLinearConExpr( *((LinConRange*)(alg_con_info_[i].GetPItem())), svwf);
+    FeedLinearConBody( *((LinConRange*)(pitem)), svwf);
   } break;
   case StaticItemTypeID::ID_LinConLE: {
-    FeedLinearConExpr( *((LinConLE*)(alg_con_info_[i].GetPItem())), svwf);
+    FeedLinearConBody( *((LinConLE*)(pitem)), svwf);
   } break;
   case StaticItemTypeID::ID_LinConEQ: {
-    FeedLinearConExpr( *((LinConEQ*)(alg_con_info_[i].GetPItem())), svwf);
+    FeedLinearConBody( *((LinConEQ*)(pitem)), svwf);
   } break;
   case StaticItemTypeID::ID_LinConGE: {
-    FeedLinearConExpr( *((LinConGE*)(alg_con_info_[i].GetPItem())), svwf);
+    FeedLinearConBody( *((LinConGE*)(pitem)), svwf);
+  } break;
+  case StaticItemTypeID::ID_NLConstraint: {
+    FeedLinearConBody(
+        ((const NLConstraint*)(pitem))->GetMainCon(), svwf);
+  } break;
+  case StaticItemTypeID::ID_NLAssignLE: {
+    FeedLinearConBody( *((NLAssignLE*)(pitem)), svwf);
+  } break;
+  case StaticItemTypeID::ID_NLAssignEQ: {
+    FeedLinearConBody( *((NLAssignEQ*)(pitem)), svwf);
+  } break;
+  case StaticItemTypeID::ID_NLAssignGE: {
+    FeedLinearConBody( *((NLAssignGE*)(pitem)), svwf);
+  } break;
+  case StaticItemTypeID::ID_NLComplementarity: {
+    FeedLinearConBody(
+        ((const NLComplementarity*)(pitem))->GetExpression(), svwf);
   } break;
   default:
     MP_RAISE("Unknown algebraic constraint type");
   }
 }
 
-template <class ConLinearExprWriterFactory, class Body, class RhsOrRange>
-void MP2NLModelAPI::FeedLinearConExpr(
-    const AlgebraicConstraint<Body, RhsOrRange>& algcon,
+template <class ExprBody, class ConLinearExprWriterFactory>
+void MP2NLModelAPI::FeedLinearConBody(
+    const ExprBody& algcon,
     ConLinearExprWriterFactory& svwf) {
   if (algcon.size()) {
     auto svw = svwf.MakeVectorWriter(algcon.size());
@@ -483,6 +541,8 @@ void MP2NLModelAPI::FeedAlgConExpression(
   // to call GetExpression() instead of switch().
   const auto& con_info = alg_con_info_.at(icon);
   const auto* pitem = con_info.GetPItem();
+  std::printf("Feed alg con expr: i=%d, id=%d\n",
+              icon, (int)con_info.GetStaticTypeID());
   switch (con_info.GetStaticTypeID()) {
   case StaticItemTypeID::ID_NLConstraint: {
     const auto& con = *((NLConstraint*)(pitem));
@@ -500,9 +560,15 @@ void MP2NLModelAPI::FeedAlgConExpression(
   case StaticItemTypeID::ID_NLAssignGE:
     FeedExpr(GetExpression(*((NLAssignGE*)(pitem))), ew);
     break;
-  case StaticItemTypeID::ID_NLComplementarity:
-    FeedExpr(GetExpression(*((NLComplementarity*)(pitem))), ew);
-    break;
+  case StaticItemTypeID::ID_NLComplementarity: {
+    const auto& cc = *((NLComplementarity*)(pitem));
+    auto j = cc.GetVariable();
+    if (var_lbs_[j]<=MinusInfinity()   // @todo proper expressions
+        || var_ubs_[j]>=Infinity())
+      ew.NPut(0.0);
+    else
+      ew.NPut(cc.GetExpression().constant_term());
+  } break;
   default:
     ew.NPut(0.0);                     // must be linear constr
     break;
@@ -541,8 +607,111 @@ void MP2NLModelAPI::FeedLogicalConExpression(
 }
 
 template <class ExprWriter>
-void MP2NLModelAPI::FeedExpr(Expr e, ExprWriter& ) {
+void MP2NLModelAPI::FeedExpr(Expr expr, ExprWriter& ew) {
+  if (expr.IsEmptyExpr())
+    ew.NPut(0.0);
+  else if (expr.IsVariable()) {       // @todo def vars
+    ew.VPut(expr.GetVarIndex(),
+            GetVarName(expr.GetVarIndex()));
+  } else
+    FeedOpcode(expr, ew);
+}
 
+template <class ExprWriter>
+void MP2NLModelAPI::FeedOpcode(Expr expr, ExprWriter& ew) {
+  assert(expr.IsExpression());
+  const auto& expr_info = expr_info_.at(expr.GetExprIndex());
+  const auto* pitem = expr_info.GetPItem();
+  switch (expr_info.GetExprTypeID()) {
+  case ExpressionTypeID::ID_NLAffine:
+    FeedAlgebraic(*(const NLAffineExpression*)pitem, ew);
+    break;
+  case ExpressionTypeID::ID_NLQuad:
+    FeedAlgebraic(*(const NLQuadExpression*)pitem, ew);
+    break;
+
+  case ExpressionTypeID::ID_Abs:
+    FeedOpcodeArgs(*(const AbsExpression*)pitem, ew.OPut1(nl::ABS));
+    break;
+  case ExpressionTypeID::ID_And:
+    FeedOpcodeArgs(*(const AndExpression*)pitem,
+                   ew.OPutN(nl::AND,
+                            GetNumArguments(*(const AndExpression*)pitem)));
+    break;
+  case ExpressionTypeID::ID_Or:
+    FeedOpcodeArgs(*(const OrExpression*)pitem,
+                   ew.OPutN(nl::OR,
+                            GetNumArguments(*(const OrExpression*)pitem)));
+    break;
+  case ExpressionTypeID::ID_Exp:
+    FeedOpcodeArgs(*(const ExpExpression*)pitem, ew.OPut1(nl::EXP));
+    break;
+  case ExpressionTypeID::ID_Log:
+    FeedOpcodeArgs(*(const LogExpression*)pitem, ew.OPut1(nl::LOG));
+    break;
+  case ExpressionTypeID::ID_Pow:
+    FeedOpcodeArgs(*(const PowExpression*)pitem, ew.OPut2(nl::POW_CONST_EXP));
+    break;
+  case ExpressionTypeID::ID_Sin:
+    FeedOpcodeArgs(*(const SinExpression*)pitem, ew.OPut1(nl::SIN));
+    break;
+  case ExpressionTypeID::ID_Cos:
+    FeedOpcodeArgs(*(const CosExpression*)pitem, ew.OPut1(nl::COS));
+    break;
+  default:
+    MP_RAISE("MP2NL: unknown expression type");
+  }
+}
+
+template <class AlgMPExpr, class ExprWriter>
+void MP2NLModelAPI::FeedAlgebraic(
+    const AlgMPExpr& e, ExprWriter& ew) {
+  int n_args = GetLinSize(e) + GetQuadSize(e) + bool(GetConstTerm(e));
+  auto write_args = [&,this](const auto& e, auto ew_args0) {
+    for (int i=0; i<GetLinSize(e); ++i) {
+      if (1.0==GetLinCoef(e, i))
+        ew_args0.EPut(GetLinTerm(e, i));
+      else {
+        auto ew_args1 = ew_args0.OPut2(nl::MUL);
+        ew_args1.NPut(GetLinCoef(e, i));
+        ew_args1.EPut(GetLinTerm(e, i));
+      }
+    }
+    if constexpr (std::is_same_v<AlgMPExpr, NLQuadExpression>) {
+      for (int i=0; i<GetQuadSize(e); ++i) {
+        if (1.0==GetQuadCoef(e, i)) {
+          auto ew_args1 = ew_args0.OPut2(nl::MUL);
+          ew_args1.EPut(GetQuadTerm1(e, i));
+          ew_args1.EPut(GetQuadTerm2(e, i));
+        } else {
+          auto ew_args1 = ew_args0.OPut2(nl::MUL);
+          ew_args1.NPut(GetQuadCoef(e, i));
+          auto ew_args2 = ew_args1.OPut2(nl::MUL);
+          ew_args2.EPut(GetQuadTerm1(e, i));
+          ew_args2.EPut(GetQuadTerm2(e, i));
+        }
+      }
+    }
+    if (GetConstTerm(e))
+      ew_args0.NPut(GetConstTerm(e));
+  };
+  if (!n_args)
+    ew.NPut(0.0);
+  else if (1==n_args)
+    write_args(e, std::move(ew));
+  else if (2==n_args)
+    write_args(e, ew.OPut2(nl::ADD));
+  else
+    write_args(e, ew.OPutN(nl::SUM, n_args));
+}
+
+template <class MPExpr, class ArgWriter>
+void MP2NLModelAPI::FeedOpcodeArgs(
+    const MPExpr& e, ArgWriter ew_arg) {
+  for (int i=0; i<GetNumArguments(e); ++i)
+    ew_arg.EPut(GetArgExpression(e, i));
+  for (int i=0; i<GetNumParameters(e); ++i)
+    ew_arg.NPut(GetParameter(e, i));
 }
 
 
@@ -637,6 +806,26 @@ void MP2NLModelAPI::FeedSuffixes(SuffixWriterFactory& swf) {
 
 template <class ColNameWriter>
 void MP2NLModelAPI::FeedColNames(ColNameWriter& wrt) {
+  auto has_name0 = [this](const auto& infos) {
+    return infos.size() && infos.front().GetDispatcher().GetName(infos.front().GetPItem());
+  };
+  if ((has_name0(alg_con_info_)
+       || has_name0(log_con_info_) || has_name0(obj_info_)) && wrt) {
+    auto write_names = [this,&wrt](const auto& infos) {
+      for (size_t i=0; i<infos.size(); ++i) {
+        const auto* nm
+            = infos[i].GetDispatcher().GetName(infos[i].GetPItem());
+        wrt << (nm ? nm : "..");
+      }
+    };
+    write_names(alg_con_info_);    // @todo any permutations
+    write_names(log_con_info_);
+    write_names(obj_info_);
+  }
+}
+
+template <class ColNameWriter>
+void MP2NLModelAPI::FeedRowAndObjNames(ColNameWriter& wrt) {
   if (var_names_.size() && wrt) {
     assert(var_names_.size() == var_lbs_.size());
     for (size_t i=0; i<var_names_.size(); ++i)

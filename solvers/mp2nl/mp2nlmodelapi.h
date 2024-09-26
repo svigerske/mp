@@ -325,8 +325,8 @@ public:
   /// @note Use accessors, not methods;
   /// - GetLinSize(le), GetLinCoef(le, i), GetLinTerm(le, i);
   ///   GetConstTerm(le).
-  ACCEPT_EXPRESSION(NLAffineExpr, Recommended);
-  Expr AddExpression(const NLAffineExpr& le);
+  ACCEPT_EXPRESSION(NLAffineExpression, Recommended);
+  Expr AddExpression(const NLAffineExpression& le);
 
   /// Accept NLQuadExpr.
   /// @note Use accessors, not methods;
@@ -334,8 +334,8 @@ public:
   ///   GetQuadSize(le), GetQuadCoef(le, i),
   ///   GetQuadTerm1(le, i), GetQuadTerm2(le, i);
   ///   GetConstTerm(le).
-  ACCEPT_EXPRESSION(NLQuadExpr, Recommended);
-  Expr AddExpression(const NLQuadExpr& le);
+  ACCEPT_EXPRESSION(NLQuadExpression, Recommended);
+  Expr AddExpression(const NLQuadExpression& le);
 
   /// Each expression can be accepted as a proper expression,
   /// or as a flat functional constraint var <=/==/>= expr
@@ -629,9 +629,9 @@ public:
   template <class ConLinearExprWriterFactory>
   void FeedLinearConExpr(int i, ConLinearExprWriterFactory& svwf);
 
-  template <class ConLinearExprWriterFactory, class Body, class RhsOrRange>
-  void FeedLinearConExpr(
-      const AlgebraicConstraint<Body, RhsOrRange>& algcon,
+  template <class ExprBody, class ConLinearExprWriterFactory>
+  void FeedLinearConBody(
+      const ExprBody& algcon,
       ConLinearExprWriterFactory& svwf);
 
   /** Feed nonlinear expression of constraint \a i.
@@ -664,6 +664,19 @@ public:
   template <class ExprWriter>
   void FeedExpr(Expr e, ExprWriter& );
 
+  /// Write opcode(s)
+  template <class ExprWriter>
+  void FeedOpcode(Expr e, ExprWriter& );
+
+  /// Feed NLAffineExpression or NLQuadExpression
+  template <class AlgMPExpr, class ExprWriter>
+  void FeedAlgebraic(const AlgMPExpr& e, ExprWriter& ew);
+
+  /// Write opcode arguments.
+  /// Parameters written after the expression arguments.
+  /// @param aw: argument writer produced by OPutN() or similar.
+  template <class MPExpr, class ArgWriter>
+  void FeedOpcodeArgs(const MPExpr& e, ArgWriter aw);
 
   ///////////////////// 8. PL-SOS CONSTRAINTS ////////////
   /**
@@ -801,7 +814,7 @@ public:
    *          wrt << name[i].c_str();
      */
   template <class RowObjNameWriter>
-  void FeedRowAndObjNames(RowObjNameWriter& wrt) { }
+  void FeedRowAndObjNames(RowObjNameWriter& wrt);
 
   /** Provide deleted row names.*/
   template <class DelRowNameWriter>
@@ -846,6 +859,15 @@ public:
   /// Get old var index for a new var index
   int GetOldVarIndex(int i) const { return mark_data_.var_order_12_[i]; }
 
+  /// Item name
+  template <class Item>
+  const char* GetItemName(const Item& item) const
+  { return item.name(); }
+
+  /// Item name
+  template <class FuncCon>
+  const char* GetItemName(const ExprWrapper<FuncCon>& item) const
+  { return item.GetFlatConstraint().name(); }
 
 protected:
   /// For writing NL
@@ -893,11 +915,11 @@ protected:
   /// Placeholder for item marker
   template <class Item>
   void MarkItem(const Item& , ItemMarkingData& ) {
-    MP_UNSUPPORTED(std::string("MP2NLModelAPI::MarkVars() not supported for ")
+    MP_UNSUPPORTED(std::string("MP2NLModelAPI::MarkItem() not supported for ")
                    + typeid(Item).name());
   }
 
-  /// Mark LinConEQ
+  /// Mark linear part of any objective
   void MarkItem(const LinearObjective& lo, ItemMarkingData& prm) {
     mark_data_.n_obj_nz_ += lo.vars().size();        // count nnz
   }
@@ -929,6 +951,28 @@ protected:
   void MarkItem(const LinConGE& lcr, ItemMarkingData& prm) {
     mark_data_.n_con_nz_ += lcr.size();
     Add2ColSizes(lcr.vars());
+  }
+
+  /// Mark NLconstraint
+  void MarkItem(const NLConstraint& nlc, ItemMarkingData& prm) {
+    MarkItem(nlc.GetMainCon(), prm);
+  }
+
+  /// Mark NLAssign
+  void MarkItem(const NLAssignLE& nlc, ItemMarkingData& prm) {
+    mark_data_.n_con_nz_ += 1;
+    Add2ColSizes({ nlc.GetVar() });
+  }
+  /// Mark NLAssign
+  void MarkItem(const NLAssignEQ& nlc, ItemMarkingData& prm) {
+    mark_data_.n_con_nz_ += 1;
+    Add2ColSizes({ nlc.GetVar() });
+    ++prm.n_eqns_;
+  }
+  /// Mark NLAssign
+  void MarkItem(const NLAssignGE& nlc, ItemMarkingData& prm) {
+    mark_data_.n_con_nz_ += 1;
+    Add2ColSizes({ nlc.GetVar() });
   }
 
   /// Add to col sizes
@@ -1004,6 +1048,9 @@ protected:
     const MP2NLModelAPI& GetMAPI() const { return mapi_; }
     MP2NLModelAPI& GetMAPI() { return mapi_; }
 
+    /// ItemName
+    virtual const char* GetName(void* pitem) = 0;
+
     virtual void MarkItem(void* pitem, ItemMarkingData& vmp) = 0;
     virtual void WriteBounds(void* pitem, const NLWParams& nlwp) = 0;
     virtual void MarkExprTree(void* pitem) = 0;
@@ -1030,6 +1077,10 @@ protected:
     /// Construct
     ItemDispatcher(MP2NLModelAPI& mapi)
         : BasicItemDispatcher(mapi) { }
+
+    /// ItemName
+    const char* GetName(void* pitem) override
+    { return GetMAPI().GetItemName(*(const Item*)pitem); }
 
     /// Var marking
     void MarkItem(void* pitem, ItemMarkingData& vmp) override
@@ -1114,6 +1165,33 @@ protected:
   CREATE_STATIC_ITEM_DISPATCHER(NLComplementarity)
 
 
+/// Macro to define an expression dispatcher
+#define CREATE_EXPRESSION_DISPATCHER(ItemType) \
+  ItemDispatcher<ItemType ## Expression> \
+    item_dispatcher_ ## ItemType ## _ { *this }; \
+  template <> \
+  ItemDispatcher<ItemType ## Expression>& \
+  GetItemDispatcher<ItemType ## Expression>() \
+  { return item_dispatcher_ ## ItemType ## _; } \
+  template <> \
+  bool IsItemTypeStatic<ItemType ## Expression>() \
+  { return false; } \
+  template <> \
+  ExpressionTypeID GetExpressionTypeID<ItemType ## Expression>() \
+  { return ExpressionTypeID::ID_ ## ItemType; }
+
+
+  CREATE_EXPRESSION_DISPATCHER(NLAffine)
+  CREATE_EXPRESSION_DISPATCHER(NLQuad)
+
+  CREATE_EXPRESSION_DISPATCHER(Abs)
+  CREATE_EXPRESSION_DISPATCHER(And)
+  CREATE_EXPRESSION_DISPATCHER(Or)
+  CREATE_EXPRESSION_DISPATCHER(Exp)
+  CREATE_EXPRESSION_DISPATCHER(Log)
+  CREATE_EXPRESSION_DISPATCHER(Pow)
+  CREATE_EXPRESSION_DISPATCHER(Sin)
+  CREATE_EXPRESSION_DISPATCHER(Cos)
 
 
   /// Constraint/objective/expression info.
@@ -1218,6 +1296,14 @@ protected:
   template <class Expr>
   MP2NL_Expr StoreMP2NLExprID(
       const Expr& expr, ExpressionTypeID eid);
+
+  /// Variable name
+  const char* GetVarName(int v) const {
+    assert(v>=0 && v<(int)var_lbs_.size());
+    return
+        (int)var_names_.size() > v ? var_names_[v] : nullptr;
+  }
+
 
 private:
   /// References to the model data.
