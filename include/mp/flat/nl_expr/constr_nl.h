@@ -164,18 +164,21 @@ using NLComplementarity = ComplementarityConstraint<AffineExpr>;
 
 /// NL logical constraint: expr(resvar) == true
 class NLLogical
-    : public BasicConstraint, public LogicalFunctionalConstraintTraits {
+    : public BasicConstraint {
 public:
   /// Constraint type name
   static const char* GetTypeName() {
     return "NLLogical";
   }
 
+  /// Is logical?
+  static bool IsLogical() { return true; }
+
   /// Construct from the result variable
   NLLogical(int rv) : resvar_(rv) { assert(rv>=0); }
 
   /// Get resvar
-  int GetResultVar() const { return resvar_; }
+  int GetCapturedResultVar() const { return resvar_; }
 
   /// Throw - should not be used
   VarArray1 GetArguments() const { MP_RAISE("No marking for NL items"); }
@@ -184,7 +187,7 @@ public:
   template <class VarInfo>
   Violation
   ComputeViolation(const VarInfo& x) const {
-    return {std::fabs(x[GetResultVar() - 1.0]), 1.0};
+    return {std::fabs(x[GetCapturedResultVar() - 1.0]), 1.0};
   }
 
 private:
@@ -211,7 +214,7 @@ inline void WriteModelItem(Writer& wrt,
 /// This is a static constraint.
 template <int sense>
 class NLReification
-    : public BasicConstraint, public LogicalFunctionalConstraintTraits {
+    : public BasicConstraint {
 public:
   /// Constraint type name
   static const char* GetTypeName() {
@@ -220,6 +223,9 @@ public:
     if (1==sense) return "NLRimpl";
     MP_RAISE("NLReif: unknown sense");
   }
+
+  /// Is logical?
+  static bool IsLogical() { return true; }
 
   /// Construct
   NLReification(int b) : bvar_(b) { }

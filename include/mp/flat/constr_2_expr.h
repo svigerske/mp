@@ -511,7 +511,10 @@ protected:
   }
 
   /// Consider explicifying an expression
-  template <class FuncCon>
+  template <class FuncCon,
+           std::enable_if_t<
+               std::is_base_of_v<          // functional cons only
+                   FunctionalConstraint, FuncCon>, bool > = true >
   void ConsiderExplicifyingExpression(const FuncCon& con, int i) {
     if (MPCD( IsProperVar(con.GetResultVar()) ))
       DoExplicify(con, i);
@@ -534,8 +537,9 @@ protected:
       MPD( AddConstraint(NLAssignGE(resvar)) );
   }
 
-  /// Add expr = var assignment for logical expression (NLEquivalence, NLImpl, NLRImpl).
-  /// If this constraint is root-level (is true),
+  /// Add expr = var assignment (NLEquivalence, NLImpl, NLRImpl)
+  /// for logical expression.
+  /// If this expression is root-level (is true),
   /// add root explicifier instead (NLLogical).
   template <class FuncCon,
            std::enable_if_t<

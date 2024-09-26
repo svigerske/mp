@@ -140,8 +140,8 @@ public:
 
   /// Get the expression term of an \a NLLogical.
   ExprType GetExpression(const NLLogical& nll) {
-    assert( nll.GetResultVar()>=0 );
-    return GetPureInitExpression(nll.GetResultVar());
+    assert( nll.GetCapturedResultVar()>=0 );
+    return GetPureInitExpression(nll.GetCapturedResultVar());
   }
 
   /// Get the expression term of an \a NLReification.

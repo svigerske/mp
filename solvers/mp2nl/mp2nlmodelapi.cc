@@ -541,8 +541,6 @@ void MP2NLModelAPI::FeedAlgConExpression(
   // to call GetExpression() instead of switch().
   const auto& con_info = alg_con_info_.at(icon);
   const auto* pitem = con_info.GetPItem();
-  std::printf("Feed alg con expr: i=%d, id=%d\n",
-              icon, (int)con_info.GetStaticTypeID());
   switch (con_info.GetStaticTypeID()) {
   case StaticItemTypeID::ID_NLConstraint: {
     const auto& con = *((NLConstraint*)(pitem));
@@ -805,7 +803,7 @@ void MP2NLModelAPI::FeedSuffixes(SuffixWriterFactory& swf) {
 }
 
 template <class ColNameWriter>
-void MP2NLModelAPI::FeedColNames(ColNameWriter& wrt) {
+void MP2NLModelAPI::FeedRowAndObjNames(ColNameWriter& wrt) {
   auto has_name0 = [this](const auto& infos) {
     return infos.size() && infos.front().GetDispatcher().GetName(infos.front().GetPItem());
   };
@@ -825,7 +823,7 @@ void MP2NLModelAPI::FeedColNames(ColNameWriter& wrt) {
 }
 
 template <class ColNameWriter>
-void MP2NLModelAPI::FeedRowAndObjNames(ColNameWriter& wrt) {
+void MP2NLModelAPI::FeedColNames(ColNameWriter& wrt) {
   if (var_names_.size() && wrt) {
     assert(var_names_.size() == var_lbs_.size());
     for (size_t i=0; i<var_names_.size(); ++i)
