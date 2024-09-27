@@ -6,6 +6,19 @@
 
 namespace mp {
 
+void MP2NLModelAPI::InitCustomOptions() {
+  GetEnv().AddStoredOption("nl:stub stub nlstub",
+                           "Filename stub for the NL and SOL files.",
+                           storedOptions_.stub_);
+  GetEnv().AddStoredOption("nl:text nltextformat nltext",
+                           "0*/1: write NL file in text format.",
+                           storedOptions_.nl_format_text_);
+  GetEnv().AddStoredOption("nl:comments nlcomments",
+                           "0*/1: add comments to the text-format NL file.",
+                           storedOptions_.nl_comments_);
+
+}
+
 void MP2NLModelAPI::InitProblemModificationPhase(const FlatModelInfo* flat_model_info) {
   alg_con_info_.reserve(
       flat_model_info->GetNumberOfConstraintsOfGroup(CG_Algebraic));
@@ -189,6 +202,7 @@ void MP2NLModelAPI::MapExpressions() {
     MapExprTreeFromItemInfo(info);
   for (const auto& info: log_con_info_)
     MapExprTreeFromItemInfo(info);
+  ResetIniExprRetrievedFlags();
 }
 
 void MP2NLModelAPI::MarkVars() {
@@ -239,7 +253,7 @@ NLHeader MP2NLModelAPI::DoMakeHeader() {
   hdr.num_objs = obj_info_.size();
   hdr.num_ranges = mark_data_.n_ranges_;
   hdr.num_eqns = mark_data_.n_eqns_;
-  hdr.num_logical_cons = 0;
+  hdr.num_logical_cons = log_con_info_.size();
 
   /** Total number of nonlinear constraints. */
   hdr.num_nl_cons = 0;
@@ -301,10 +315,10 @@ NLHeader MP2NLModelAPI::DoMakeHeader() {
   // --------------------------
 
   /** Number of nonzeros in constraints' Jacobian. */
-  hdr.num_con_nonzeros = 0;
+  hdr.num_con_nonzeros = mark_data_.n_con_nz_;
 
   /** Number of nonzeros in all objective gradients. */
-  hdr.num_obj_nonzeros = 0;
+  hdr.num_obj_nonzeros = mark_data_.n_obj_nz_;
 
   // Information about names
   // -----------------------
@@ -349,6 +363,9 @@ NLHeader MP2NLModelAPI::DoMakeHeader() {
   hdr.num_common_exprs_in_single_objs = 0;
 
   hdr.prob_name = "mp2nl_model";
+
+  hdr.format = storedOptions_.nl_format_text_
+                   ? mp::NLHeader::TEXT : mp::NLHeader::BINARY;
 
   return hdr;
 }
@@ -843,6 +860,7 @@ public:
   /// Solve
   void Solve(const char* solver, const char* sopts) override {
     if_solve_attempted_ = true;
+    nlsol_.SetFileStub(mapi_.GetFileStub());
     if_solve_ok_ = nlsol_.Solve(mapi_, *this, solver, sopts);
   }
 

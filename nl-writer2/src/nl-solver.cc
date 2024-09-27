@@ -581,7 +581,7 @@ void NLSolver::DestroyAutoStub() {
 
 void NLSolver::SetFileStub(std::string stub) {
   if (stub.size()) {
-    filestub_ = stub;
+    filestub_ = std::move(stub);
     filestubCustom_ = true;
   }
 }

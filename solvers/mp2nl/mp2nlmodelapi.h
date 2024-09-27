@@ -82,7 +82,7 @@ public:
 
   /// If any driver options added from the ModelAPI
   /// (usually only in the Backend)
-  void InitCustomOptions() { }
+  void InitCustomOptions();
 
   /// Called before problem input.
   /// Model info can be used to preallocate memory.
@@ -387,6 +387,7 @@ public:
   // TODO Div; PowVarVar;
   // CondLin...
 
+
 public:
   ///////////////////////////////////////////////////////////////////
   ///////////////// Implement NLFeeder interface ////////////////////
@@ -403,7 +404,7 @@ public:
   NLHeader Header();
 
   /// NL comments?
-  bool WantNLComments() const { return false; }
+  bool WantNLComments() const { return storedOptions_.nl_comments_; }
 
   /// The maximum number of significant digits written.
   /// The default value requests full precision, which
@@ -869,6 +870,10 @@ public:
   const char* GetItemName(const ExprWrapper<FuncCon>& item) const
   { return item.GetFlatConstraint().name(); }
 
+  /// NL/SOL file stub
+  const std::string& GetFileStub() const
+  { return storedOptions_.stub_; }
+
 protected:
   /// For writing NL
   void PrepareModel();
@@ -1327,6 +1332,13 @@ private:
 
   std::unique_ptr<MP2NLSolverIntf> p_nls_;
 
+  /// These options are stored in the class
+  struct Options {
+    std::string stub_;
+    int nl_comments_ {};
+    int nl_format_text_ {};
+  };
+  Options storedOptions_;
 };
 
 } // namespace mp

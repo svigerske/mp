@@ -124,7 +124,13 @@ public:
     return nlc.GetMainCon().ub();
   }
 
-  /// Get the expression term of an \a NLBaseAssign.
+  /// Get the expression term of an \a NLBaseAssign,
+  /// i.e., NLAssignLE, NLAssignEQ, NLAssignGE.
+  /// @note For each such 'explicification' constraint,
+  /// the expression
+  /// can be normally accessed only once. To access them
+  /// repeatedly, call ResetIniExprRetrievedFlags()
+  /// for every repetition.
   template <int sense>
   ExprType GetExpression(const NLBaseAssign<sense>& nll) {
     assert( nll.GetVar()>=0 );
@@ -139,12 +145,23 @@ public:
   }
 
   /// Get the expression term of an \a NLLogical.
+  /// @note For each such 'explicification' constraint,
+  /// the expression
+  /// can be normally accessed only once. To access them
+  /// repeatedly, call ResetIniExprRetrievedFlags()
+  /// for every repetition.
   ExprType GetExpression(const NLLogical& nll) {
     assert( nll.GetCapturedResultVar()>=0 );
     return GetPureInitExpression(nll.GetCapturedResultVar());
   }
 
-  /// Get the expression term of an \a NLReification.
+  /// Get the expression term of an \a NLReification,
+  /// i.e., NLimpl, NLEquivalence, NLRimpl.
+  /// @note For each such 'explicification' constraint,
+  /// the expression
+  /// can be normally accessed only once. To access them
+  /// repeatedly, call ResetIniExprRetrievedFlags()
+  /// for every repetition.
   template <int sense>
   ExprType GetExpression(const NLReification<sense>& nll) {
     assert( nll.GetBVar()>=0 );
@@ -225,6 +242,11 @@ public:
   double GetParameter(const FlatExpression& fe, int i)
   { return fe.GetFlatConstraint().GetParameters().at(i); }
 
+
+  /// Placeholder for InitCustomOptions()
+  void InitCustomOptions() { }
+
+
   ////////////////////// INTERNAL ////////////////////////
 
 private:
@@ -294,6 +316,16 @@ public:
   bool IsVarProper(int i) const {
     assert(i>=0 && i<(int)is_var_proper_.size());
     return is_var_proper_[i];
+  }
+
+  /// Reset init_expr_retrieved_ flags,
+  /// e.g., after manual marking.
+  /// Necessary when visiting expressions several times,
+  /// actually only explicified expressions.
+  void ResetIniExprRetrievedFlags() {
+    auto sz = is_init_expr_retrieved_.size();
+    is_init_expr_retrieved_.clear();
+    is_init_expr_retrieved_.resize(sz);
   }
 
   /// Init expr getter type

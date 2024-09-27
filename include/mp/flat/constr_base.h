@@ -37,8 +37,12 @@ public:
   /// Add (merge) context, if meaningful
   void AddContext(Context ) const { MP_RAISE("Adding context for static constraint"); }
   /// Has result var (is functional)?
+  /// @note Any non-functional (i.e., static) constraint
+  /// should return false here.
   bool HasResultVar() const { return false; }
   /// For functional constraints, result variable index
+  /// @note Any non-functional (i.e., static) constraint
+  /// should return -1 here.
   int GetResultVar() const { return -1; }
   /// Compute violation
   template <class VarInfo>

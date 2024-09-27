@@ -223,9 +223,10 @@ void MP2NLBackend::ReportModelSuffix(
     ReportSuffix(modelsuf.name_,
                  2 | modelsuf.flags_, suf_post.GetObjValues()(),
                  modelsuf.table_);
-  ReportSuffix(modelsuf.name_,
-               3 | modelsuf.flags_, modelsuf.values_[3],
-               modelsuf.table_);
+  if (modelsuf.values_[3].size())
+    ReportSuffix(modelsuf.name_,
+                 3 | modelsuf.flags_, modelsuf.values_[3],
+                 modelsuf.table_);
 }
 
 void MP2NLBackend::ReportMP2NLResults() {
@@ -307,12 +308,12 @@ void MP2NLBackend::InitCustomOptions() {
   //                 "Log file name.",
   //                 storedOptions_.logFile_);
 
-  AddStoredOption("tech:solver solver",
-                  "Underlying AMPL solver.",
+  AddStoredOption("nl:solver solver nlsolver",
+                  "Subsolver (underlying AMPL solver.)",
                   storedOptions_.solver_);
 
-  AddStoredOption("tech:solver_options solver_options slv_opts",
-                  "Underlying solver options.\n\n"
+  AddStoredOption("nl:solver_options solver_options slv_opts",
+                  "Subsolver options.\n\n"
                   "This way is for convenience; the preferred and "
                   "dominating way is to use the <subsolver>_options "
                   "environment variable (which can be set in AMPL "
