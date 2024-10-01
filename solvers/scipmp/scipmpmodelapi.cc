@@ -349,7 +349,7 @@ void ScipModelAPI::AddConstraint( const NLLogical& nll ) {
   SCIP_CCALL( SCIPaddCons(getSCIP(), getPROBDATA()->nlconss.back()) );
 }
 
-void ScipModelAPI::AddConstraint( const NLEquivalence& nll ) {
+void ScipModelAPI::AddConstraint( const NLReifEquiv& nll ) {
   getPROBDATA()->nlconss.push_back(nullptr);
 
   SCIP_CCALL( SCIPcreateConsBasicNonlinear(
@@ -360,7 +360,7 @@ void ScipModelAPI::AddConstraint( const NLEquivalence& nll ) {
       getSCIP(), getPROBDATA()->nlconss.back(),
       getPROBDATA()->vars[ GetVariable(nll) ], -1.0) );
 }
-void ScipModelAPI::AddConstraint( const NLImpl& nll ) {
+void ScipModelAPI::AddConstraint( const NLReifImpl& nll ) {
   getPROBDATA()->nlconss.push_back(nullptr);
 
   SCIP_CCALL( SCIPcreateConsBasicNonlinear(
@@ -371,7 +371,7 @@ void ScipModelAPI::AddConstraint( const NLImpl& nll ) {
       getSCIP(), getPROBDATA()->nlconss.back(),
       getPROBDATA()->vars[ GetVariable(nll) ], -1.0) );
 }
-void ScipModelAPI::AddConstraint( const NLRimpl& nll ) {
+void ScipModelAPI::AddConstraint( const NLReifRimpl& nll ) {
   getPROBDATA()->nlconss.push_back(nullptr);
 
   SCIP_CCALL( SCIPcreateConsBasicNonlinear(

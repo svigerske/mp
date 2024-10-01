@@ -358,7 +358,8 @@ inline void WriteJSON(JW jw,
 }
 
 
-/// Argument container visitor: VarArrayN
+/// Argument container visitor: VarArrayN.
+/// Only 1 level.
 template <size_t N>    // Needs to appear before the generic template version, CLang 15
 inline void VisitArguments(const std::array<int, N>& cnt, std::function<void (int)> argv) {
   for (auto v: cnt)

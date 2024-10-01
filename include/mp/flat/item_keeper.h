@@ -32,6 +32,8 @@ public:
   /// Constraint keeper description
   virtual const std::string& GetDescription() const = 0;
 
+  /// Is a logical constraint?
+  virtual bool IsLogical() const = 0;
 
   /// Get context of contraint \a i
   virtual Context GetContext(int i) const = 0;

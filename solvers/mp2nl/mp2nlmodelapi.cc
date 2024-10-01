@@ -165,6 +165,8 @@ MP2NL_Expr MP2NLModelAPI::AddExpression(const AndExpression &expr)
 { return AddExpression(expr, ExpressionTypeID::ID_And); }
 MP2NL_Expr MP2NLModelAPI::AddExpression(const OrExpression &expr)
 { return AddExpression(expr, ExpressionTypeID::ID_Or); }
+MP2NL_Expr MP2NLModelAPI::AddExpression(const EquivalenceExpression &expr)
+{ return AddExpression(expr, ExpressionTypeID::ID_Equivalence); }
 
 MP2NL_Expr MP2NLModelAPI::AddExpression(const CondLTExpression &expr)
 { return AddExpression(expr, ExpressionTypeID::ID_CondLT); }
@@ -662,24 +664,31 @@ void MP2NLModelAPI::FeedExpr(Expr expr, ExprWriter& ew) {
     FeedOpcode(expr, ew);
 }
 
-#define HANDLE_OPCODE_CASE_1_ARG(Expr, Opcode) \
+#define HANDLE_OPCODE_CASE_1_ARG(Expr, Opcode, fdr) \
 case ExpressionTypeID::ID_ ## Expr: \
-    FeedOpcodeArgs(*(const Expr ## Expression*)pitem, ew.OPut1(nl::Opcode)); \
+    fdr(*(const Expr ## Expression*)pitem, ew.OPut1(nl::Opcode)); \
     break;
-#define HANDLE_OPCODE_CASE_2_ARG(Expr, Opcode) \
+#define HANDLE_OPCODE_CASE_2_ARG(Expr, Opcode, fdr) \
 case ExpressionTypeID::ID_ ## Expr: \
-    FeedOpcodeArgs(*(const Expr ## Expression*)pitem, ew.OPut2(nl::Opcode)); \
+    fdr(*(const Expr ## Expression*)pitem, ew.OPut2(nl::Opcode)); \
     break;
-#define HANDLE_OPCODE_CASE_3_ARG(Expr, Opcode) \
+#define HANDLE_OPCODE_CASE_3_ARG(Expr, Opcode, fdr) \
 case ExpressionTypeID::ID_ ## Expr: \
-    FeedOpcodeArgs(*(const Expr ## Expression*)pitem, ew.OPut3(nl::Opcode)); \
+    fdr(*(const Expr ## Expression*)pitem, ew.OPut3(nl::Opcode)); \
     break;
-#define HANDLE_OPCODE_CASE_N_ARG(Expr, Opcode) \
+#define HANDLE_OPCODE_CASE_N_ARG(Expr, Opcode, fdr) \
 case ExpressionTypeID::ID_ ## Expr: \
-    FeedOpcodeArgs(*(const Expr ## Expression*)pitem, \
+    fdr(*(const Expr ## Expression*)pitem, \
       ew.OPutN(nl::Opcode, \
         GetNumArguments(*(const Expr ## Expression*)pitem))); \
     break;
+#define HANDLE_OPCODE_CASE_N_OR_2_ARG(Expr, Opcode, Opcode2, fdr) \
+case ExpressionTypeID::ID_ ## Expr: { \
+    auto n_args = GetNumArguments(*(const Expr ## Expression*)pitem); \
+    fdr(*(const Expr ## Expression*)pitem, \
+      2==n_args ? ew.OPut2(nl::Opcode2) \
+      : ew.OPutN(nl::Opcode, n_args)); \
+} break;
 #define HANDLE_RELATIONAL(Expr, Opcode) \
 case ExpressionTypeID::ID_ ## Expr: \
     FeedRelational(*(const Expr ## Expression*)pitem, ew.OPut2(nl::Opcode)); \
@@ -699,14 +708,14 @@ void MP2NLModelAPI::FeedOpcode(Expr expr, ExprWriter& ew) {
     FeedAlgebraic(*(const NLQuadExpression*)pitem, ew);
     break;
 
-    HANDLE_OPCODE_CASE_1_ARG(Abs, ABS)
-    HANDLE_OPCODE_CASE_N_ARG(AllDiff, ALLDIFF)
-    HANDLE_OPCODE_CASE_N_ARG(And, AND)
-    HANDLE_OPCODE_CASE_N_ARG(Or, OR)
+    HANDLE_OPCODE_CASE_N_ARG(AllDiff, ALLDIFF, FdArgs)
+    HANDLE_OPCODE_CASE_N_OR_2_ARG(And, FORALL, AND, FdLogicArgs)
+    HANDLE_OPCODE_CASE_N_OR_2_ARG(Or, EXISTS, OR, FdLogicArgs)
+    HANDLE_OPCODE_CASE_2_ARG(Equivalence, IFF, FdLogicArgs)
 
-    HANDLE_OPCODE_CASE_3_ARG(IfThen, IF)
-    HANDLE_OPCODE_CASE_3_ARG(Implication, IMPLICATION)
-    HANDLE_OPCODE_CASE_1_ARG(Not, NOT)
+    HANDLE_OPCODE_CASE_3_ARG(IfThen, IF, FdIfArgs)    // @todo logic?
+    HANDLE_OPCODE_CASE_3_ARG(Implication, IMPLICATION, FdLogicArgs)
+    HANDLE_OPCODE_CASE_1_ARG(Not, NOT, FdLogicArgs)
 
     HANDLE_RELATIONAL(CondLT, LT)
     HANDLE_RELATIONAL(CondLE, LE)
@@ -714,8 +723,15 @@ void MP2NLModelAPI::FeedOpcode(Expr expr, ExprWriter& ew) {
     HANDLE_RELATIONAL(CondGE, GE)
     HANDLE_RELATIONAL(CondGT, GT)
 
-    HANDLE_OPCODE_CASE_N_ARG(Min, MIN)
-    HANDLE_OPCODE_CASE_N_ARG(Max, MAX)
+    HANDLE_OPCODE_CASE_1_ARG(Abs, ABS, FdArgs)
+    HANDLE_OPCODE_CASE_N_ARG(Min, MIN, FdArgs)
+    HANDLE_OPCODE_CASE_N_ARG(Max, MAX, FdArgs)
+
+    HANDLE_OPCODE_CASE_1_ARG(Exp, EXP, FdArgs)
+    HANDLE_OPCODE_CASE_1_ARG(Log, LOG, FdArgs)
+    HANDLE_OPCODE_CASE_2_ARG(Pow, POW, FdArgs)
+    HANDLE_OPCODE_CASE_1_ARG(Sin, SIN, FdArgs)
+    HANDLE_OPCODE_CASE_1_ARG(Cos, COS, FdArgs)
 
   default:
     MP_RAISE("MP2NL: unknown expression type");
@@ -775,13 +791,13 @@ template <int sense, class ExprWriter>
 void MP2NLModelAPI::FeedReification(
     const NLBaseReif<sense>& e, ExprWriter& ew) {
   if (sense<0) {
-    auto args = ew.OPutN(nl::OR, 2);
+    auto args = ew.OPut2(nl::OR);
     auto args_lhs = args.OPut2(nl::EQ);
     args_lhs.VPut( GetNewVarIndex(GetVariable(e)) );
     args_lhs.NPut(0.0);
     args.EPut(GetExpression(e));
   } else if (sense>0) {
-    auto args = ew.OPutN(nl::OR, 2);
+    auto args = ew.OPut2(nl::OR);
     auto args_lhs = args.OPut2(nl::EQ);
     args_lhs.VPut( GetNewVarIndex(GetVariable(e)) );
     args_lhs.NPut(1.0);
@@ -797,7 +813,7 @@ void MP2NLModelAPI::FeedReification(
 }
 
 template <class MPExpr, class ArgWriter>
-void MP2NLModelAPI::FeedOpcodeArgs(
+void MP2NLModelAPI::FdArgs(
     const MPExpr& e, ArgWriter ew_arg) {
   for (int i=0; i<GetNumArguments(e); ++i)
     ew_arg.EPut(GetArgExpression(e, i));
@@ -805,6 +821,39 @@ void MP2NLModelAPI::FeedOpcodeArgs(
     ew_arg.NPut(GetParameter(e, i));
 }
 
+template <class MPExpr, class ArgWriter>
+void MP2NLModelAPI::FdLogicArgs(
+    const MPExpr& e, ArgWriter ew_arg) {
+  for (int i=0; i<GetNumArguments(e); ++i) {
+    FeedLogicalExpression(
+        GetArgExpression(e, i), ew_arg);
+  }
+  for (int i=0; i<GetNumParameters(e); ++i)
+    ew_arg.NPut(GetParameter(e, i));
+}
+
+template <class MPExpr, class ArgWriter>
+void MP2NLModelAPI::FdIfArgs(
+    const MPExpr& e, ArgWriter ew_arg) {
+  for (int i=0; i<GetNumArguments(e); ++i) {
+    if (!i)                            // 1st arg.
+      FeedLogicalExpression(           // @todo others too?
+          GetArgExpression(e, i), ew_arg);
+    else
+      ew_arg.EPut(GetArgExpression(e, i));
+  }
+}
+
+template <class ArgWriter>
+void MP2NLModelAPI::FeedLogicalExpression(
+    MP2NL_Expr mp2nle, ArgWriter& aw) {
+  if (mp2nle.IsVariable()) {
+    auto arg2 = aw.OPut2(nl::EQ);
+    arg2.EPut(mp2nle);
+    arg2.NPut(1.0);
+  } else
+    aw.EPut(mp2nle);
+}
 
 template <class ColSizeWriter>
 void MP2NLModelAPI::FeedColumnSizes(ColSizeWriter& csw) {

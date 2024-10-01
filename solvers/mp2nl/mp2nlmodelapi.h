@@ -366,13 +366,15 @@ public:
   ACCEPT_EXPRESSION(AllDiffExpression, Recommended)
   Expr AddExpression(const AllDiffExpression& absc);
 
-  /// And/Or
+  /// And/Or/Equivalence
   /// @note Use GetNumArguments(expr)
   ///   and GetArgument(expr, i) for i=0..num_args-1.
   ACCEPT_EXPRESSION(AndExpression, Recommended)
   MP2NL_Expr AddExpression(const AndExpression& cc);
   ACCEPT_EXPRESSION(OrExpression, Recommended)
   MP2NL_Expr AddExpression(const OrExpression& dc);
+  ACCEPT_EXPRESSION(EquivalenceExpression, Recommended)
+  MP2NL_Expr AddExpression(const EquivalenceExpression& dc);
 
   ACCEPT_EXPRESSION(CondLTExpression, Recommended)
   MP2NL_Expr AddExpression(const CondLTExpression& dc);
@@ -712,7 +714,25 @@ public:
   /// Parameters written after the expression arguments.
   /// @param aw: argument writer produced by OPutN() or similar.
   template <class MPExpr, class ArgWriter>
-  void FeedOpcodeArgs(const MPExpr& e, ArgWriter aw);
+  void FdArgs(const MPExpr& e, ArgWriter aw);
+
+  /// Write opcode logical arguments.
+  /// Variables are written as "var==1".
+  /// Parameters written after the expression arguments.
+  /// @param aw: argument writer produced by OPutN() or similar.
+  template <class MPExpr, class ArgWriter>
+  void FdLogicArgs(const MPExpr& e, ArgWriter aw);
+
+  /// Write IfThen's arguments.
+  /// @todo the then/else arguments might need to be logical...
+  template <class MPExpr, class ArgWriter>
+  void FdIfArgs(const MPExpr& e, ArgWriter aw);
+
+  /// Write a logical argument.
+  /// Variables are written as "var==1".
+  template <class ArgWriter>
+  void FeedLogicalExpression(MP2NL_Expr mp2nle, ArgWriter& aw);
+
 
   ///////////////////// 8. PL-SOS CONSTRAINTS ////////////
   /**
@@ -1064,11 +1084,11 @@ protected:
     ID_NLAffine,
     ID_NLQuad,
 
-    ID_Abs,
     ID_AllDiff,
     ID_And,
     ID_Not,
     ID_Or,
+    ID_Equivalence,
     ID_IfThen,
     ID_Implication,
 
@@ -1078,6 +1098,7 @@ protected:
     ID_CondGE,
     ID_CondGT,
 
+    ID_Abs,
     ID_Min,
     ID_Max,
 
@@ -1238,9 +1259,9 @@ protected:
   CREATE_EXPRESSION_DISPATCHER(NLAffine)
   CREATE_EXPRESSION_DISPATCHER(NLQuad)
 
-  CREATE_EXPRESSION_DISPATCHER(Abs)
   CREATE_EXPRESSION_DISPATCHER(And)
   CREATE_EXPRESSION_DISPATCHER(Or)
+  CREATE_EXPRESSION_DISPATCHER(Equivalence)
 
   CREATE_EXPRESSION_DISPATCHER(AllDiff)
   CREATE_EXPRESSION_DISPATCHER(CondLT)
@@ -1252,6 +1273,7 @@ protected:
   CREATE_EXPRESSION_DISPATCHER(Implication)
   CREATE_EXPRESSION_DISPATCHER(Not)
 
+  CREATE_EXPRESSION_DISPATCHER(Abs)
   CREATE_EXPRESSION_DISPATCHER(Min)
   CREATE_EXPRESSION_DISPATCHER(Max)
 

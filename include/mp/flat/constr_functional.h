@@ -32,6 +32,13 @@ DEF_LOGICAL_FUNC_CONSTR( And, VarArray,
 DEF_LOGICAL_FUNC_CONSTR( Or, VarArray,
                                    "r = exists({vi})");
 
+////////////////////////////////////////////////////////////////////////
+/// NL equivalence constraint: r <==> (expr(var1) <==> expr(var2)).
+/// We have to do this for NL output because flat constraints
+/// represent equivalence algebraically.
+DEF_LOGICAL_FUNC_CONSTR( Equivalence, VarArray2,
+                        "r = (v1 <==> v2)");
+
 
 ////////////////////////////////////////////////////////////////////////
 DEF_LOGICAL_FUNC_CONSTR( Not, VarArray1,

@@ -423,6 +423,12 @@ public: // for ConstraintKeeper
 
   /// Check whether ModelAPI accepts and recommends the constraint
   template <class Constraint>
+  bool ModelAPIOk() const {
+    return ModelAPIAcceptsAndRecommends((const Constraint*)0);
+  }
+
+  /// Check whether ModelAPI accepts and recommends the constraint
+  template <class Constraint>
   bool ModelAPIAcceptsAndRecommends(const Constraint* pcon) const {
     return ConstraintAcceptanceLevel::Recommended ==
         GetConstraintAcceptance(pcon);
@@ -900,6 +906,15 @@ public:
   /// Get the init expr
   const ConInfo& GetInitExpression(int var) const {
 		return var_info_.at(var);
+  }
+
+  /// The variable has an init expr,
+  /// and the init expr is a logical constraint?
+  bool IsInitExprLogical(int var) const {
+    if (!MPCD(HasInitExpression(var)))
+      return false;
+    const auto& ie = GetInitExpression(var);
+    return ie.GetCK()->IsLogical();
   }
 
   /// Get func con context.
@@ -1501,6 +1516,10 @@ protected:
                                   "acc:and acc:forall")
   STORE_CONSTRAINT_TYPE__WITH_MAP(OrConstraint,
                                   "acc:or acc:exists")
+  /// Used only for expression output,
+  /// flat model keeps this in algebraic form
+  STORE_CONSTRAINT_TYPE__WITH_MAP(
+      EquivalenceConstraint, "acc:equiv acc:equivalence")
 
   STORE_CONSTRAINT_TYPE__WITH_MAP(CondLinConEQ, "acc:condlineq")
   STORE_CONSTRAINT_TYPE__WITH_MAP(CondLinConLE, "acc:condlinle")
@@ -1596,8 +1615,6 @@ protected:
 
   STORE_CONSTRAINT_TYPE__NO_MAP(
       NLLogical, "acc:nllogcon acc:nllogical")
-  STORE_CONSTRAINT_TYPE__NO_MAP(
-      NLEquivalence, "acc:nlequiv acc:nlequivalence")
   STORE_CONSTRAINT_TYPE__NO_MAP(
       NLReifEquiv, "acc:nlreifequiv")
   STORE_CONSTRAINT_TYPE__NO_MAP(

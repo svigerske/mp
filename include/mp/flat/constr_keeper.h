@@ -49,6 +49,10 @@ public:
   const std::string& GetDescription() const override
   { return desc_; }
 
+  /// Is a logical constraint?
+  bool IsLogical() const override
+  { return Constraint::IsLogical(); }
+
   /// Assume Converter has the Backend
   Backend& GetBackend(BasicFlatConverter& cvt)
   { return static_cast<Converter&>(cvt).GetModelAPI(); }

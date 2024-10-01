@@ -211,61 +211,6 @@ inline void WriteModelItem(Writer& wrt,
 }
 
 
-/// NL equivalence constraint: expr(var1) <==> expr(var2).
-/// We have to do this new kind because flat constraints
-/// represent equivalence algebraically.
-class NLEquivalence
-    : public BasicConstraint {
-public:
-  /// Constraint type name
-  static const char* GetTypeName() {
-    return "NLEquivalence";
-  }
-
-  /// Is logical?
-  static bool IsLogical() { return true; }
-
-  /// Construct from the result variable
-  NLEquivalence(int v1, int v2) : v1_(v1), v2_(v2)
-  { assert(v1>=0 && v2>=0); }
-
-  /// Get var 1
-  int GetVar1() const { return v1_; }
-
-  /// Get var 2
-  int GetVar2() const { return v2_; }
-
-  /// Throw - should not be used
-  VarArray1 GetArguments() const { MP_RAISE("No marking for NL items"); }
-
-  /// Compute violation
-  template <class VarInfo>
-  Violation
-  ComputeViolation(const VarInfo& x) const {
-    return {std::fabs(x[GetVar1()] - x[GetVar2()]), 1.0};
-  }
-
-private:
-  int v1_ {-1}, v2_ {-1};
-};
-
-/// Write an NLLogical
-inline void WriteJSON(JSONW jw,
-                      const NLEquivalence& nll) {
-  jw["var1"] = nll.GetVar1();
-  jw["var2"] = nll.GetVar2();
-}
-
-/// Write RhsCon without name.
-template <class Writer, class Names>
-inline void WriteModelItem(Writer& wrt,
-                           const NLEquivalence& nllc,
-                           const Names& vnam) {
-  wrt << "NLEquivalenceVar1: " << vnam.at(nllc.GetVar1());
-  wrt << "NLEquivalenceVar2: " << vnam.at(nllc.GetVar2());
-}
-
-
 /// Logical expression explicifier.
 /// Syntax sugar for reification: b==1 <==> expr(b)==1.
 /// Sense: equivalence (0), impl(-1), rimpl (1).

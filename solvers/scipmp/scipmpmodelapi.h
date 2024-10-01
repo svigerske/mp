@@ -203,24 +203,24 @@ public:
   /// @note Should be 'Recommended'
   ///   whenever logical expressions are accepted.
   /// @note Accessors: GetExpression(nle), GetVariable(nle).
-  ACCEPT_CONSTRAINT(NLEquivalence, Recommended, CG_Nonlinear)
-  void AddConstraint(const NLEquivalence& nle);
+  ACCEPT_CONSTRAINT(NLReifEquiv, Recommended, CG_Nonlinear)
+  void AddConstraint(const NLReifEquiv& nle);
   /// NL implication: var==1 ==> expression.
   /// This is an expression explicifier in positive context.
   ///
   /// @note Should be 'Recommended'
   ///   whenever logical expressions are accepted.
   /// @note Accessors: GetExpression(nle), GetVariable(nle).
-  ACCEPT_CONSTRAINT(NLImpl, Recommended, CG_Nonlinear)
-  void AddConstraint(const NLImpl& nle);
+  ACCEPT_CONSTRAINT(NLReifImpl, Recommended, CG_Nonlinear)
+  void AddConstraint(const NLReifImpl& nle);
   /// NL reverse implication: expression ==> var==1.
   /// This is an expression explicifier in negative context.
   ///
   /// @note Should be 'Recommended'
   ///   whenever logical expressions are accepted.
   /// @note Accessors: GetExpression(nle), GetVariable(nle).
-  ACCEPT_CONSTRAINT(NLRimpl, Recommended, CG_Nonlinear)
-  void AddConstraint(const NLRimpl& nle);
+  ACCEPT_CONSTRAINT(NLReifRimpl, Recommended, CG_Nonlinear)
+  void AddConstraint(const NLReifRimpl& nle);
 
   /// Moreover, once algebraic expressions are accepted
   /// via NLConstraint, subexpressions might be submitted via

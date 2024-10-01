@@ -405,6 +405,13 @@ public:
 
   template <class PreprocessInfo>
   void PreprocessConstraint(
+      EquivalenceConstraint& , PreprocessInfo& prepro) {
+    prepro.narrow_result_bounds(0.0, 1.0);
+    prepro.set_result_type( var::INTEGER );
+  }
+
+  template <class PreprocessInfo>
+  void PreprocessConstraint(
       AllDiffConstraint& , PreprocessInfo& prepro) {
     prepro.narrow_result_bounds(0.0, 1.0);
     prepro.set_result_type( var::INTEGER );

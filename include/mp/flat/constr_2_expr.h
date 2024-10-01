@@ -99,8 +99,11 @@ public:
     if (1==stage_cvt2expr_
         && (ConstraintAcceptanceLevel::Recommended != cal
             || HasExpressionArgs(con.GetBody()))) {
-      ConvertToNLCon(con, i);
-      return true;                              // to remove the original \a con
+      auto alscope = MPD( MakeAutoLinker( con, i ) );   // link from \a con
+      if (HasLogicalExpressionArgs(con.GetBody()))
+        if (HandleLogicalArgs(con, i))
+          return true;                     // to remove the original \a con
+      return ConvertToNLCon(con, i);       // convert if expr's, or not acc
     }
     return false;
   }
@@ -227,12 +230,6 @@ public:
       ConstraintAcceptanceLevel , ExpressionAcceptanceLevel ) {
     return false;
   }
-  /// NLEquivalence: just produced.
-  bool ConvertWithExpressions(
-      const NLEquivalence& , int ,
-      ConstraintAcceptanceLevel , ExpressionAcceptanceLevel ) {
-    return false;
-  }
   /// NLBaseReif: just produced.
   template <int sense>
   bool ConvertWithExpressions(
@@ -278,7 +275,7 @@ public:
 
 
 protected:
-  /// Algebraic cons: no marking (when NLConstraint accepted?)
+  /// Algebraic cons: no marking (even when NLConstraint not accepted.)
   /// @todo Do we need to consider NLConstraint / NLObjective at this step?
   /// Are they added during marking?
   template <class Body, class RhsOrRange>
@@ -303,7 +300,7 @@ protected:
   /// Check if the algebraic body has expressions
   bool HasExpressionArgs(const QuadAndLinTerms& qlt) const {
     return HasExpressionArgs(qlt.GetLinTerms())
-           || HasExpressionArgs(qlt.GetQPTerms());
+    || HasExpressionArgs(qlt.GetQPTerms());
   }
 
   bool HasExpressionArgs(const LinTerms& lt) const {
@@ -324,14 +321,103 @@ protected:
     return false;
   }
 
+  /// Check if the algebraic body has logical expressions.
+  /// This is bad for MP2NL.
+  bool HasLogicalExpressionArgs(const QuadAndLinTerms& qlt) const {
+    return HasLogicalExpressionArgs(qlt.GetLinTerms())
+    || HasLogicalExpressionArgs(qlt.GetQPTerms());
+  }
+
+  bool HasLogicalExpressionArgs(const LinTerms& lt) const {
+    for (auto v: lt.vars())
+      if (!MPCD( IsProperVar(v) )             // still an expression
+          && MPCD( IsInitExprLogical(v) )) {
+        return true;
+      }
+    return false;
+  }
+
+  bool HasLogicalExpressionArgs(const QuadTerms& qt) const {
+    for (auto v: qt.vars1())
+      if (!MPCD( IsProperVar(v) )
+          && MPCD( IsInitExprLogical(v) ))
+        return true;
+    for (auto v: qt.vars2())
+      if (!MPCD( IsProperVar(v) )
+          && MPCD( IsInitExprLogical(v) ))
+        return true;
+    return false;
+  }
+
+  /// Handle logical expression in a linear con
+  /// @return whether to remove the original \a con.
+  template <class RhsOrRange>
+  bool HandleLogicalArgs(
+      const AlgebraicConstraint<LinTerms, RhsOrRange>& con, int i) {
+    if (HandleLogicalArgs_SpecialCases(con, i))
+      return true;
+    VisitArguments(con, MarkVarIfLogical_);          // Mark as proper vars
+    return false;                                    // don't remove immediately
+  }
+
+  /// Handle logical expression in a quadratic con
+  template <class RhsOrRange>
+  bool HandleLogicalArgs(
+      const AlgebraicConstraint<QuadAndLinTerms, RhsOrRange>& con, int ) {
+    VisitArguments(con, MarkVarIfLogical_);          // Mark as proper vars
+    return false;                                    // don't remove immediately
+  }
+
+  /// Special linear cases.
+  /// @todo atleast, atmost, exactly
+  template <class RhsOrRange>
+  bool HandleLogicalArgs_SpecialCases(
+      const AlgebraicConstraint<LinTerms, RhsOrRange>& con, int ) {
+    const auto& body = con.GetBody();
+    if (!con.lb() && !con.ub()          // == 0.0
+        && 2==body.size()) {            // 2 terms
+      if (MPCD( IsInitExprLogical(body.var(0)) )
+          && !MPCD( IsProperVar(body.var(0)) )
+          && MPCD( IsInitExprLogical(body.var(1)) )
+          && !MPCD( IsProperVar(body.var(1)) )
+          && 1.0==std::fabs(body.coef(0))
+          && 1.0==std::fabs(body.coef(1))
+          && body.coef(0) == -body.coef(0)
+          && MPCD( template ModelAPIOk<EquivalenceConstraint>() )) {
+        int resvar = MPD( AssignResultVar2Args(
+            EquivalenceConstraint({body.var(0), body.var(1)})) );
+        MPD( FixAsTrue(resvar) );
+        return true;
+      }
+    }
+    else if (1==body.size()
+             && MPCD( IsInitExprLogical(body.var(0)) )
+             && !MPCD( IsProperVar(body.var(0)) )
+             && body.coef(0))                    // != 0
+    {
+      if (!con.lb() && !con.ub()                 // == 0.0
+          && MPCD( template ModelAPIOk<NotConstraint>() ) ) {
+        int resvar = MPD( AssignResultVar2Args(
+            NotConstraint({body.var(0)})) );
+        MPD( FixAsTrue(resvar) );
+        return true;
+      }
+      else if (con.lb() && con.ub() && con.lb()==con.ub()
+               && con.lb()==body.coef(0) ) {
+        MPD( FixAsTrue(body.var(0)) );
+        return true;
+      }
+    }
+    return false;
+  }
+
   /// Convert algebraic con to a \a NLConstraint,
   /// if \a NLConstraint's are accepted. Otherwise,
   /// explicify the expression and convert to
   /// \a LinConLE/EQ/GE/Range.
   template <class Body, class RhsOrRange>
-  void ConvertToNLCon(
-      const AlgebraicConstraint<Body, RhsOrRange>& con, int i) {
-    auto alscope = MPD( MakeAutoLinker( con, i ) );   // link from \a con
+  bool ConvertToNLCon(
+      const AlgebraicConstraint<Body, RhsOrRange>& con, int ) {
     LinTerms lt;
     /// exprTerm will be a LinearFunctionalConstraint or a Quadratic...
     auto exprTerm = ExtractLinAndExprArgs(con.GetBody(), lt);
@@ -341,8 +427,7 @@ protected:
     int exprResVar = -1;
     if (exprTerm.GetArguments().is_variable()) {
       exprResVar = exprTerm.GetArguments().get_representing_variable();
-    } else {
-      assert( !exprTerm.GetArguments().empty() );     // has more terms, or coef != 1.0
+    } else if ( !exprTerm.GetArguments().empty() ) {  // has more terms, or coef != 1.0
       exprTerm.AddContext(                            // Context is compulsory
           rng.lb() > MPCD( PracticallyMinusInf() )    // Should not need to propagate
           ? (rng.ub() < MPCD( PracticallyInf() )
@@ -350,31 +435,41 @@ protected:
               : Context::CTX_NEG);
       exprResVar = MPD( AssignResultVar2Args(std::move(exprTerm)) );
     }
-    if (!MPCD(VarHasMarking(exprResVar)))             // mark as expr if new
-      MPD( MarkAsExpression(exprResVar) );
-    if ( !MPCD( ModelAPIAcceptsAndRecommends((const NLConstraint*)nullptr) ) )
-      MPD( MarkAsResultVar(exprResVar) );
-    /// Exists and marked a variable
-    if (MPCD( IsProperVar(exprResVar) )) {            // Not an expression after all
-      lt.add_term(1.0, exprResVar);        // @todo When exprTerm was originally a var,
-      lt.sort_terms();                     // this would reproduce the original con.
-      if (lt.size()>1) {                              // ... has other variables
-        if (MPCD( ModelAPIAcceptsAndRecommends(       // Accepts LinCon..
-                (const AlgebraicConstraint<LinTerms, RhsOrRange>*)nullptr) )) {
-          AlgebraicConstraint<LinTerms, RhsOrRange> lc {lt, con.GetRhsOrRange(), false};
-          MPD( AddConstraint( std::move(lc) ) );
-          return;
-        } else {
-          assert( MPCD( ModelAPIAcceptsAndRecommends((const NLConstraint*)nullptr) ) );
+    bool need_nlc {false};
+    if (exprResVar >= 0) {                            // Some expressions are there
+      if (!MPCD(VarHasMarking(exprResVar)))             // mark as expr if new
+        MPD( MarkAsExpression(exprResVar) );
+      if ( !MPCD( ModelAPIAcceptsAndRecommends((const NLConstraint*)nullptr) ) )
+        MPD( MarkAsResultVar(exprResVar) );
+      /// Exists and marked a variable
+      if (MPCD( IsProperVar(exprResVar) )) {            // Not an expression after all
+        lt.add_term(1.0, exprResVar);        // @todo When exprTerm was originally a var,
+        lt.sort_terms();                     // this would reproduce the original con.
+        if (lt.size()>1) {                              // ... has other variables
+          if (MPCD( ModelAPIAcceptsAndRecommends(       // Accepts LinCon..
+                  (const AlgebraicConstraint<LinTerms, RhsOrRange>*)nullptr) )) {
+            AlgebraicConstraint<LinTerms, RhsOrRange> lc {lt, con.GetRhsOrRange(), false};
+            MPD( AddConstraint( std::move(lc) ) );
+            return true;
+          }
+          need_nlc = true;
+        } else {         // single variable, its expression will be explicified
+          MPD( NarrowVarBounds(exprResVar, rng.lb(), rng.ub()) );
+          return true;
         }
-      } else {         // single variable, its expression will be explicified
-        MPD( NarrowVarBounds(exprResVar, rng.lb(), rng.ub()) );
-        return;
+        exprResVar = -1;                                // no expression
       }
-      exprResVar = -1;                                // no expression
-    }  // else, stays as -1
-    NLConstraint nlc{lt, exprResVar, rng, false};     // no sorting
-    MPD( AddConstraint( std::move(nlc) ) );
+    }
+    if (0<=exprResVar                                   // either: have expression
+        || !MPCD( ModelAPIAcceptsAndRecommends(         // or, not accepts source \a con
+            (const AlgebraicConstraint<Body, RhsOrRange>*)nullptr) )
+        || need_nlc) {                                  // or, other reason
+      assert( MPCD( ModelAPIAcceptsAndRecommends((const NLConstraint*)nullptr) ) );
+      NLConstraint nlc{lt, exprResVar, rng, false};     // no sorting
+      MPD( AddConstraint( std::move(nlc) ) );
+      return true;
+    }
+    return false;
   }
 
   /// Convert (if needed) an objective to NLObjective.
@@ -561,9 +656,17 @@ protected:
 
 
 private:
-  /// (Argument) variable visitor
+  /// (Argument) variable visitor: mark var as proper
   std::function<void( int )> MarkVar_ = [this](int v){
     MPD( MarkAsResultVar(v) );       // no recursion
+  };
+
+  /// (Argument) variable visitor: mark var as proper,
+  /// if it represents a logical expression
+  std::function<void( int )> MarkVarIfLogical_
+      = [this](int v){
+          if (MPCD( IsInitExprLogical(v) ))
+            MPD( MarkAsResultVar(v) ); // no recursion
   };
 
   /// NL conversion stage
