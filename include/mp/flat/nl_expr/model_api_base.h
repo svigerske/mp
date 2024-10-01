@@ -155,22 +155,22 @@ public:
     return GetPureInitExpression(nll.GetCapturedResultVar());
   }
 
-  /// Get the expression term of an \a NLReification,
-  /// i.e., NLimpl, NLEquivalence, NLRimpl.
+  /// Get the expression term of an \a NLBaseReif,
+  /// i.e., NLReifImpl, NLReifEquiv, NLReifRimpl.
   /// @note For each such 'explicification' constraint,
   /// the expression
   /// can be normally accessed only once. To access them
   /// repeatedly, call ResetIniExprRetrievedFlags()
   /// for every repetition.
   template <int sense>
-  ExprType GetExpression(const NLReification<sense>& nll) {
+  ExprType GetExpression(const NLBaseReif<sense>& nll) {
     assert( nll.GetBVar()>=0 );
     return GetPureInitExpression(nll.GetBVar());
   }
 
   /// Get the variable of an \a NLReification.
   template <int sense>
-  int GetVariable(const NLReification<sense>& nll) {
+  int GetVariable(const NLBaseReif<sense>& nll) {
     assert( nll.GetBVar()>=0 );
     return nll.GetBVar();
   }
@@ -242,6 +242,24 @@ public:
   double GetParameter(const FlatExpression& fe, int i)
   { return fe.GetFlatConstraint().GetParameters().at(i); }
 
+
+  /// Get the expression term of a \a ConditionalConstraint.
+  template <class Rhs>
+  ExprType GetExpression(
+      const ExprWrapper< ConditionalConstraint<
+          AlgebraicConstraint<LinTerms, Rhs> > >& cc) {
+    return MPD( GetInitExpression(
+        cc.GetFlatConstraint().
+        GetConstraint().get_representing_variable()) );
+  }
+
+  /// Get the expression term of a \a ConditionalConstraint.
+  template <class Rhs>
+  double GetRHS(
+      const ExprWrapper< ConditionalConstraint<
+          AlgebraicConstraint<LinTerms, Rhs> > >& cc) {
+    return cc.GetFlatConstraint().GetConstraint().rhs();
+  }
 
   /// Placeholder for InitCustomOptions()
   void InitCustomOptions() { }

@@ -183,15 +183,15 @@ void BasicConstraintKeeper::DoPopulateConstraintList(
   auto eal = GetModelAPIAcceptanceEXPR(ma);
   // Description table
   env.SetConstraintListHeader(
-      "List of flat constraints.\n"
-      "For each constraint the following are given:\n"
+      "List of flat constraints and corresponding expressions.\n"
+      "For each constraint/expression, the following are given:\n"
       "\n"
       "  - name,\n"
       "  - convertibility into simpler forms,\n"
       "  - solver acceptance natively as flat constraint,\n"
       "  - solver acceptance natively as expression,\n"
       "  - driver option(s) to modify acceptance\n"
-      "    (enabled if both convertible and accepted).");
+      "    (effective if both convertible and accepted).");
   std::string con_descr = (cancvt) ? "Convertible" : "NonConvertible";
   con_descr += "; ";
   const char * const acc_lev_nam[] = {

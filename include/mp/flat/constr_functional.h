@@ -147,19 +147,26 @@ DEF_NUMERIC_FUNC_CONSTR( Atanh, VarArray1,
 
 ////////////////////////////////////////////////////////////////////////
 DEF_CONDITIONAL_CONSTRAINT_WRAPPER(CondLinLT, LinConLT);
+/// Typedef CondLinConLT for legacy
 using CondLinConLT = CondLinLTConstraint;
+/// Typedef CondLTExpression: its LHS is an expression
+using CondLTExpression = CondLinLTExpression;
 ////////////////////////////////////////////////////////////////////////
 DEF_CONDITIONAL_CONSTRAINT_WRAPPER(CondLinLE, LinConLE);
 using CondLinConLE = CondLinLEConstraint;
+using CondLEExpression = CondLinLEExpression;
 ////////////////////////////////////////////////////////////////////////
 DEF_CONDITIONAL_CONSTRAINT_WRAPPER(CondLinEQ, LinConEQ);
 using CondLinConEQ = CondLinEQConstraint;
+using CondEQExpression = CondLinEQExpression;
 ////////////////////////////////////////////////////////////////////////
 DEF_CONDITIONAL_CONSTRAINT_WRAPPER(CondLinGE, LinConGE);
 using CondLinConGE = CondLinGEConstraint;
+using CondGEExpression = CondLinGEExpression;
 ////////////////////////////////////////////////////////////////////////
 DEF_CONDITIONAL_CONSTRAINT_WRAPPER(CondLinGT, LinConGT);
 using CondLinConGT = CondLinGTConstraint;
+using CondGTExpression = CondLinGTExpression;
 
 ////////////////////////////////////////////////////////////////////////
 DEF_CONDITIONAL_CONSTRAINT_WRAPPER(CondQuadLT, QuadConLT);

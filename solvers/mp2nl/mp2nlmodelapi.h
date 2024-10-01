@@ -267,24 +267,24 @@ public:
   /// @note Should be 'Recommended'
   ///   whenever logical expressions are accepted.
   /// @note Accessors: GetExpression(nle), GetVariable(nle).
-  ACCEPT_CONSTRAINT(NLEquivalence, Recommended, CG_Logical)
-  void AddConstraint(const NLEquivalence& nle);
+  ACCEPT_CONSTRAINT(NLReifEquiv, Recommended, CG_Logical)
+  void AddConstraint(const NLReifEquiv& nle);
   /// NL implication: var==1 ==> expression.
   /// This is an expression explicifier in positive context.
   ///
   /// @note Should be 'Recommended'
   ///   whenever logical expressions are accepted.
   /// @note Accessors: GetExpression(nle), GetVariable(nle).
-  ACCEPT_CONSTRAINT(NLImpl, Recommended, CG_Logical)
-  void AddConstraint(const NLImpl& nle);
+  ACCEPT_CONSTRAINT(NLReifImpl, Recommended, CG_Logical)
+  void AddConstraint(const NLReifImpl& nle);
   /// NL reverse implication: expression ==> var==1.
   /// This is an expression explicifier in negative context.
   ///
   /// @note Should be 'Recommended'
   ///   whenever logical expressions are accepted.
   /// @note Accessors: GetExpression(nle), GetVariable(nle).
-  ACCEPT_CONSTRAINT(NLRimpl, Recommended, CG_Logical)
-  void AddConstraint(const NLRimpl& nle);
+  ACCEPT_CONSTRAINT(NLReifRimpl, Recommended, CG_Logical)
+  void AddConstraint(const NLReifRimpl& nle);
 
 
   /// Linear indicator constraints can be used as
@@ -359,16 +359,43 @@ public:
   /// say ACCEPT_CONSTRAINT(Recommended)
   /// and/or ACCEPT_CONSTRAINT(AcceptedButNotRecommended).
   /// This can be user-configured via solver options 'acc:exp' etc.
+  ///
+  /// We are not accepting abs() as a constraint, only as expression.
   ACCEPT_CONSTRAINT(AbsConstraint, NotAccepted, CG_General)
 
+  ACCEPT_EXPRESSION(AllDiffExpression, Recommended)
+  Expr AddExpression(const AllDiffExpression& absc);
+
+  /// And/Or
+  /// @note Use GetNumArguments(expr)
+  ///   and GetArgument(expr, i) for i=0..num_args-1.
   ACCEPT_EXPRESSION(AndExpression, Recommended)
   MP2NL_Expr AddExpression(const AndExpression& cc);
   ACCEPT_EXPRESSION(OrExpression, Recommended)
   MP2NL_Expr AddExpression(const OrExpression& dc);
-  // ACCEPT_CONSTRAINT(AndConstraint, AcceptedButNotRecommended, CG_General)
-  // void AddConstraint(const AndConstraint& cc);
-  // ACCEPT_CONSTRAINT(OrConstraint, Recommended, CG_General)
-  // void AddConstraint(const OrConstraint& dc);
+
+  ACCEPT_EXPRESSION(CondLTExpression, Recommended)
+  MP2NL_Expr AddExpression(const CondLTExpression& dc);
+  ACCEPT_EXPRESSION(CondLEExpression, Recommended)
+  MP2NL_Expr AddExpression(const CondLEExpression& dc);
+  ACCEPT_EXPRESSION(CondEQExpression, Recommended)
+  MP2NL_Expr AddExpression(const CondEQExpression& dc);
+  ACCEPT_EXPRESSION(CondGEExpression, Recommended)
+  MP2NL_Expr AddExpression(const CondGEExpression& dc);
+  ACCEPT_EXPRESSION(CondGTExpression, Recommended)
+  MP2NL_Expr AddExpression(const CondGTExpression& dc);
+
+  ACCEPT_EXPRESSION(IfThenExpression, Recommended)
+  MP2NL_Expr AddExpression(const IfThenExpression& dc);
+  ACCEPT_EXPRESSION(ImplicationExpression, Recommended)
+  MP2NL_Expr AddExpression(const ImplicationExpression& dc);
+  ACCEPT_EXPRESSION(NotExpression, Recommended)
+  MP2NL_Expr AddExpression(const NotExpression& dc);
+
+  ACCEPT_EXPRESSION(MinExpression, Recommended)
+  MP2NL_Expr AddExpression(const MinExpression& dc);
+  ACCEPT_EXPRESSION(MaxExpression, Recommended)
+  MP2NL_Expr AddExpression(const MaxExpression& dc);
 
 
   ACCEPT_EXPRESSION(ExpExpression, Recommended)
@@ -672,6 +699,14 @@ public:
   /// Feed NLAffineExpression or NLQuadExpression
   template <class AlgMPExpr, class ExprWriter>
   void FeedAlgebraic(const AlgMPExpr& e, ExprWriter& ew);
+
+  /// Feed comparison
+  template <class CondMPExpr, class ExprWriter>
+  void FeedRelational(const CondMPExpr& e, ExprWriter ew);
+
+  /// Feed NLBaseReif
+  template <int sense, class ExprWriter>
+  void FeedReification(const NLBaseReif<sense>& e, ExprWriter& ew);
 
   /// Write opcode arguments.
   /// Parameters written after the expression arguments.
@@ -1008,9 +1043,9 @@ protected:
     ID_NLAssignEQ,
     ID_NLAssignGE,
     ID_NLLogical,
-    ID_NLEquivalence,
-    ID_NLImpl,
-    ID_NLRimpl,
+    ID_NLReifEquiv,
+    ID_NLReifImpl,
+    ID_NLReifRimpl,
     ID_IndicatorConstraintLinLE,
     ID_IndicatorConstraintLinEQ,
     ID_IndicatorConstraintLinGE,
@@ -1030,8 +1065,22 @@ protected:
     ID_NLQuad,
 
     ID_Abs,
+    ID_AllDiff,
     ID_And,
+    ID_Not,
     ID_Or,
+    ID_IfThen,
+    ID_Implication,
+
+    ID_CondLT,
+    ID_CondLE,
+    ID_CondEQ,
+    ID_CondGE,
+    ID_CondGT,
+
+    ID_Min,
+    ID_Max,
+
     ID_Exp,
     ID_Log,
     ID_Pow,
@@ -1159,9 +1208,9 @@ protected:
   CREATE_STATIC_ITEM_DISPATCHER(NLAssignEQ)
   CREATE_STATIC_ITEM_DISPATCHER(NLAssignGE)
   CREATE_STATIC_ITEM_DISPATCHER(NLLogical)
-  CREATE_STATIC_ITEM_DISPATCHER(NLEquivalence)
-  CREATE_STATIC_ITEM_DISPATCHER(NLImpl)
-  CREATE_STATIC_ITEM_DISPATCHER(NLRimpl)
+  CREATE_STATIC_ITEM_DISPATCHER(NLReifEquiv)
+  CREATE_STATIC_ITEM_DISPATCHER(NLReifImpl)
+  CREATE_STATIC_ITEM_DISPATCHER(NLReifRimpl)
   CREATE_STATIC_ITEM_DISPATCHER(IndicatorConstraintLinLE)
   CREATE_STATIC_ITEM_DISPATCHER(IndicatorConstraintLinEQ)
   CREATE_STATIC_ITEM_DISPATCHER(IndicatorConstraintLinGE)
@@ -1192,6 +1241,20 @@ protected:
   CREATE_EXPRESSION_DISPATCHER(Abs)
   CREATE_EXPRESSION_DISPATCHER(And)
   CREATE_EXPRESSION_DISPATCHER(Or)
+
+  CREATE_EXPRESSION_DISPATCHER(AllDiff)
+  CREATE_EXPRESSION_DISPATCHER(CondLT)
+  CREATE_EXPRESSION_DISPATCHER(CondLE)
+  CREATE_EXPRESSION_DISPATCHER(CondEQ)
+  CREATE_EXPRESSION_DISPATCHER(CondGE)
+  CREATE_EXPRESSION_DISPATCHER(CondGT)
+  CREATE_EXPRESSION_DISPATCHER(IfThen)
+  CREATE_EXPRESSION_DISPATCHER(Implication)
+  CREATE_EXPRESSION_DISPATCHER(Not)
+
+  CREATE_EXPRESSION_DISPATCHER(Min)
+  CREATE_EXPRESSION_DISPATCHER(Max)
+
   CREATE_EXPRESSION_DISPATCHER(Exp)
   CREATE_EXPRESSION_DISPATCHER(Log)
   CREATE_EXPRESSION_DISPATCHER(Pow)

@@ -1597,11 +1597,13 @@ protected:
   STORE_CONSTRAINT_TYPE__NO_MAP(
       NLLogical, "acc:nllogcon acc:nllogical")
   STORE_CONSTRAINT_TYPE__NO_MAP(
-      NLEquivalence, "acc:nlequiv")
+      NLEquivalence, "acc:nlequiv acc:nlequivalence")
   STORE_CONSTRAINT_TYPE__NO_MAP(
-      NLImpl, "acc:nlimpl")
+      NLReifEquiv, "acc:nlreifequiv")
   STORE_CONSTRAINT_TYPE__NO_MAP(
-      NLRimpl, "acc:nlrimpl")
+      NLReifImpl, "acc:nlreifimpl")
+  STORE_CONSTRAINT_TYPE__NO_MAP(
+      NLReifRimpl, "acc:nlreifrimpl")
 
 
   protected:

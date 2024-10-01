@@ -91,12 +91,12 @@ void MP2NLModelAPI::AddConstraint(const NLComplementarity& cc)
 void MP2NLModelAPI::AddConstraint( const NLLogical& nll )
 { log_con_info_.push_back(MakeItemInfo(nll, StaticItemTypeID::ID_NLLogical)); }
 
-void MP2NLModelAPI::AddConstraint( const NLEquivalence& nll )
-{ log_con_info_.push_back(MakeItemInfo(nll, StaticItemTypeID::ID_NLEquivalence)); }
-void MP2NLModelAPI::AddConstraint( const NLImpl& nll )
-{ log_con_info_.push_back(MakeItemInfo(nll, StaticItemTypeID::ID_NLImpl)); }
-void MP2NLModelAPI::AddConstraint( const NLRimpl& nll )
-{ log_con_info_.push_back(MakeItemInfo(nll, StaticItemTypeID::ID_NLRimpl)); }
+void MP2NLModelAPI::AddConstraint( const NLReifEquiv& nll )
+{ log_con_info_.push_back(MakeItemInfo(nll, StaticItemTypeID::ID_NLReifEquiv)); }
+void MP2NLModelAPI::AddConstraint( const NLReifImpl& nll )
+{ log_con_info_.push_back(MakeItemInfo(nll, StaticItemTypeID::ID_NLReifImpl)); }
+void MP2NLModelAPI::AddConstraint( const NLReifRimpl& nll )
+{ log_con_info_.push_back(MakeItemInfo(nll, StaticItemTypeID::ID_NLReifRimpl)); }
 
 
 void MP2NLModelAPI::AddConstraint(const IndicatorConstraintLinLE &ic)
@@ -158,10 +158,37 @@ MP2NL_Expr MP2NLModelAPI::AddExpression(const NLQuadExpression &expr)
 { return AddExpression(expr, ExpressionTypeID::ID_NLQuad); }
 MP2NL_Expr MP2NLModelAPI::AddExpression(const AbsExpression &expr)
 { return AddExpression(expr, ExpressionTypeID::ID_Abs); }
+
+MP2NL_Expr MP2NLModelAPI::AddExpression(const AllDiffExpression &expr)
+{ return AddExpression(expr, ExpressionTypeID::ID_AllDiff); }
 MP2NL_Expr MP2NLModelAPI::AddExpression(const AndExpression &expr)
 { return AddExpression(expr, ExpressionTypeID::ID_And); }
 MP2NL_Expr MP2NLModelAPI::AddExpression(const OrExpression &expr)
 { return AddExpression(expr, ExpressionTypeID::ID_Or); }
+
+MP2NL_Expr MP2NLModelAPI::AddExpression(const CondLTExpression &expr)
+{ return AddExpression(expr, ExpressionTypeID::ID_CondLT); }
+MP2NL_Expr MP2NLModelAPI::AddExpression(const CondLEExpression &expr)
+{ return AddExpression(expr, ExpressionTypeID::ID_CondLE); }
+MP2NL_Expr MP2NLModelAPI::AddExpression(const CondEQExpression &expr)
+{ return AddExpression(expr, ExpressionTypeID::ID_CondEQ); }
+MP2NL_Expr MP2NLModelAPI::AddExpression(const CondGEExpression &expr)
+{ return AddExpression(expr, ExpressionTypeID::ID_CondGE); }
+MP2NL_Expr MP2NLModelAPI::AddExpression(const CondGTExpression &expr)
+{ return AddExpression(expr, ExpressionTypeID::ID_CondGT); }
+
+MP2NL_Expr MP2NLModelAPI::AddExpression(const IfThenExpression &expr)
+{ return AddExpression(expr, ExpressionTypeID::ID_IfThen); }
+MP2NL_Expr MP2NLModelAPI::AddExpression(const ImplicationExpression &expr)
+{ return AddExpression(expr, ExpressionTypeID::ID_Implication); }
+
+MP2NL_Expr MP2NLModelAPI::AddExpression(const NotExpression &expr)
+{ return AddExpression(expr, ExpressionTypeID::ID_Not); }
+MP2NL_Expr MP2NLModelAPI::AddExpression(const MinExpression &expr)
+{ return AddExpression(expr, ExpressionTypeID::ID_Min); }
+MP2NL_Expr MP2NLModelAPI::AddExpression(const MaxExpression &expr)
+{ return AddExpression(expr, ExpressionTypeID::ID_Max); }
+
 MP2NL_Expr MP2NLModelAPI::AddExpression(const ExpExpression &expr)
 { return AddExpression(expr, ExpressionTypeID::ID_Exp); }
 MP2NL_Expr MP2NLModelAPI::AddExpression(const LogExpression &expr)
@@ -196,12 +223,15 @@ void MP2NLModelAPI::PrepareModel() {
 }
 
 void MP2NLModelAPI::MapExpressions() {
-  for (const auto& info: obj_info_)
+  for (const auto& info: obj_info_) {
     MapExprTreeFromItemInfo(info);
-  for (const auto& info: alg_con_info_)
+  }
+  for (const auto& info: alg_con_info_) {
     MapExprTreeFromItemInfo(info);
-  for (const auto& info: log_con_info_)
+  }
+  for (const auto& info: log_con_info_) {
     MapExprTreeFromItemInfo(info);
+  }
   ResetIniExprRetrievedFlags();
 }
 
@@ -588,9 +618,9 @@ void MP2NLModelAPI::FeedAlgConExpression(
     ew.NPut(0.0);                     // must be linear constr
     break;
   case StaticItemTypeID::ID_NLLogical:
-  case StaticItemTypeID::ID_NLImpl:
-  case StaticItemTypeID::ID_NLEquivalence:
-  case StaticItemTypeID::ID_NLRimpl:
+  case StaticItemTypeID::ID_NLReifImpl:
+  case StaticItemTypeID::ID_NLReifEquiv:
+  case StaticItemTypeID::ID_NLReifRimpl:
   case StaticItemTypeID::ID_LinearObjective:
   case StaticItemTypeID::ID_NLObjective:
   case StaticItemTypeID::ID_None:
@@ -607,14 +637,14 @@ void MP2NLModelAPI::FeedLogicalConExpression(
   case StaticItemTypeID::ID_NLLogical:
     FeedExpr(GetExpression(*((NLLogical*)(pitem))), ew);
     break;
-  case StaticItemTypeID::ID_NLImpl:
-    FeedExpr(GetExpression(*((NLImpl*)(pitem))), ew);
+  case StaticItemTypeID::ID_NLReifImpl: {
+    FeedReification((*((NLReifImpl*)(pitem))), ew);
+  } break;
+  case StaticItemTypeID::ID_NLReifEquiv:
+    FeedReification((*((NLReifEquiv*)(pitem))), ew);
     break;
-  case StaticItemTypeID::ID_NLEquivalence:
-    FeedExpr(GetExpression(*((NLEquivalence*)(pitem))), ew);
-    break;
-  case StaticItemTypeID::ID_NLRimpl:
-    FeedExpr(GetExpression(*((NLRimpl*)(pitem))), ew);
+  case StaticItemTypeID::ID_NLReifRimpl:
+    FeedReification((*((NLReifRimpl*)(pitem))), ew);
     break;
   default:
     MP_RAISE("Unknown logical constraint type");
@@ -626,11 +656,34 @@ void MP2NLModelAPI::FeedExpr(Expr expr, ExprWriter& ew) {
   if (expr.IsEmptyExpr())
     ew.NPut(0.0);
   else if (expr.IsVariable()) {       // @todo def vars
-    ew.VPut(expr.GetVarIndex(),
+    ew.VPut( GetNewVarIndex( expr.GetVarIndex() ),
             GetVarName(expr.GetVarIndex()));
   } else
     FeedOpcode(expr, ew);
 }
+
+#define HANDLE_OPCODE_CASE_1_ARG(Expr, Opcode) \
+case ExpressionTypeID::ID_ ## Expr: \
+    FeedOpcodeArgs(*(const Expr ## Expression*)pitem, ew.OPut1(nl::Opcode)); \
+    break;
+#define HANDLE_OPCODE_CASE_2_ARG(Expr, Opcode) \
+case ExpressionTypeID::ID_ ## Expr: \
+    FeedOpcodeArgs(*(const Expr ## Expression*)pitem, ew.OPut2(nl::Opcode)); \
+    break;
+#define HANDLE_OPCODE_CASE_3_ARG(Expr, Opcode) \
+case ExpressionTypeID::ID_ ## Expr: \
+    FeedOpcodeArgs(*(const Expr ## Expression*)pitem, ew.OPut3(nl::Opcode)); \
+    break;
+#define HANDLE_OPCODE_CASE_N_ARG(Expr, Opcode) \
+case ExpressionTypeID::ID_ ## Expr: \
+    FeedOpcodeArgs(*(const Expr ## Expression*)pitem, \
+      ew.OPutN(nl::Opcode, \
+        GetNumArguments(*(const Expr ## Expression*)pitem))); \
+    break;
+#define HANDLE_RELATIONAL(Expr, Opcode) \
+case ExpressionTypeID::ID_ ## Expr: \
+    FeedRelational(*(const Expr ## Expression*)pitem, ew.OPut2(nl::Opcode)); \
+    break;
 
 template <class ExprWriter>
 void MP2NLModelAPI::FeedOpcode(Expr expr, ExprWriter& ew) {
@@ -638,6 +691,7 @@ void MP2NLModelAPI::FeedOpcode(Expr expr, ExprWriter& ew) {
   const auto& expr_info = expr_info_.at(expr.GetExprIndex());
   const auto* pitem = expr_info.GetPItem();
   switch (expr_info.GetExprTypeID()) {
+
   case ExpressionTypeID::ID_NLAffine:
     FeedAlgebraic(*(const NLAffineExpression*)pitem, ew);
     break;
@@ -645,34 +699,24 @@ void MP2NLModelAPI::FeedOpcode(Expr expr, ExprWriter& ew) {
     FeedAlgebraic(*(const NLQuadExpression*)pitem, ew);
     break;
 
-  case ExpressionTypeID::ID_Abs:
-    FeedOpcodeArgs(*(const AbsExpression*)pitem, ew.OPut1(nl::ABS));
-    break;
-  case ExpressionTypeID::ID_And:
-    FeedOpcodeArgs(*(const AndExpression*)pitem,
-                   ew.OPutN(nl::AND,
-                            GetNumArguments(*(const AndExpression*)pitem)));
-    break;
-  case ExpressionTypeID::ID_Or:
-    FeedOpcodeArgs(*(const OrExpression*)pitem,
-                   ew.OPutN(nl::OR,
-                            GetNumArguments(*(const OrExpression*)pitem)));
-    break;
-  case ExpressionTypeID::ID_Exp:
-    FeedOpcodeArgs(*(const ExpExpression*)pitem, ew.OPut1(nl::EXP));
-    break;
-  case ExpressionTypeID::ID_Log:
-    FeedOpcodeArgs(*(const LogExpression*)pitem, ew.OPut1(nl::LOG));
-    break;
-  case ExpressionTypeID::ID_Pow:
-    FeedOpcodeArgs(*(const PowExpression*)pitem, ew.OPut2(nl::POW_CONST_EXP));
-    break;
-  case ExpressionTypeID::ID_Sin:
-    FeedOpcodeArgs(*(const SinExpression*)pitem, ew.OPut1(nl::SIN));
-    break;
-  case ExpressionTypeID::ID_Cos:
-    FeedOpcodeArgs(*(const CosExpression*)pitem, ew.OPut1(nl::COS));
-    break;
+    HANDLE_OPCODE_CASE_1_ARG(Abs, ABS)
+    HANDLE_OPCODE_CASE_N_ARG(AllDiff, ALLDIFF)
+    HANDLE_OPCODE_CASE_N_ARG(And, AND)
+    HANDLE_OPCODE_CASE_N_ARG(Or, OR)
+
+    HANDLE_OPCODE_CASE_3_ARG(IfThen, IF)
+    HANDLE_OPCODE_CASE_3_ARG(Implication, IMPLICATION)
+    HANDLE_OPCODE_CASE_1_ARG(Not, NOT)
+
+    HANDLE_RELATIONAL(CondLT, LT)
+    HANDLE_RELATIONAL(CondLE, LE)
+    HANDLE_RELATIONAL(CondEQ, EQ)
+    HANDLE_RELATIONAL(CondGE, GE)
+    HANDLE_RELATIONAL(CondGT, GT)
+
+    HANDLE_OPCODE_CASE_N_ARG(Min, MIN)
+    HANDLE_OPCODE_CASE_N_ARG(Max, MAX)
+
   default:
     MP_RAISE("MP2NL: unknown expression type");
   }
@@ -718,6 +762,38 @@ void MP2NLModelAPI::FeedAlgebraic(
     write_args(e, ew.OPut2(nl::ADD));
   else
     write_args(e, ew.OPutN(nl::SUM, n_args));
+}
+
+template <class CondMPExpr, class ExprWriter>
+void MP2NLModelAPI::FeedRelational(
+    const CondMPExpr& e, ExprWriter ew) {
+  ew.EPut(GetExpression(e));
+  ew.NPut(GetRHS(e));
+}
+
+template <int sense, class ExprWriter>
+void MP2NLModelAPI::FeedReification(
+    const NLBaseReif<sense>& e, ExprWriter& ew) {
+  if (sense<0) {
+    auto args = ew.OPutN(nl::OR, 2);
+    auto args_lhs = args.OPut2(nl::EQ);
+    args_lhs.VPut( GetNewVarIndex(GetVariable(e)) );
+    args_lhs.NPut(0.0);
+    args.EPut(GetExpression(e));
+  } else if (sense>0) {
+    auto args = ew.OPutN(nl::OR, 2);
+    auto args_lhs = args.OPut2(nl::EQ);
+    args_lhs.VPut( GetNewVarIndex(GetVariable(e)) );
+    args_lhs.NPut(1.0);
+    auto args_rhs = args.OPut1(nl::NOT);
+    args_rhs.EPut(GetExpression(e));
+  } else {
+    auto args = ew.OPutN(nl::IFF, 2);
+    auto args_lhs = args.OPut2(nl::EQ);
+    args_lhs.VPut( GetNewVarIndex(GetVariable(e)) );
+    args_lhs.NPut(1.0);
+    args.EPut(GetExpression(e));
+  }
 }
 
 template <class MPExpr, class ArgWriter>

@@ -92,6 +92,7 @@ inline void WriteModelItem(Writer& wrt,
 }
 
 
+/// Algebraic expression explicifier.
 /// Syntax sugar for the assignment: var <=/==/>= expr.
 /// Can have special meaning in certain solvers.
 /// Sense: equality (0), >= (1), <= (-1).
@@ -187,7 +188,7 @@ public:
   template <class VarInfo>
   Violation
   ComputeViolation(const VarInfo& x) const {
-    return {std::fabs(x[GetCapturedResultVar() - 1.0]), 1.0};
+    return {std::fabs(x[GetCapturedResultVar()] - 1.0), 1.0};
   }
 
 private:
@@ -197,7 +198,7 @@ private:
 /// Write an NLLogical
 inline void WriteJSON(JSONW jw,
                       const NLLogical& nll) {
-  jw["resvar"] = nll.GetResultVar();
+  jw["resvar"] = nll.GetCapturedResultVar();
 }
 
 /// Write RhsCon without name.
@@ -205,22 +206,79 @@ template <class Writer, class Names>
 inline void WriteModelItem(Writer& wrt,
                            const NLLogical& nllc,
                            const Names& vnam) {
-  wrt << "NLLogicalExprIndex: " << vnam.at(nllc.GetResultVar());
+  wrt << "NLLogicalExprIndex: "
+      << vnam.at(nllc.GetCapturedResultVar());
 }
 
 
-/// Syntax sugar for reification: b==1 <==> expr(b)==1.
-/// Sense: equivalence (0), impl(-1), rimpl (1).
-/// This is a static constraint.
-template <int sense>
-class NLReification
+/// NL equivalence constraint: expr(var1) <==> expr(var2).
+/// We have to do this new kind because flat constraints
+/// represent equivalence algebraically.
+class NLEquivalence
     : public BasicConstraint {
 public:
   /// Constraint type name
   static const char* GetTypeName() {
-    if (0==sense) return "NLEquivalence";
-    if (-1==sense) return "NLImpl";
-    if (1==sense) return "NLRimpl";
+    return "NLEquivalence";
+  }
+
+  /// Is logical?
+  static bool IsLogical() { return true; }
+
+  /// Construct from the result variable
+  NLEquivalence(int v1, int v2) : v1_(v1), v2_(v2)
+  { assert(v1>=0 && v2>=0); }
+
+  /// Get var 1
+  int GetVar1() const { return v1_; }
+
+  /// Get var 2
+  int GetVar2() const { return v2_; }
+
+  /// Throw - should not be used
+  VarArray1 GetArguments() const { MP_RAISE("No marking for NL items"); }
+
+  /// Compute violation
+  template <class VarInfo>
+  Violation
+  ComputeViolation(const VarInfo& x) const {
+    return {std::fabs(x[GetVar1()] - x[GetVar2()]), 1.0};
+  }
+
+private:
+  int v1_ {-1}, v2_ {-1};
+};
+
+/// Write an NLLogical
+inline void WriteJSON(JSONW jw,
+                      const NLEquivalence& nll) {
+  jw["var1"] = nll.GetVar1();
+  jw["var2"] = nll.GetVar2();
+}
+
+/// Write RhsCon without name.
+template <class Writer, class Names>
+inline void WriteModelItem(Writer& wrt,
+                           const NLEquivalence& nllc,
+                           const Names& vnam) {
+  wrt << "NLEquivalenceVar1: " << vnam.at(nllc.GetVar1());
+  wrt << "NLEquivalenceVar2: " << vnam.at(nllc.GetVar2());
+}
+
+
+/// Logical expression explicifier.
+/// Syntax sugar for reification: b==1 <==> expr(b)==1.
+/// Sense: equivalence (0), impl(-1), rimpl (1).
+/// This is a static constraint.
+template <int sense>
+class NLBaseReif
+    : public BasicConstraint {
+public:
+  /// Constraint type name
+  static const char* GetTypeName() {
+    if (0==sense) return "NLReifEquiv";
+    if (-1==sense) return "NLReifImpl";
+    if (1==sense) return "NLReifRimpl";
     MP_RAISE("NLReif: unknown sense");
   }
 
@@ -228,7 +286,7 @@ public:
   static bool IsLogical() { return true; }
 
   /// Construct
-  NLReification(int b) : bvar_(b) { }
+  NLBaseReif(int b) : bvar_(b) { }
 
   /// Get bvar
   int GetBVar() const { return bvar_; }
@@ -243,17 +301,17 @@ private:
 };
 
 
-/// Typedef NLEquivalence
-using NLEquivalence = NLReification<0>;
-/// Typedef NLImpl
-using NLImpl = NLReification<-1>;
-/// Typedef NLRImpl
-using NLRimpl = NLReification<1>;
+/// Typedef NLReifEquiv
+using NLReifEquiv = NLBaseReif<0>;
+/// Typedef NLReifImpl
+using NLReifImpl = NLBaseReif<-1>;
+/// Typedef NLReifRImpl
+using NLReifRimpl = NLBaseReif<1>;
 
 /// Write a Reification
 template <int sense>
 inline void WriteJSON(JSONW jw,
-                      const NLReification<sense>& reif) {
+                      const NLBaseReif<sense>& reif) {
   jw["var_explicit_reif"] = reif.GetBVar();
   jw["sense"] = sense;
 }
@@ -261,7 +319,7 @@ inline void WriteJSON(JSONW jw,
 /// Write RhsCon without name.
 template <class Writer, int sense, class Names>
 inline void WriteModelItem(Writer& wrt,
-                           const NLReification<sense>& nlr,
+                           const NLBaseReif<sense>& nlr,
                            const Names& vnam) {
   wrt << "EXPLICIT REIF var: " << vnam.at(nlr.GetBVar());
 }

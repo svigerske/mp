@@ -233,15 +233,10 @@ public:
       ConstraintAcceptanceLevel , ExpressionAcceptanceLevel ) {
     return false;
   }
-  /// NLImpl: just produced.
+  /// NLBaseReif: just produced.
+  template <int sense>
   bool ConvertWithExpressions(
-      const NLImpl& , int ,
-      ConstraintAcceptanceLevel , ExpressionAcceptanceLevel ) {
-    return false;
-  }
-  /// NLRimpl: just produced.
-  bool ConvertWithExpressions(
-      const NLRimpl& , int ,
+      const NLBaseReif<sense>& , int ,
       ConstraintAcceptanceLevel , ExpressionAcceptanceLevel ) {
     return false;
   }
@@ -361,9 +356,9 @@ protected:
       MPD( MarkAsResultVar(exprResVar) );
     /// Exists and marked a variable
     if (MPCD( IsProperVar(exprResVar) )) {            // Not an expression after all
-      lt.add_term(1.0, exprResVar);
-      lt.sort_terms();
-      if (lt.size()>1) {                              // have other variables
+      lt.add_term(1.0, exprResVar);        // @todo When exprTerm was originally a var,
+      lt.sort_terms();                     // this would reproduce the original con.
+      if (lt.size()>1) {                              // ... has other variables
         if (MPCD( ModelAPIAcceptsAndRecommends(       // Accepts LinCon..
                 (const AlgebraicConstraint<LinTerms, RhsOrRange>*)nullptr) )) {
           AlgebraicConstraint<LinTerms, RhsOrRange> lc {lt, con.GetRhsOrRange(), false};
@@ -537,7 +532,7 @@ protected:
       MPD( AddConstraint(NLAssignGE(resvar)) );
   }
 
-  /// Add expr = var assignment (NLEquivalence, NLImpl, NLRImpl)
+  /// Add expr = var assignment (NLReifEquiv, NLReifImpl, NLRImpl)
   /// for logical expression.
   /// If this expression is root-level (is true),
   /// add root explicifier instead (NLLogical).
@@ -556,11 +551,11 @@ protected:
     else {                                                // A (half-)reified function constraint
       assert(!con.GetContext().IsNone());
       if (con.GetContext().IsMixed())
-        MPD( AddConstraint(NLEquivalence(resvar)) );
+        MPD( AddConstraint(NLReifEquiv(resvar)) );
       else if (con.GetContext().HasPositive())
-        MPD( AddConstraint(NLImpl(resvar)) );
+        MPD( AddConstraint(NLReifImpl(resvar)) );
       else
-        MPD( AddConstraint(NLRimpl(resvar)) );
+        MPD( AddConstraint(NLReifRimpl(resvar)) );
     }
   }
 

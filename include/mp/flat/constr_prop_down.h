@@ -322,11 +322,11 @@ public:
   /// Do nothing
   inline void PropagateResult(NLLogical& , double , double , Context ) { }
   /// Do nothing
-  inline void PropagateResult(NLEquivalence& , double , double , Context ) { }
+  inline void PropagateResult(NLReifEquiv& , double , double , Context ) { }
   /// Do nothing
-  inline void PropagateResult(NLImpl& , double , double , Context ) { }
+  inline void PropagateResult(NLReifImpl& , double , double , Context ) { }
   /// Do nothing
-  inline void PropagateResult(NLRimpl& , double , double , Context ) { }
+  inline void PropagateResult(NLReifRimpl& , double , double , Context ) { }
 
 };
 
