@@ -853,8 +853,10 @@ public:
     if (! (lb(bvar)==0.0 && ub(bvar)==1.0) )
       MP_RAISE("Asked to complement variable with bounds "
                              + std::to_string(lb(bvar)) + ".." + std::to_string(ub(bvar)));
-    AffineExpr ae({{-1.0}, {bvar}}, 1.0);
-    return MP_DISPATCH( Convert2Var(std::move(ae)) );
+    /// Algebraic way: AffineExpr ae({{-1.0}, {bvar}}, 1.0);
+    /// return MP_DISPATCH( Convert2Var(std::move(ae)) );
+    return
+        AssignResultVar2Args( NotConstraint{{bvar}} );
   }
 
   /// Add vector of variables. Type: var::CONTINUOUS by default

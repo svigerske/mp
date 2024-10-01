@@ -271,8 +271,12 @@ private:
   /// Get Expr for a variable, if proper/explicit,
   /// or for the InitExpression().
   Expr GetInitExpression(int i_expr) {
-    assert(i_expr < is_expr_stored_.size());
-    assert(i_expr < expr_stored_.size());
+    if (i_expr >= is_expr_stored_.size()) {
+      is_expr_stored_.resize(int(i_expr*1.3)+1);
+      expr_stored_.resize(int(i_expr*1.3)+1);
+      is_init_expr_retrieved_.resize(int(i_expr*1.3)+1);
+      is_var_proper_.resize(int(i_expr*1.3)+1);
+    }
     if (!is_expr_stored_[i_expr]) {
       is_expr_stored_[i_expr] = true;
       if (IsVarProper(i_expr)) {
@@ -295,9 +299,12 @@ private:
   /// @note GetInitExpression(\a i_expr) might still return
   ///   the Expr for the result variable \a i_expr.
   Expr GetPureInitExpression(int i_expr) {
-    assert(i_expr < is_expr_stored_.size());
-    assert(i_expr < expr_stored_.size());
-    assert(i_expr < is_init_expr_retrieved_.size());
+    if (i_expr >= is_expr_stored_.size()) {
+      is_expr_stored_.resize(int(i_expr*1.3)+1);
+      expr_stored_.resize(int(i_expr*1.3)+1);
+      is_init_expr_retrieved_.resize(int(i_expr*1.3)+1);
+      is_var_proper_.resize(int(i_expr*1.3)+1);
+    }
     assert(!is_init_expr_retrieved_[i_expr]);             // not twice explicified
     if (IsVarProper(i_expr)) {
       is_init_expr_retrieved_[i_expr] = true;             // is being explicified
