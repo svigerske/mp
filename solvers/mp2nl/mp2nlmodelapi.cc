@@ -804,7 +804,7 @@ void MP2NLModelAPI::FeedReification(
     auto args_rhs = args.OPut1(nl::NOT);
     args_rhs.EPut(GetExpression(e));
   } else {
-    auto args = ew.OPutN(nl::IFF, 2);
+    auto args = ew.OPut2(nl::IFF);
     auto args_lhs = args.OPut2(nl::EQ);
     args_lhs.VPut( GetNewVarIndex(GetVariable(e)) );
     args_lhs.NPut(1.0);
