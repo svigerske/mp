@@ -7,20 +7,20 @@
 # -------------------------------------------------------------
 
 var x >=-100, <=100;
-var y >=-100, <=100;
+var y >=-3, <=100;
 var z >=-100, <=100;
 
 minimize Obj1:
-    y - 2*x - 3*z;
+    y + 2*x + 3*z;
 
 subj to C1:
        x+y >= 1;
 
 subj to C2:
-       y + max(3, z + abs(x+3)) <= 1.83;
+       y + max(3, abs(z) + abs(x+3)) <= 4.83;
 
 subj to C3:
-       z + log(y + 3.8*exp(x+3)) >= -14.265;
+       z + log(y + 3.8*sin(x+3)) >= -14.265;
 
 
 suffix funcpieces IN;

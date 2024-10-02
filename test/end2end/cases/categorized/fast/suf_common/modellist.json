@@ -159,9 +159,10 @@
     }
   },
   {
-    "name": "funcpieces_02",
+    "name": "funcpieces_02 sin log max abs",
     "tags": [ "nonlinear", "funcpieces" ],
     "options": { "ANYSOLVER_options": "debug=1" },
+    "objective": -2.32,
     "values": {
       "Initial.test_funcpieces_presolved": 50
     }
