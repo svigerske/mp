@@ -107,7 +107,7 @@ public:
   USE_BASE_CONSTRAINT_HANDLERS(BaseModelAPI)
 
   //////////////////////////// EXPRESSION TREES ////////////////////////////
-  /// Hanlde expression trees: inherit basic API
+	/// Handle expression trees: inherit basic API
   USE_BASE_EXPRESSION_HANDLERS(BaseModelAPI)
 
 
@@ -414,7 +414,6 @@ public:
   Expr AddExpression(const CosExpression& );
 
   // TODO Div; PowVarVar;
-  // CondLin...
 
 
 public:

@@ -158,9 +158,6 @@ int MP2NLBackend::BarrierIterations() const {
   return 0;
 }
 
-void MP2NLBackend::ExportModel(const std::string &file) {
-}
-
 
 void MP2NLBackend::SetInterrupter(mp::Interrupter *inter) {
   // TODO
@@ -535,7 +532,6 @@ void MP2NLBackend::AddMIPStart(
 }
 
 void MP2NLBackend::DoWriteProblem(const std::string& name) {
-  ExportModel(name);
 }
 
 } // namespace mp

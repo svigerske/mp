@@ -19,17 +19,18 @@ using SmallVec = gch::small_vector<T, N>;
 template <class T>
 using SmallVecDefSz = gch::small_vector<T>;
 
-/// Grow vector capacity by a factor if needed.
-/// @return reference to the element at \a i.
+/// Grow vector capacity by a factor if needed;
+/// set vec[i] = v.
 /// @note better preallocate, or call in the reverse order of indexes.
 template <class Vec>
-auto AutoExpand(Vec& vec, typename Vec::size_type i) {
+void AutoExpand(
+		Vec& vec, typename Vec::size_type i, typename Vec::value_type v) {
   if (vec.size()<=i) {
     if (vec.capacity()<=i)
       vec.reserve(((i+1)*13)/10);
     vec.resize(i+1);
   }
-  return vec[i];
+	vec[i] = std::move(v);
 }
 
 }  // namespace mp

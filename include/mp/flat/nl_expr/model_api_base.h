@@ -124,6 +124,12 @@ public:
     return nlc.GetMainCon().ub();
   }
 
+  /// NLAssign constraint name.
+  template <int sense>
+  const char* GetName(const NLBaseAssign<sense>& nll) {
+    return nll.GetName();
+  }
+
   /// Get the expression term of an \a NLBaseAssign,
   /// i.e., NLAssignLE, NLAssignEQ, NLAssignGE.
   /// @note For each such 'explicification' constraint,
@@ -271,7 +277,7 @@ private:
   /// Get Expr for a variable, if proper/explicit,
   /// or for the InitExpression().
   Expr GetInitExpression(int i_expr) {
-    if (i_expr >= is_expr_stored_.size()) {
+		if (i_expr >= (int)is_expr_stored_.size()) {
       is_expr_stored_.resize(int(i_expr*1.3)+1);
       expr_stored_.resize(int(i_expr*1.3)+1);
       is_init_expr_retrieved_.resize(int(i_expr*1.3)+1);
@@ -299,7 +305,7 @@ private:
   /// @note GetInitExpression(\a i_expr) might still return
   ///   the Expr for the result variable \a i_expr.
   Expr GetPureInitExpression(int i_expr) {
-    if (i_expr >= is_expr_stored_.size()) {
+		if (i_expr >= (int)is_expr_stored_.size()) {
       is_expr_stored_.resize(int(i_expr*1.3)+1);
       expr_stored_.resize(int(i_expr*1.3)+1);
       is_init_expr_retrieved_.resize(int(i_expr*1.3)+1);

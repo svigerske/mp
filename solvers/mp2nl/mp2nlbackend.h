@@ -134,7 +134,6 @@ public:  // public for static polymorphism
   //////////////////// [[ Implementation details ]] //////////////////////
   ///////////////////////////////////////////////////////////////////////////////
 protected:
-  void ExportModel(const std::string& file);
 
   double ObjectiveValue() const;
 

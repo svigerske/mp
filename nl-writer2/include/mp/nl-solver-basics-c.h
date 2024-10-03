@@ -113,7 +113,7 @@ typedef struct NLW2_NLOptionsBasic_C {
 } NLW2_NLOptionsBasic_C;
 
 /// Use this to create default NL options for NLModel.
-NLW2_NLOptionsBasic_C NLW2_MakeNLOptionsBasic_C_Default();
+NLW2_NLOptionsBasic_C NLW2_MakeNLOptionsBasic_C_Default(void);
 
 /// NLW2_WriteNLResultCode enum.
 enum NLW2_WriteNLResultCode {

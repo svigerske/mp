@@ -576,7 +576,7 @@ protected:
   void AddAllUnbridged(BasicFlatModelAPI& be,
                        const std::vector<std::string>* pvnam) {
     auto con_group = GetConstraintGroup(be);
-    for ( ; i_2add_next_ < cons_.size(); ++i_2add_next_) {
+		for ( ; i_2add_next_ < (int)cons_.size(); ++i_2add_next_) {
       const auto& cont = cons_[i_2add_next_];
       bool adding = !cont.IsBridged();            // includes 'unused'
       if (adding) {

@@ -742,7 +742,7 @@ template <class AlgMPExpr, class ExprWriter>
 void MP2NLModelAPI::FeedAlgebraic(
     const AlgMPExpr& e, ExprWriter& ew) {
   int n_args = GetLinSize(e) + GetQuadSize(e) + bool(GetConstTerm(e));
-  auto write_args = [&,this](const auto& e, auto ew_args0) {
+	auto write_args = [&](const auto& e, auto ew_args0) {
     for (int i=0; i<GetLinSize(e); ++i) {
       if (1.0==GetLinCoef(e, i))
         ew_args0.EPut(GetLinTerm(e, i));
@@ -946,12 +946,12 @@ void MP2NLModelAPI::FeedSuffixes(SuffixWriterFactory& swf) {
 
 template <class ColNameWriter>
 void MP2NLModelAPI::FeedRowAndObjNames(ColNameWriter& wrt) {
-  auto has_name0 = [this](const auto& infos) {
+	auto has_name0 = [](const auto& infos) {
     return infos.size() && infos.front().GetDispatcher().GetName(infos.front().GetPItem());
   };
   if ((has_name0(alg_con_info_)
        || has_name0(log_con_info_) || has_name0(obj_info_)) && wrt) {
-    auto write_names = [this,&wrt](const auto& infos) {
+		auto write_names = [&wrt](const auto& infos) {
       for (size_t i=0; i<infos.size(); ++i) {
         const auto* nm
             = infos[i].GetDispatcher().GetName(infos[i].GetPItem());
