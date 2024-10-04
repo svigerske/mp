@@ -139,6 +139,11 @@
     "tags" : ["logical"]
   },
   {
+    "name" : "int_ne_04__2ne",
+    "objective" : 1,
+    "tags" : ["logical"]
+  },
+  {
     "name" : "float_ne_01__vnec cvt:mip:eps",
     "options": {
       "ANYSOLVER_options": "cvt:mip:eps=0.01"

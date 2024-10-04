@@ -79,15 +79,16 @@ public:
 #ifndef USE_FLAT_ALGEBRA
       auto bNt = GetMC().ComputeBoundsAndType(con.GetBody());
       double cmpEps = GetMC().ComparisonEps( bNt.get_result_type() );
-      /// res3 = (body <= rhs-eps || body >= rhs+eps)
+      /// res3 <==> (res || body <= rhs-eps || body >= rhs+eps)
       auto res3 = GetMC().AssignResultVar2Args(
           OrConstraint{ {
-              GetMC().AssignResultVar2Args(   // <=
-                            ConditionalConstraint< AlgCon<-1> >
-                            { { con.GetBody(), con.rhs() - cmpEps } }),
-              GetMC().AssignResultVar2Args(   // >=
-                  ConditionalConstraint< AlgCon<1> >
-                            { { con.GetBody(), con.rhs() + cmpEps } })
+            res,
+            GetMC().AssignResultVar2Args(   // <=
+                ConditionalConstraint< AlgCon<-1> >
+                { { con.GetBody(), con.rhs() - cmpEps } }),
+            GetMC().AssignResultVar2Args(   // >=
+                ConditionalConstraint< AlgCon<1> >
+                { { con.GetBody(), con.rhs() + cmpEps } })
           } });
       GetMC().FixAsTrue(res3);
 #else  // USE_FLAT_ALGEBRA
