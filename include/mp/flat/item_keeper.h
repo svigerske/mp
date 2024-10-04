@@ -300,7 +300,8 @@ public:
   using BaseConverter::PreprocessConstraint; \
       using BaseConverter::PropagateResult; \
       using BaseConverter::IfHasCvt_impl; \
-      using BaseConverter::IfNeedsCvt_impl; \
+  using BaseConverter::IfNeedsCvt_impl; \
+  using BaseConverter::IfDelayCvt_impl; \
       using BaseConverter::Convert
 
 

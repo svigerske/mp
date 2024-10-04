@@ -355,6 +355,8 @@ protected:
 public: // for ConstraintKeeper
   /// RunConversion() of a constraint in the flat phase:
   /// Assume mixed context if not set.
+  /// @note Do not use directly. Call via
+  ///   ConstraintKeeper.ConvertConstraint().
   template <class Constraint>
   void RunConversion(const Constraint& con, int i, int depth) {
     assert(
@@ -420,6 +422,28 @@ public: // for ConstraintKeeper
   /// (see class PowConstExponentConverter_MIP).
   template <class Constraint>
   bool IfNeedsCvt_impl(const Constraint& , int ) {
+    return false;
+  }
+
+  /// Query if the specific item of the constraint
+  /// needs to be skipped in regular conversion,
+  /// despite being not accepted by the ModelAPI.
+  /// For example, some conditional comparisons.
+  /// This method should not be redefined;
+  /// specialize IfNeedsCvt_impl instead.
+  template <class Constraint>
+  bool IfDelayConversion(const Constraint& con, int i) {
+    return MPD( IfDelayCvt_impl(con, i) );
+  }
+
+  /// Generic query if a constraint needs to be
+  /// skipped from regular conversion,
+  /// despite being not accepted by the ModelAPI.
+  /// Specialize this method, or even
+  /// ConstraintConverter::IfDelayConversion
+  /// (see class CondEQConverter_MIP).
+  template <class Constraint>
+  bool IfDelayCvt_impl(const Constraint& , int ) {
     return false;
   }
 

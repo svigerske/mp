@@ -272,8 +272,10 @@ protected:
       MP_RAISE("Repeated map conversion cycle");
     for (const auto& m: map_vars_eq_const_) {
       if (!IsUEncAprioriExcluded(m.first)) {  // else it's all done
-        if (!WentWithoutEqEncForVar(m.first, m.second))
+        if (!WentWithoutEqEncForVar(m.first, m.second)) {
           ConvertEqVarConstMap(m.first, m.second);
+          MarkUnusedConditionals(m.first, m.second);
+        }
       }
     }
     // 2. Initiate possible conversions into big-M's
@@ -282,7 +284,8 @@ protected:
 
   /// Aposteriori decide & reformulate cond equalities
   /// without unary encoding?
-  bool WentWithoutEqEncForVar(int var, const SingleVarEqConstMap& map) {
+  bool WentWithoutEqEncForVar(
+      int var, const SingleVarEqConstMap& map) {
     if (DontNeedEqEncForVar(var, map)) {
       GoWithoutEqEnc(var, map);
       return true;
@@ -291,7 +294,8 @@ protected:
   }
 
   /// @return true if don't need UEnc for var _aposteriori_
-  bool DontNeedEqEncForVar(int var, const SingleVarEqConstMap& map) {
+  bool DontNeedEqEncForVar(
+      int var, const SingleVarEqConstMap& map) {
     if (IsUEncAprioriExcluded(var))
       return true;
     double dom_rng = MPCD(ub(var))-MPCD(lb(var))+1;
@@ -305,20 +309,18 @@ protected:
       if (con.GetContext().HasNegative())
         ++nNegCtx;
     }  // When up to 1 value in negative ctx, allow indicators.
-    // Example:
+    // Example. x is conditionally equated to a single value 5:
     // x==5 ==> ...
     return nNegCtx <= options_.NoUEncNegCtxMax_;
   }
 
   /// Manually convert all comparisons for this variable
   void GoWithoutEqEnc(int , const SingleVarEqConstMap& map) {
-    const auto& ck = GET_CONSTRAINT_KEEPER(CondLinConEQ);
+    auto& ck = GET_CONSTRAINT_KEEPER(CondLinConEQ);
     // 1. Convert the ConLinEq's into indicators.
     // Make sure IfMightUseEqualityEncoding() returns false.
     for (const auto& el: map) {
-      const auto& con = ck.GetConstraint(el.second);
-      MPD( RunConversion(
-             con, el.second, ck.GetConstraintDepth(el.second)) );
+      ck.ConvertConstraint(el.second);
     }
     // 2. Initiate possible conversions into big-M's
     //    - done later for all.
@@ -380,6 +382,15 @@ protected:
     }
     coefs.push_back(-1.0);
     this->AddConstraint(LinConEQ({coefs, unaryEncVars}, 0.0));
+  }
+
+  /// Mark unused CondLinEQ's which were replaced by UEnc
+  void MarkUnusedConditionals(int var, const SingleVarEqConstMap& map) {
+    auto& ck = GET_CONSTRAINT_KEEPER(CondLinConEQ);
+    for (const auto& el: map) {
+      assert(!ck.IsRedundant(el.second));
+      ck.MarkAsBridged(el.second);
+    }
   }
 
   ///////////////////////////////////////////////////////////////////////

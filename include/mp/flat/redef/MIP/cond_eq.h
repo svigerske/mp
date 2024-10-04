@@ -31,20 +31,20 @@ public:
   /// Converted item type
   using ItemType = ConditionalConstraint< AlgCon<0> >;
 
-  /// Reuse Base::Convert() template but ...
-  using Base::Convert;
+  /// Reuse
+  using Base::IfDelayConversion;
 
-  /// ... but reimplement Convert() for \a CondLinConEQ
-  /// only: add filter
-  void Convert(const CondLinConEQ& eq0c, int i) {
-    assert(!eq0c.GetContext().IsNone());
+  /// Generic check whether the constraint
+  /// needs to be skipped from conversion,
+  /// despite being not accepted by ModelAPI.
+  /// Reimplementing for the linear case.
+  bool IfDelayConversion(const CondLinConEQ& eq0c, int ) {
     const auto& args = eq0c.GetArguments();
-    if (1<args.size() ||               // >1 variable
-        !GetMC().IfMightUseEqualityEncodingForVar(
-          args.var(0))) {
-      Base::Convert(eq0c, i); // Calls ConvertCtxPos / Neg
-    } // else, might use unary encoding whose flags are,
-  }   // in the fixed case, fixed by PropagateResult()
+    return 1==args.size() &&               // 1 variable
+        GetMC().IfMightUseEqualityEncodingForVar(
+            args.var(0));
+  } // If yes, might use unary encoding whose flags are,
+    // in the fixed case, fixed by PropagateResult()
 
   /// Convert in positive context
   /// resvar==1 => body==d

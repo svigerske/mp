@@ -76,8 +76,9 @@ public:
   { assert(check_index(i)); return cons_[i].GetCon(); }
 
   /// Is item \a i already bridged or abandoned?
-  bool IsRedundant(int i) const
-  { return cons_[i].IsBridged() || cons_[i].IsUnused(); }
+  bool IsRedundant(int i) const {
+    return cons_[i].IsBridged() || cons_[i].IsUnused();
+  }
 
   /// Get constraint depth in the reformulation tree
   int GetConstraintDepth(int i) const
@@ -338,7 +339,8 @@ protected:
         i = (int)cons_.size();
       } else {
         for ( ; ++i!=(int)cons_.size(); )
-          if (!cons_[i].IsBridged())
+          if (!cons_[i].IsBridged() &&
+              !GetConverter().IfDelayConversion(cons_[i].GetCon(), i))
             ConvertConstraint(cons_[i], i);
       }
     }
@@ -408,7 +410,15 @@ protected:
         });
   }
 
-	/// Call Converter's RunConversion() and mark as "bridged".
+public:
+  /// Call Converter's RunConversion() and mark as "bridged".
+  /// @param i constraint index
+  void ConvertConstraint(int i) {
+    ConvertConstraint(cons_[i], i);
+  }
+
+protected:
+  /// Call Converter's RunConversion() and mark as "bridged".
   ///
 	/// @param cnt the constraint container -
   ///   actually redundant, as \a i is enough to find it. But for speed.

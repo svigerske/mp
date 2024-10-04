@@ -24,6 +24,16 @@ public:
     return false;
   }
 
+  /// Generic check whether the constraint
+  /// needs to be skipped from conversion,
+  /// despite being not accepted by ModelAPI.
+  /// Example: CondLinEQ(x == const).
+  /// Default: false.
+  template <class ItemType>
+  bool IfDelayConversion(const ItemType& , int ) {
+    return false;
+  }
+
   /// Access const ModelConverter
   const ModelConverter& GetMC() const { return mdl_cvt_; }
   /// Access ModelConverter
@@ -109,6 +119,11 @@ public:
       item_cvt_type<Impl>::ItemType& con, int i) { \
     return item_cvt__ ## item_cvt_type ## _ . \
       IfNeedsConversion(con, i); \
+  } \
+  bool IfDelayCvt_impl(const typename \
+                     item_cvt_type<Impl>::ItemType& con, int i) { \
+      return item_cvt__ ## item_cvt_type ## _ . \
+      IfDelayConversion(con, i); \
   } \
   void Convert(const typename \
       item_cvt_type<Impl>::ItemType& con, int i) { \
