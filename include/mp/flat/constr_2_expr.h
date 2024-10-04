@@ -49,7 +49,7 @@ public:
   /// possible expressions
   template <class Con>
   void ConsiderMarkingResultVar(
-      const Con& con, int , ExpressionAcceptanceLevel eal) {
+      const Con& con, int i, ExpressionAcceptanceLevel eal) {
     assert(ExpressionAcceptanceLevel::NotAccepted!=eal);
     if (con.HasResultVar()) {         // A functional constraint
       assert(                     // Check: the result var has \a con as the init expr
@@ -477,8 +477,12 @@ protected:
   void Convert1ObjWithExpressions(int iobj, QuadraticObjective& qobj) {
     LinTerms lt_varsonly;
     LinTerms lt_in_expr = SplitLinTerms(qobj.GetLinTerms(), lt_varsonly);
-    // Have expression(s) or QP terms? Need to hide them into the expression part
-    if (lt_in_expr.size() || qobj.GetQPTerms().size()) {
+    // Have expression(s) or QP terms?
+    // Might need to hide them into the expression part
+    if (lt_in_expr.size()
+        || (qobj.GetQPTerms().size()
+            && (!MPCD(IfPassQuadObj())         // cannot or want not
+                || HasExpressionArgs(qobj.GetQPTerms())))) {
       int exprResVar = -1;
       if (lt_in_expr.is_variable() && qobj.GetQPTerms().empty()) {
         exprResVar = lt_in_expr.get_representing_variable();
@@ -490,10 +494,12 @@ protected:
         if (qobj.GetQPTerms().empty())
           exprResVar = MPD( AssignResultVar2Args(
               LinearFunctionalConstraint{ {lt_in_expr, 0.0} } ) );
-        else                        // Move QP terms into the expr
+        else {                       // Move QP terms into the expr
           exprResVar = MPD( AssignResultVar2Args(
               QuadraticFunctionalConstraint
               { {{lt_in_expr, std::move(qobj.GetQPTerms())}, 0.0} } ) );
+          qobj.GetQPTerms().clear();           // std::move() does not clear
+        }
         MPD( AddInitExprContext(exprResVar,             // Context is compulsory
                                obj::MAX==qobj.obj_sense_true()    // no need to propagate
                                    ? Context::CTX_POS : Context::CTX_NEG) );

@@ -53,7 +53,7 @@ protected:
     }
     // Sort linear body
     lin_terms.sort_terms();
-    GetMC().AddConstraint( LinConRhs< sens >{
+    GetMC().AddConstraint_AS_ROOT( LinConRhs< sens >{
                              lin_terms, qc.GetRhsOrRange() } );
   }
 

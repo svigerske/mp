@@ -239,12 +239,12 @@ public:
   /// Mark as an explicit result variable
   /// @todo AutoExpand fills 'false' for new elements...
   void MarkAsResultVar(int v) {
-		AutoExpand(var_result_, v, true);
+    AutoExpand(var_result_, v, true);
   }
 
   /// Mark as a proper expression
   void MarkAsExpression(int v) {
-		AutoExpand(var_result_, v, false);
+    AutoExpand(var_result_, v, false);
   }
 
   /// Variable has expr marking?
@@ -267,7 +267,7 @@ public:
 
   /// Mark var as eliminated.
   void MarkVarAsEliminated(int v) {
-		AutoExpand(var_elim_, v, true);
+    AutoExpand(var_elim_, v, true);
   }
 
 

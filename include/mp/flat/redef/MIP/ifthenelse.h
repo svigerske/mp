@@ -36,15 +36,19 @@ protected:
     assert((GetMC().is_fixed(args[1]) && GetMC().is_fixed(args[2])));
     const double const1 = GetMC().fixed_value(args[1]);
     const double const2 = GetMC().fixed_value(args[2]);
-    // Obtain result variable via map
-    int var_res_lin = GetMC().AssignResultVar2Args(
-          LinearFunctionalConstraint(
-            { {{const1-const2}, {args[0]}}, const2 } ));
-    // TODO just redefine init expr
-    GetMC().AddConstraint(LinConEQ{
-                            { {-1.0, 1.0},
-                              {itc.GetResultVar(), var_res_lin} },
-                            {0.0}});
+    auto funccon = LinearFunctionalConstraint(
+        { {{const1-const2}, {args[0]}}, const2 } );
+    funccon.SetContext( GetMC().GetInitExprContext(itc.GetResultVar()) );
+    GetMC().RedefineVariable(itc.GetResultVar(), std::move(funccon));
+        // Old way, no expression: // Obtain result variable via map
+    // int var_res_lin = GetMC().AssignResultVar2Args(
+    //       LinearFunctionalConstraint(
+    //         { {{const1-const2}, {args[0]}}, const2 } ));
+    // // TODO just redefine init expr
+    // GetMC().AddConstraint(LinConEQ{
+    //                         { {-1.0, 1.0},
+    //                           {itc.GetResultVar(), var_res_lin} },
+    //                         {0.0}});
   }
 
   void ConvertIfThen_variableThenElse(const IfThenConstraint& itc) {
