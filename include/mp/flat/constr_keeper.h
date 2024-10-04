@@ -75,6 +75,10 @@ public:
   Constraint& GetConstraint(int i)
   { assert(check_index(i)); return cons_[i].GetCon(); }
 
+  /// Is item \a i already bridged or abandoned?
+  bool IsRedundant(int i) const
+  { return cons_[i].IsBridged() || cons_[i].IsUnused(); }
+
   /// Get constraint depth in the reformulation tree
   int GetConstraintDepth(int i) const
   { assert(check_index(i)); return cons_[i].GetDepth(); }

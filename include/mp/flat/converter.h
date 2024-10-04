@@ -357,6 +357,8 @@ public: // for ConstraintKeeper
   /// Assume mixed context if not set.
   template <class Constraint>
   void RunConversion(const Constraint& con, int i, int depth) {
+    assert(
+        !GET_CONSTRAINT_KEEPER(Constraint).IsRedundant(i));
     constr_depth_ = depth+1;
     if (con.UsesContext())              // If context relevant,
       if (con.GetContext().IsNone())    // ensure we have context, mixed if none

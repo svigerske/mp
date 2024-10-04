@@ -180,17 +180,33 @@ public:
     MP_DISPATCH( ConvertEqVarConstMaps() );
   }
 
-  /// Whether might use equality encoding for \a var
+  /// Whether might use equality encoding for \a var.
+  /// @return false when UEnc apriori not applicable
   bool IfMightUseEqualityEncodingForVar(int var) const {
     if (n_map_cvt_cycles_)   // we've started map conversion
       return false;
-    if (!MPCD(is_var_integer(var)))
+    if (IsUEncAprioriExcluded(var))
       return false;
+    if (!MPCD(is_var_integer(var))) {
+      ExcludeUEncApriori(var);
+      return false;
+    }
     const auto lb_dbl = this->lb(var);
     const auto ub_dbl = this->ub(var);
-    return (lb_dbl>std::numeric_limits<int>::min() &&
-            ub_dbl<std::numeric_limits<int>::max()) &&
-        (ub_dbl-lb_dbl <= 10000000);
+    bool fMight = (lb_dbl>std::numeric_limits<int>::min() &&
+                   ub_dbl<std::numeric_limits<int>::max()) &&
+                  (ub_dbl-lb_dbl <= 10000000);
+    if (!fMight)
+      ExcludeUEncApriori(var);
+    return fMight;
+  }
+
+  /// Mark variable as "apriori no UEnc"
+  void ExcludeUEncApriori(int var) const
+  { set_vars_noUEnc_apriori_.insert(var); }
+  /// Is var apriori not for UEnc?
+  bool IsUEncAprioriExcluded(int var) const {
+    return set_vars_noUEnc_apriori_.end() != set_vars_noUEnc_apriori_.find(var);
   }
 
   /// Obtain extended column \a k of ZZI encoding C^r
@@ -206,8 +222,11 @@ private:
   using SingleVarEqConstMap = std::unordered_map<double, int>;
   /// A map keeping such maps for certain variables
   using VarsEqConstMap = std::unordered_map<int, SingleVarEqConstMap>;
+  /// A set for variables not subject to UEncoding apriori
+  using AprioriNoUEncSet = std::unordered_set<int>;
 
   VarsEqConstMap map_vars_eq_const_;
+  mutable AprioriNoUEncSet set_vars_noUEnc_apriori_;
   int n_map_cvt_cycles_ = 0;      // number of cycles for map conversion
 
   P_ZZI_Encoding p_zzi_ { MakeZZIEncoding() };
@@ -252,14 +271,17 @@ protected:
     if (n_map_cvt_cycles_++)
       MP_RAISE("Repeated map conversion cycle");
     for (const auto& m: map_vars_eq_const_) {
-      if (!WentWithoutEqEncForVar(m.first, m.second))
-        ConvertEqVarConstMap(m.first, m.second);
+      if (!IsUEncAprioriExcluded(m.first)) {  // else it's all done
+        if (!WentWithoutEqEncForVar(m.first, m.second))
+          ConvertEqVarConstMap(m.first, m.second);
+      }
     }
     // 2. Initiate possible conversions into big-M's
     MPD( ConvertAllConstraints() );
   }   // But why the map then?
 
-  /// Managed to reformulate cond equalities without unary encoding?
+  /// Aposteriori decide & reformulate cond equalities
+  /// without unary encoding?
   bool WentWithoutEqEncForVar(int var, const SingleVarEqConstMap& map) {
     if (DontNeedEqEncForVar(var, map)) {
       GoWithoutEqEnc(var, map);
@@ -268,8 +290,10 @@ protected:
     return false;
   }
 
-  /// @return true if don't need UEnc for var
+  /// @return true if don't need UEnc for var _aposteriori_
   bool DontNeedEqEncForVar(int var, const SingleVarEqConstMap& map) {
+    if (IsUEncAprioriExcluded(var))
+      return true;
     double dom_rng = MPCD(ub(var))-MPCD(lb(var))+1;
     if (options_.NoUEncPosCtxRatio_ * map.size()   // Use UEnc if >
         > dom_rng)

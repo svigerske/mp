@@ -76,6 +76,22 @@ public:
     } else if ( !GetMC().is_fixed(res) ||   // not fixed, or
                 !GetMC().fixed_value(res) ) // fixed to 0
     {
+#ifndef USE_FLAT_ALGEBRA
+      auto bNt = GetMC().ComputeBoundsAndType(con.GetBody());
+      double cmpEps = GetMC().ComparisonEps( bNt.get_result_type() );
+      /// res3 = (body <= rhs-eps || body >= rhs+eps)
+      auto res3 = GetMC().AssignResultVar2Args(
+          OrConstraint{ {
+              GetMC().AssignResultVar2Args(   // <=
+                            ConditionalConstraint< AlgCon<-1> >
+                            { { con.GetBody(), con.rhs() - cmpEps } }),
+              GetMC().AssignResultVar2Args(   // >=
+                  ConditionalConstraint< AlgCon<1> >
+                            { { con.GetBody(), con.rhs() + cmpEps } })
+          } });
+      GetMC().FixAsTrue(res3);
+#else  // USE_FLAT_ALGEBRA
+      // Old way: straight to algebra and indicators
       auto con = eq0c.GetArguments();
       auto newvars = GetMC().AddVars_returnIds(2, 0.0, 1.0, var::INTEGER);
       newvars.push_back( res );
@@ -94,6 +110,7 @@ public:
                               newvars[1], 1,
                             { con.GetBody(),
                               con.rhs() + cmpEps }));
+#endif  // USE_FLAT_ALGEBRA
     } // else, skip
   }
 

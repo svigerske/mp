@@ -22,6 +22,17 @@ public:
 
   /// Convert in both contexts (full reification)
   void Convert(const ItemType& nc, int ) {
+    if (GetMC().is_fixed(nc.GetResultVar())) {           // fixed result?
+      assert(GetMC().is_fixed(nc.GetArguments()[0]));    // propagated down
+      assert(GetMC().fixed_value(nc.GetResultVar())
+             == 1.0 - GetMC().fixed_value(nc.GetArguments()[0]));
+      return;
+    }
+    if (GetMC().is_fixed(nc.GetArguments()[0])) {
+      auto resval = 1.0 - GetMC().fixed_value(nc.GetArguments()[0]);
+      GetMC().NarrowVarBounds(nc.GetResultVar(), resval, resval);
+      return;
+    }
     LinearFunctionalConstraint funccon {{{{-1.0}, {nc.GetArguments()[0]}}, 1.0}};
     funccon.SetContext( GetMC().GetInitExprContext(nc.GetResultVar()) );
     GetMC().RedefineVariable(nc.GetResultVar(), std::move(funccon));

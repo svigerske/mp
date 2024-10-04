@@ -147,6 +147,14 @@
     "tags" : ["logical"]
   },
   {
+    "name" : "float_ne_02__vne2c cvt:mip:eps",
+    "options": {
+      "ANYSOLVER_options": "cvt:mip:eps=0.01"
+    },
+    "objective" : 0.01,
+    "tags" : ["logical"]
+  },
+  {
     "name" : "booleq_01",
     "options": {
       "ANYSOLVER_options": "cvt:bigm=1e5"
