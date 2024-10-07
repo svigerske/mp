@@ -386,8 +386,9 @@ protected:
         if (auto lhs_args = CheckSqrtXnXmNonneg(lint.var(iX)))
           return ContinueRotatedSOC(lint, iX, iY,
                                     lhs_args, rhs_args);
-        return ContinueStdSOC(lint.coef(iX), lint.var(iX),
-                              lint.coef(iY), rhs_args);
+        if (!rhs_args.is_from_abs_)          // not x >= abs(...)
+          return ContinueStdSOC(lint.coef(iX), lint.var(iX),
+                                lint.coef(iY), rhs_args);
       }
     } else if (1 == lint.size() &&           // const>=y.
                0.0 >= rhs*sens &&            // either ... <= rhs
@@ -396,9 +397,10 @@ protected:
       // it's -k*sqrt(...) <= rhs(>0), k>0,
       // which is always true TODO
       if (auto rhs_args = CheckNorm2(lint.var(0))) {
-        return ContinueStdSOC(std::fabs(rhs),
-                              int( MC().MakeFixedVar( 1.0 ) ),
-                              lint.coef(0), rhs_args);
+        if (!rhs_args.is_from_abs_)          // not const >= abs(...)
+          return ContinueStdSOC(std::fabs(rhs),
+                                int( MC().MakeFixedVar( 1.0 ) ),
+                                lint.coef(0), rhs_args);
       }
     }
     return false;
@@ -407,6 +409,7 @@ protected:
   /// Typedef for subexpression checkup result,
   /// whether it represents some part of an SOCP cone.
   struct ConeArgs {
+    bool is_from_abs_ {};            // No StdCone then
     std::vector<double> coefs_;
     std::vector<int> vars_;
     double const_term = 0.0;
@@ -488,6 +491,7 @@ protected:
     result.coefs_ = { 1.0 };
     result.vars_ = { arg_abs };
     result.res_vars_to_delete_ = { res_var };
+    result.is_from_abs_ = true;
     return result;
   }
 

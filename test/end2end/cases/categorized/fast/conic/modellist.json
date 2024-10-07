@@ -92,6 +92,14 @@
     }
   },
   {
+    "name" : "socp_13_abs_stdcone",
+    "tags" : ["socp"],
+    "objective" : -40,
+    "values": {
+      "solve_result_num": 0
+    }
+  },
+  {
     "name" : "expcones_01__plain",
     "objective" : 0.7821882953,
     "tags" : ["expcones"]

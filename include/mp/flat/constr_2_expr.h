@@ -698,6 +698,7 @@ protected:
       ck.ConvertConstraint(ie.GetIndex());
       return true;
     }
+    return false;
   }
 
 
