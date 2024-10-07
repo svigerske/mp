@@ -156,6 +156,7 @@ public:
     if (2==stage_cvt2expr_) {
       return ConsiderExplicifyingAlgebraic(con, i);
     }
+    return false;
   }
 
   /// Special handling for LinearFunctionalConstraint
@@ -165,6 +166,7 @@ public:
     if (2==stage_cvt2expr_) {
       return ConsiderExplicifyingAlgebraic(con, i);
     }
+    return false;
   }
 
   /// Convert complementarity constraint for use with expressions.
@@ -690,12 +692,11 @@ protected:
           || HasExpressionArgs(con.GetArguments())) {
         DoExplicify(con, i);          // as other explicified expressions
         return false;
-      } else {
-        auto& ck = GET_CONSTRAINT_KEEPER(AlgFuncCon);
-        const auto& ie = MPD( GetInitExpression(con.GetResultVar()) );
-        ck.ConvertConstraint(ie.GetIndex());
-        return true;
       }
+      auto& ck = GET_CONSTRAINT_KEEPER(AlgFuncCon);
+      const auto& ie = MPD( GetInitExpression(con.GetResultVar()) );
+      ck.ConvertConstraint(ie.GetIndex());
+      return true;
     }
   }
 
