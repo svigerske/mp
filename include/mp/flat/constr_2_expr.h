@@ -149,6 +149,24 @@ public:
     return false;                          // leave it active
   }
 
+  /// Special handling for LinearFunctionalConstraint
+  bool ConvertWithExpressions(
+      const LinearFunctionalConstraint& con, int i,
+      ConstraintAcceptanceLevel , ExpressionAcceptanceLevel eal) {
+    if (2==stage_cvt2expr_) {
+      return ConsiderExplicifyingAlgebraic(con, i);
+    }
+  }
+
+  /// Special handling for LinearFunctionalConstraint
+  bool ConvertWithExpressions(
+      const QuadraticFunctionalConstraint& con, int i,
+      ConstraintAcceptanceLevel , ExpressionAcceptanceLevel eal) {
+    if (2==stage_cvt2expr_) {
+      return ConsiderExplicifyingAlgebraic(con, i);
+    }
+  }
+
   /// Convert complementarity constraint for use with expressions.
   /// Similarly to Conditional, we need the expression part to be an NL expression.
   /// @return true if this constraint has been eliminated/replaced.
@@ -657,6 +675,27 @@ protected:
         MPD( AddConstraint(NLReifImpl(resvar)) );
       else
         MPD( AddConstraint(NLReifRimpl(resvar)) );
+    }
+  }
+
+  /// Special handling for algebraic functional constraints (LFC, QFC)
+  /// @return whether the \a con should be deleted
+  template <class AlgFuncCon>
+  bool ConsiderExplicifyingAlgebraic(const AlgFuncCon& con, int i) {
+    if (MPCD( IsProperVar(con.GetResultVar()) )) {
+      using TargetCon = AlgebraicConstraint<
+          std::decay_t<decltype(con.GetArguments().GetBody())>,
+          AlgConRhs<0> >;  // @todo can be ,=, >=
+      if (!MPCD( template ModelAPIOk< TargetCon >() )
+          || HasExpressionArgs(con.GetArguments())) {
+        DoExplicify(con, i);          // as other explicified expressions
+        return false;
+      } else {
+        auto& ck = GET_CONSTRAINT_KEEPER(AlgFuncCon);
+        const auto& ie = MPD( GetInitExpression(con.GetResultVar()) );
+        ck.ConvertConstraint(ie.GetIndex());
+        return true;
+      }
     }
   }
 
