@@ -980,6 +980,8 @@ int GurobiBackend::GurobiSetFuncConAttributes(
     case GRB_GENCONSTR_POW:
     case GRB_GENCONSTR_SIN:
     case GRB_GENCONSTR_TAN:
+    case GRB_GENCONSTR_LOGISTIC:
+    case GRB_GENCONSTR_NL:
       GrbSetAttrElement(attr, i, vals[i]);
       if (i_first<0)
         i_first=i;

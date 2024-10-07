@@ -236,8 +236,12 @@ public:
 
   ACCEPT_EXPRESSION(ExpExpression, Recommended)
   Expr AddExpression(const ExpExpression& );
+  ACCEPT_EXPRESSION(ExpAExpression, Recommended)
+  Expr AddExpression(const ExpAExpression& );
   ACCEPT_EXPRESSION(LogExpression, Recommended)
   Expr AddExpression(const LogExpression& );
+  ACCEPT_EXPRESSION(LogAExpression, Recommended)
+  Expr AddExpression(const LogAExpression& );
   /// @note Use accessor: GetParameter(pe, 0)
   ///   - don't use PowExpression's methods.
   ACCEPT_EXPRESSION(PowExpression, Recommended)
@@ -247,7 +251,9 @@ public:
   ACCEPT_EXPRESSION(CosExpression, Recommended)
   Expr AddExpression(const CosExpression& );
 
-  // TODO Div; PowVarVar; ...
+  ACCEPT_EXPRESSION(DivExpression, Recommended)
+  Expr AddExpression(const DivExpression& );
+  // TODO PowVarVar; ...
 
 public:
   /// Formula

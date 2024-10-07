@@ -316,8 +316,31 @@ void GurobiModelAPI::AppendQuadTerms(
 GRB_Expr GurobiModelAPI::AddExpression(const ExpExpression& e) {
   return CreateFormula(e, GRB_OPCODE_EXP);
 }
+GRB_Expr GurobiModelAPI::AddExpression(const ExpAExpression& e) {
+  int new_pos = (int)formulas_.size();   // we may add more in GetArg...
+  formulas_.push_back( StartFormula(GRB_OPCODE_EXP) );
+  auto f1 = StartFormula(GRB_OPCODE_MULTIPLY);
+  AppendArgument(f1,
+                 MakeConstantExpr(std::log(GetParameter(e, 0))));
+  AppendArgument(f1, GetArgExpression(e, 0));
+  formulas_[new_pos].Append(f1);
+  return MakeExpr(new_pos);
+}
 GRB_Expr GurobiModelAPI::AddExpression(const LogExpression& e) {
   return CreateFormula(e, GRB_OPCODE_LOG);
+}
+GRB_Expr GurobiModelAPI::AddExpression(const LogAExpression& e) {
+  int new_pos = (int)formulas_.size();   // we may add more in GetArg...
+  formulas_.push_back( StartFormula(GRB_OPCODE_MULTIPLY) );
+  auto a = GetParameter(e, 0);
+  if (1.0==a)
+    MP_RAISE("Logarithm with base 1");
+  AppendArgument(formulas_[new_pos],
+                 MakeConstantExpr(1.0 / std::log(a)));
+  auto f1 = StartFormula(GRB_OPCODE_LOG);
+  AppendArgument(f1, GetArgExpression(e, 0));
+  formulas_[new_pos].Append(f1);
+  return MakeExpr(new_pos);
 }
 
 GRB_Expr GurobiModelAPI::AddExpression(const PowExpression& e) {
@@ -328,6 +351,10 @@ GRB_Expr GurobiModelAPI::AddExpression(const SinExpression& e) {
 }
 GRB_Expr GurobiModelAPI::AddExpression(const CosExpression& e) {
   return CreateFormula(e, GRB_OPCODE_COS);
+}
+
+GRB_Expr GurobiModelAPI::AddExpression(const DivExpression& e) {
+  return CreateFormula(e, GRB_OPCODE_DIVIDE);
 }
 
 
