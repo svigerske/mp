@@ -1096,11 +1096,6 @@ public:
               + fln
               + "' failed:\n"
               + exc.what();
-          if (IMPL_HAS_STD_FEATURE(WRITE_SOLUTION))
-            msg +=
-                "\n    Note: to export solutions and results\n"
-                "    in the solver's native formats,\n"
-                "    use option 'tech:writesolution'";
           MP_RAISE(msg);
         }
       }
