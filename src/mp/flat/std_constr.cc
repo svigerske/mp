@@ -22,6 +22,7 @@ static const char* const congroup_names[]
  "Quadratic",
  "Conic",
  "General",
+        "Nonlinear",
  "Piecewiselinear",
  "SOS",
  "SOS1",

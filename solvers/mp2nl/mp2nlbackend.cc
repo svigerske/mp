@@ -295,10 +295,14 @@ void MP2NLBackend::InitCustomOptions() {
     "To set these options, assign a string specifying their values to the "
     "AMPL option ``mp2nl_options``. For example::\n"
     "\n"
-    "  ampl: option mp2nl_options 'solver=baron solver_options=\"outlev=1 iisfind=1\"';\n");
+    "  ampl: option mp2nl_options 'solver=baron';\n"
+    "  ampl: option baron_options 'outlev=1 iisfind=1';"
+      );
 
   AddStoredOption("tech:outlev outlev",
-    "0*/1: Verbosity for the MP2NL driver. For the underlying solver, use tech:solver_options.",
+    "0*/1: Verbosity for the MP2NL driver. "
+                  "For the underlying solver, use the <subsolver>_options "
+                  "environment variable.",
     storedOptions_.outlev_);
 
   // AddStoredOption("tech:logfile logfile",

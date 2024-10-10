@@ -22,6 +22,7 @@
 #ifndef MODEL_API_BASE_H
 #define MODEL_API_BASE_H
 
+#include <deque>
 #include <utility>
 
 #include "mp/flat/model_api_base.h"
@@ -97,7 +98,7 @@ public:
   ///   via Impl::GetZeroExpression().
   ExprType GetExpression(const NLObjective& nlo) {
     const auto i_expr = nlo.HasExpr()
-    ? nlo.ExprIndex() : -1;
+                            ? nlo.ExprIndex() : -1;
     if (i_expr<0)
       return MPD( GetZeroExpression() );
     return GetInitExpression(i_expr);       // could be explicified
@@ -274,8 +275,8 @@ public:
   ////////////////////// INTERNAL ////////////////////////
 
 private:
-  /// Get Expr for a variable, if proper/explicit,
-  /// or for the InitExpression().
+  /// Get Expr for a result variable, if proper/explicit,
+  /// or for the implicit InitExpression().
   Expr GetInitExpression(int i_expr) {
 		if (i_expr >= (int)is_expr_stored_.size()) {
       is_expr_stored_.resize(int(i_expr*1.3)+1);
@@ -370,7 +371,7 @@ public:
 private:
   std::vector<bool> is_var_proper_;
   std::vector<bool> is_expr_stored_;    // actual Expr's of the result var or the init expressions
-  std::vector<ExprType> expr_stored_;
+  std::deque<ExprType> expr_stored_;    // to keep iterators valid
   std::vector<bool> is_init_expr_retrieved_;
   InitExprGetterType get_init_expr_;
 };
