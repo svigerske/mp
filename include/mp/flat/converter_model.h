@@ -240,7 +240,6 @@ public:
   /// @todo AutoExpand fills 'false' for new elements...
   void MarkAsResultVar(int v) {
     AutoExpand(var_result_, v, true);
-    std::printf("      MARKING AS VAR: [%d]\n", v);
   }
 
   /// Mark as a proper expression

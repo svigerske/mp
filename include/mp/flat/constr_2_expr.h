@@ -75,8 +75,6 @@ public:
       fMarkArgs = (ExpressionAcceptanceLevel::NotAccepted==eal);
     else
       fMarkArgs = true;        // static cons: all non-algebraic by default
-    std::printf("  MARK ARGS: %s[%d], acc lev %d, true? %d\n",
-                typeid(Con).name(), i, (int)eal, fMarkArgs);
     if (fMarkArgs)
       MPD( DoMarkArgsAsVars(con, i) );
   }

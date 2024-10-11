@@ -292,7 +292,6 @@ private:
     if (!is_expr_stored_[i_expr]) {
       is_expr_stored_[i_expr] = true;
       if (IsVarProper(i_expr)) {
-        std::printf("Returning VAR EXPR (%d)\n", i_expr);
         expr_stored_[i_expr] = MPD( GetVarExpression(i_expr) );
       } else {
         get_init_expr_(i_expr, &expr_stored_[i_expr]);
