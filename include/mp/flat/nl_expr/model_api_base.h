@@ -152,14 +152,19 @@ public:
   }
 
   /// Get the expression term of an \a NLLogical.
-  /// @note For each such 'explicification' constraint,
-  /// the expression
+  /// @note The expression
   /// can be normally accessed only once. To access them
   /// repeatedly, call ResetIniExprRetrievedFlags()
   /// for every repetition.
   ExprType GetExpression(const NLLogical& nll) {
     assert( nll.GetCapturedResultVar()>=0 );
     return GetPureInitExpression(nll.GetCapturedResultVar());
+  }
+
+  /// Get the value of NLLogical (true/false).
+  bool GetValue(const NLLogical& nll) {
+    assert( nll.GetCapturedResultVar()>=0 );
+    return nll.IsTrue();
   }
 
   /// Get the expression term of an \a NLBaseReif,
@@ -287,6 +292,7 @@ private:
     if (!is_expr_stored_[i_expr]) {
       is_expr_stored_[i_expr] = true;
       if (IsVarProper(i_expr)) {
+        std::printf("Returning VAR EXPR (%d)\n", i_expr);
         expr_stored_[i_expr] = MPD( GetVarExpression(i_expr) );
       } else {
         get_init_expr_(i_expr, &expr_stored_[i_expr]);
@@ -371,6 +377,7 @@ public:
 private:
   std::vector<bool> is_var_proper_;
   std::vector<bool> is_expr_stored_;    // actual Expr's of the result var or the init expressions
+  /// Expression cache
   std::deque<ExprType> expr_stored_;    // to keep iterators valid
   std::vector<bool> is_init_expr_retrieved_;
   InitExprGetterType get_init_expr_;

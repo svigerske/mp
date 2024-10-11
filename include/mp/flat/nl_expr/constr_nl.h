@@ -163,7 +163,8 @@ inline void WriteModelItem(Writer& wrt,
 using NLComplementarity = ComplementarityConstraint<AffineExpr>;
 
 
-/// NL logical constraint: expr(resvar) == true
+/// NL logical constraint:
+/// expr(resvar) <==> const (true or false)
 class NLLogical
     : public BasicConstraint {
 public:
@@ -176,7 +177,11 @@ public:
   static bool IsLogical() { return true; }
 
   /// Construct from the result variable
-  NLLogical(int rv) : resvar_(rv) { assert(rv>=0); }
+  NLLogical(int rv, bool val) : resvar_(rv), value_(val)
+  { assert(rv>=0); }
+
+  /// Is const == true?
+  bool IsTrue() const { return value_; }
 
   /// Get resvar
   int GetCapturedResultVar() const { return resvar_; }
@@ -188,17 +193,20 @@ public:
   template <class VarInfo>
   Violation
   ComputeViolation(const VarInfo& x) const {
-    return {std::fabs(x[GetCapturedResultVar()] - 1.0), 1.0};
+    return
+        {std::fabs(x[GetCapturedResultVar()] - value_), double(value_)};
   }
 
 private:
   int resvar_ {-1};
+  bool value_ {};
 };
 
 /// Write an NLLogical
 inline void WriteJSON(JSONW jw,
                       const NLLogical& nll) {
   jw["resvar"] = nll.GetCapturedResultVar();
+  jw["value"] = nll.IsTrue();
 }
 
 /// Write RhsCon without name.
@@ -208,6 +216,8 @@ inline void WriteModelItem(Writer& wrt,
                            const Names& vnam) {
   wrt << "NLLogicalExprIndex: "
       << vnam.at(nllc.GetCapturedResultVar());
+  wrt << "NLLogicalExprValue: "
+      << nllc.IsTrue();
 }
 
 

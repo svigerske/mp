@@ -298,12 +298,14 @@ protected:
       int var, const SingleVarEqConstMap& map) {
     if (IsUEncAprioriExcluded(var))
       return true;
+    const auto& ck = GET_CONSTRAINT_KEEPER(CondLinConEQ);
+    if (!ck.IfConsiderConversion())
+      return true;
     double dom_rng = MPCD(ub(var))-MPCD(lb(var))+1;
     if (options_.NoUEncPosCtxRatio_ * map.size()   // Use UEnc if >
         > dom_rng)
       return false;
     int nNegCtx = 0;
-    const auto& ck = GET_CONSTRAINT_KEEPER(CondLinConEQ);
     for (const auto& el: map) {
       const auto& con = ck.GetConstraint(el.second);
       if (con.GetContext().HasNegative())
@@ -317,6 +319,8 @@ protected:
   /// Manually convert all comparisons for this variable
   void GoWithoutEqEnc(int , const SingleVarEqConstMap& map) {
     auto& ck = GET_CONSTRAINT_KEEPER(CondLinConEQ);
+    if (!ck.IfConsiderConversion())
+      return;
     // 1. Convert the ConLinEq's into indicators.
     // Make sure IfMightUseEqualityEncoding() returns false.
     for (const auto& el: map) {
@@ -352,13 +356,13 @@ protected:
     // Create UEncoding
     const Model& model = MP_DISPATCH( GetModel() );
     if (!model.is_integer_var(var))
-      MP_RAISE("MP2MIP: Equality encoding: comparing non-integer variables not implemented");
+      MP_RAISE("Unary encoding: comparing non-integer variables not implemented");
     const auto lb_dbl = this->lb(var);
     const auto ub_dbl = this->ub(var);
     if (lb_dbl==this->MinusInfty() || ub_dbl==this->Infty())
-      MP_RAISE("MP2MIP: Equality-comparing unbounded variables not implemented");
+      MP_RAISE("Equality-comparing unbounded variables not implemented");
     if (lb_dbl<std::numeric_limits<int>::min() || ub_dbl>std::numeric_limits<int>::max())
-      MP_RAISE("MP2MIP: Equality-comparing variables with domain out of integer range not implemented");
+      MP_RAISE("Equality-comparing variables with domain out of integer range not implemented");
     const int lb = (int)std::round(lb_dbl);
     const int ub = (int)std::round(ub_dbl);
     std::vector<int> unaryEncVars(ub-lb+1);

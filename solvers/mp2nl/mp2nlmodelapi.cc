@@ -638,7 +638,7 @@ void MP2NLModelAPI::FeedLogicalConExpression(
   const auto* pitem = con_info.GetPItem();
   switch (con_info.GetStaticTypeID()) {
   case StaticItemTypeID::ID_NLLogical:
-    FeedExpr(GetExpression(*((NLLogical*)(pitem))), ew);
+    FeedNLLogical(*((NLLogical*)(pitem)), ew);
     break;
   case StaticItemTypeID::ID_NLReifImpl: {
     FeedReification((*((NLReifImpl*)(pitem))), ew);
@@ -788,11 +788,21 @@ void MP2NLModelAPI::FeedRelational(
   ew.NPut(GetRHS(e));
 }
 
+template <class ExprWriter>
+void MP2NLModelAPI::FeedNLLogical(const NLLogical& e, ExprWriter& ew) {
+  if (!e.IsTrue()) {
+    auto ew_args = ew.OPut1(nl::NOT);
+    FeedExpr(GetExpression(e), ew_args);
+  } else {
+    FeedExpr(GetExpression(e), ew);
+  }
+}
+
 template <int sense, class ExprWriter>
 void MP2NLModelAPI::FeedReification(
     const NLBaseReif<sense>& e, ExprWriter& ew) {
-  if (sense<0) {
-    auto args = ew.OPut2(nl::OR);
+  if (sense<0) {    // @todo could do some via IFF; except, e.g., AllDiff
+    auto args = ew.OPut2(nl::OR);    // However this would set CTX_MIX
     auto args_lhs = args.OPut2(nl::EQ);
     args_lhs.VPut( GetNewVarIndex(GetVariable(e)) );
     args_lhs.NPut(0.0);

@@ -130,6 +130,19 @@ public:
   double ConversionPriority() const
   { return Converter::ConstraintCvtPriority((Constraint*)nullptr); }
 
+  /// Whether we consider conversion of this type.
+  /// It can still not happen if not convertible, or asked to delay
+  /// individual items.
+  bool IfConsiderConversion() const {
+    return
+        (ConstraintAcceptanceLevel::NotAccepted == GetChosenAcceptanceLevel()
+         || (ConstraintAcceptanceLevel::NotAccepted == GetModelAPIAcceptance()
+             && (!GetConverter().IfWantNLOutput()
+                 || ExpressionAcceptanceLevel::NotAccepted
+                        == GetChosenAcceptanceLevelEXPR())
+                && 2 != AccLevelCommon()));             // Not when acc:_all=2
+  }
+
   /// Convert all new items of this constraint.
   /// This normally dispatches conversion (decomposition) to the Converter
   /// @return whether any converted
@@ -249,6 +262,7 @@ public:
       BasicFlatModelAPI& be, int i, void* pexpr) override {
     if constexpr (ExpressionAcceptanceLevel::NotAccepted
         != Backend::ExpressionInterfaceAcceptanceLevel()) {
+      assert(!cons_[i].IsBridged());
       *(typename Backend::Expr*)pexpr =
           static_cast<Backend&>(be).AddExpression(cons_[i].GetExpr());
     }
@@ -329,14 +343,9 @@ protected:
     int i=i_last;
     const auto acceptanceLevel =
         GetChosenAcceptanceLevel();
-    if (ConstraintAcceptanceLevel::NotAccepted == acceptanceLevel
-        || (ConstraintAcceptanceLevel::NotAccepted == GetModelAPIAcceptance()
-            && (!GetConverter().IfWantNLOutput()
-                || ExpressionAcceptanceLevel::NotAccepted
-                       == GetChosenAcceptanceLevelEXPR())
-            && 2 != AccLevelCommon())) {                 // Not when acc:_all=2
+    if (IfConsiderConversion()) {
       if (!IfConverterConverts(GetConverter())) {
-        i = (int)cons_.size();
+        i = (int)cons_.size();             // skip unconverted items
       } else {
         for ( ; ++i!=(int)cons_.size(); )
           if (!cons_[i].IsBridged() &&
@@ -349,7 +358,8 @@ protected:
         i = (int)cons_.size();
       } else {
         for (; ++i != (int)cons_.size(); ) {
-          if (!cons_[i].IsBridged()) {
+          if (!cons_[i].IsBridged() &&
+              !GetConverter().IfDelayConversion(cons_[i].GetCon(), i)) {
             try {       // Try to convert all but allow failure
               ConvertConstraint(cons_[i], i);
             } catch (const ConstraintConversionGracefulFailure& ) {

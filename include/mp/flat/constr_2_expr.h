@@ -41,8 +41,8 @@ public:
   /// vs assigning their result to a variable
   void MarkExpressions() {
     MPD( MarkAllResultVarsAsVars() );      // tentatively
-    MPD( GetModel() ).MarkExprResultVars(*(Impl*)this);
-    MPD( GetModel() ).MarkArguments(*(Impl*)this);
+    MPD( GetModel() ).MarkExprResultVars(*(Impl*)this); // As expressions
+    MPD( GetModel() ).MarkArguments(*(Impl*)this);   // As vars if required
   }
 
   /// Consider marking the result variables as
@@ -55,7 +55,8 @@ public:
       assert(                     // Check: the result var has \a con as the init expr
           MPD( template GetInitExpressionOfType<Con>(con.GetResultVar()) )
           == &con);
-      if ( !MPD( IfVarBoundsStrongerThanInitExpr(con.GetResultVar()) ) )
+      if (con.IsLogical()         // Fixed logical results handled differently
+          || !MPD( IfVarBoundsStrongerThanInitExpr(con.GetResultVar()) ) )
         MPD( MarkAsExpression(con.GetResultVar()) );   // can be changed later
     }
   }
@@ -74,6 +75,8 @@ public:
       fMarkArgs = (ExpressionAcceptanceLevel::NotAccepted==eal);
     else
       fMarkArgs = true;        // static cons: all non-algebraic by default
+    std::printf("  MARK ARGS: %s[%d], acc lev %d, true? %d\n",
+                typeid(Con).name(), i, (int)eal, fMarkArgs);
     if (fMarkArgs)
       MPD( DoMarkArgsAsVars(con, i) );
   }
@@ -634,6 +637,26 @@ protected:
   void ConsiderExplicifyingExpression(const FuncCon& con, int i) {
     if (MPCD( IsProperVar(con.GetResultVar()) ))
       DoExplicify(con, i);
+    else {
+      if (con.IsLogical()) {
+        assert(con.HasResultVar());        // is a func con
+        auto resvar = con.GetResultVar();
+        if (MPCD( is_fixed(resvar) )) {    // we don't explicify just for this
+          auto val = MPCD( fixed_value(resvar) );
+          if constexpr (std::is_same_v<FuncCon, NotConstraint>) {
+            assert(MPCD( is_fixed(con.GetArguments()[0]) ));
+            assert(val != MPCD( fixed_value(con.GetArguments()[0]) ));
+            // that's it, leave it because
+            // we should handle the arg expr separately as below
+          } else {
+            if ((val && con.GetContext().HasPositive())
+                || (!val && con.GetContext().HasNegative())) {
+              MPD( AddConstraint(NLLogical(resvar, val)) );  // static con
+            }  // else, skip
+          }
+        }
+      }
+    }
   }
 
   /// Add expr = var assignment for algebraic expression
@@ -655,8 +678,7 @@ protected:
 
   /// Add expr = var assignment (NLReifEquiv, NLReifImpl, NLRImpl)
   /// for logical expression.
-  /// If this expression is root-level (is true),
-  /// add root explicifier instead (NLLogical).
+  /// Even if this expression is root-level (is true).
   template <class FuncCon,
            std::enable_if_t<
                std::is_base_of_v<
@@ -664,20 +686,13 @@ protected:
   void DoExplicify(const FuncCon& con, int i) {
     auto alscope = MPD( MakeAutoLinker( con, i ) );       // link from \a con
     auto resvar = con.GetResultVar();
-    if (MPCD( is_fixed(resvar) )                          // "root" context
-        && MPCD( fixed_value(resvar) )
-        && con.GetContext().HasPositive()) {              // static logical constraint
-      MPD( AddConstraint(NLLogical(resvar)) );
-    }
-    else {                                                // A (half-)reified function constraint
-      assert(!con.GetContext().IsNone());
-      if (con.GetContext().IsMixed())
-        MPD( AddConstraint(NLReifEquiv(resvar)) );
-      else if (con.GetContext().HasPositive())
-        MPD( AddConstraint(NLReifImpl(resvar)) );
-      else
-        MPD( AddConstraint(NLReifRimpl(resvar)) );
-    }
+    assert(!con.GetContext().IsNone());
+    if (con.GetContext().IsMixed())
+      MPD( AddConstraint(NLReifEquiv(resvar)) );
+    else if (con.GetContext().HasPositive())
+      MPD( AddConstraint(NLReifImpl(resvar)) );
+    else
+      MPD( AddConstraint(NLReifRimpl(resvar)) );
   }
 
   /// Special handling for algebraic functional constraints (LFC, QFC)

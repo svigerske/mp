@@ -132,7 +132,8 @@ public:
   /// the high-level constraints
   /// NLConstraint, NLAssignLE, NLAssignEQ, NLAssignGE,
   /// NLComplementarity,
-  /// NLLogical, NLEquivalence, NLImpl, NLRimpl, and NLObjective.
+  /// NLLogical, NLEquivalence, NLImpl, NLRimpl,
+  /// and NLObjective.
   ACCEPT_EXPRESSION_INTERFACE(AcceptedButNotRecommended);
 
   /// Once expressions are supported, need the following
@@ -704,6 +705,10 @@ public:
   /// Feed comparison
   template <class CondMPExpr, class ExprWriter>
   void FeedRelational(const CondMPExpr& e, ExprWriter ew);
+
+  /// Feed NLLogical
+  template <class ExprWriter>
+  void FeedNLLogical(const NLLogical& e, ExprWriter& ew);
 
   /// Feed NLBaseReif
   template <int sense, class ExprWriter>
