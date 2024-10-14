@@ -36,7 +36,7 @@ public:
             NotConstraint( {feq0} ));
       }
     }
-    GetMC().AddConstraint( LinConEQ( {coefs, flags}, 0.0 ) );
+    GetMC().AddConstraint_AS_ROOT( LinConEQ( {coefs, flags}, 0.0 ) );
   }
 
   /// Reuse the stored ModelConverter

@@ -123,6 +123,7 @@ public:
       int i,
       ConstraintAcceptanceLevel , ExpressionAcceptanceLevel eal) {
     assert(stage_cvt2expr_>0 && stage_cvt2expr_<=2);
+    assert(!con.GetContext().IsNone());
     // See if the item is going into an expr.
     // Otherwise it's a flat con.
     if (ExpressionAcceptanceLevel::NotAccepted != eal) {
