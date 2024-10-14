@@ -283,12 +283,14 @@ private:
   /// Get Expr for a result variable, if proper/explicit,
   /// or for the implicit InitExpression().
   Expr GetInitExpression(int i_expr) {
-		if (i_expr >= (int)is_expr_stored_.size()) {
-      is_expr_stored_.resize(int(i_expr*1.3)+1);
-      expr_stored_.resize(int(i_expr*1.3)+1);
-      is_init_expr_retrieved_.resize(int(i_expr*1.3)+1);
-      is_var_proper_.resize(int(i_expr*1.3)+1);
-    }
+    /// FlatConverter should have marked all expressions;
+    assert(i_expr < (int)is_expr_stored_.size());
+    // if (i_expr >= (int)is_expr_stored_.size()) {
+  //     is_expr_stored_.resize(int(i_expr*1.3)+1);
+  //     expr_stored_.resize(int(i_expr*1.3)+1);
+  //     is_init_expr_retrieved_.resize(int(i_expr*1.3)+1);
+  //     is_var_proper_.resize(int(i_expr*1.3)+1, true);    // proper by default
+  //   }
     if (!is_expr_stored_[i_expr]) {
       is_expr_stored_[i_expr] = true;
       if (IsVarProper(i_expr)) {
@@ -311,12 +313,8 @@ private:
   /// @note GetInitExpression(\a i_expr) might still return
   ///   the Expr for the result variable \a i_expr.
   Expr GetPureInitExpression(int i_expr) {
-		if (i_expr >= (int)is_expr_stored_.size()) {
-      is_expr_stored_.resize(int(i_expr*1.3)+1);
-      expr_stored_.resize(int(i_expr*1.3)+1);
-      is_init_expr_retrieved_.resize(int(i_expr*1.3)+1);
-      is_var_proper_.resize(int(i_expr*1.3)+1);
-    }
+    /// FlatConverter should have marked all expressions;
+    assert(i_expr < (int)is_expr_stored_.size());
     assert(!is_init_expr_retrieved_[i_expr]);             // not twice explicified
     if (IsVarProper(i_expr)) {
       is_init_expr_retrieved_[i_expr] = true;             // is being explicified

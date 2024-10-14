@@ -22,6 +22,10 @@ public:
   /// The auxiliary result variables of the functional
   /// constraints which were marked as expressions,
   /// will be handled in a special way.
+  ///
+  /// @note Beyond the initial marking stage,
+  /// the result variables of any new constraints/expressions,
+  /// and any other new variables should be marked too.
   void Convert2NL() {
     MPD( MarkExpressions() );
     /// Objectives before constraints,
@@ -601,6 +605,8 @@ protected:
     auto fc = MakeFunctionalConstraint(
         AlgebraicExpression{con.GetConstraint().GetArguments(), 0.0});
     auto resvar = MPD( AssignResultVar2Args(std::move(fc)) );
+    if ( !MPCD(VarHasMarking(resvar) ))         // mark as expr if new
+      MPD( MarkAsExpression(resvar) );
     /// resvar can be a proper variable - ModelAPI should flexibly handle this
     LinTerms lt { {1.0}, {resvar} };
     ConditionalConstraint< AlgebraicConstraint<LinTerms, RhsOrRange> >
@@ -620,6 +626,8 @@ protected:
     auto fc = MakeFunctionalConstraint(con.GetExpression());
     fc.SetContext(Context::CTX_MIX);                      // need context
     auto resvar = MPD( AssignResultVar2Args(std::move(fc)) );
+    if ( !MPCD(VarHasMarking(resvar) ))         // mark as expr if new
+      MPD( MarkAsExpression(resvar) );
     /// resvar can be a proper variable - ModelAPI should flexibly handle this
     LinTerms lt { {1.0}, {resvar} };
     ComplementarityConstraint< AlgebraicExpression<LinTerms> >
