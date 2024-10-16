@@ -271,6 +271,9 @@ add_ampl_backend(ortoolsmp DLL_RUNTIME SHARED_LIB MODULE ortoolsmp
 add_ampl_backend(cplex DLL_RUNTIME SHARED_LIB MODULE CPLEX
                       LIBRARIES cplex-library ${CMAKE_DL_LIBS})
 
+add_ampl_backend(baronmp  DLL_RUNTIME MODULE BARON
+                      LIBRARIES ${baron_LIBS} ${CMAKE_DL_LIBS})
+
 add_ampl_backend(xpress DLL_RUNTIME SHARED_LIB MODULE XPRESS
                       LIBRARIES ${xpress_LIBS} ${CMAKE_DL_LIBS})
 
@@ -295,6 +298,8 @@ if (TARGET gurobi)
   endif()
 endif()
 
+
+
 ## A simple Gurobi driver to test AMPLS C API
 add_ampl_solver(gurobi_ampls DLL_RUNTIME
   gurobi-ampls.c
@@ -304,7 +309,6 @@ add_ampl_solver(gurobi_ampls DLL_RUNTIME
 
 # Copy CPLEX DLL to the target directory.
 if (CPLEX_DLL AND (TARGET ilogcp))
-
   get_filename_component(CPLEX_DLL_NAME "${CPLEX_DLL}" NAME)
   add_custom_command(TARGET ilogcp
     COMMAND ${CMAKE_COMMAND} -E copy_if_different
