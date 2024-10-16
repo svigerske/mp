@@ -56,7 +56,11 @@ public:
 
   /// Visit any other node
   void VisitUnsupported(Expr e) {
-    terms_flt_.push_back({ {}, GetFlt().Visit(e), {} });
+    auto t =
+      std::make_tuple< TermCmp, FlatExpr, std::pair<double, double> >(
+        {}, GetFlt().Visit(e), {}
+      );
+    terms_flt_.push_back(t);
   }
 
 protected:
@@ -142,7 +146,9 @@ private:
   Flattener& flt_;
   /// tuple: comparator, term, bounds
   std::vector<
-      std::tuple< TermCmp, FlatExpr, std::pair<double, double> > >
+      std::tuple< TermCmp, FlatExpr, std::pair<double, double> > 
+  
+  >
       terms_flt_;
   int n_terms_const_ = 0;
   int n_terms_binary_ = 0;
