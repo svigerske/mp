@@ -202,6 +202,7 @@ public:
   /// This is called from BackendApp.
   void RunFromNLFile(const std::string& nl_filename,
                      const std::string& filename_no_ext) override {
+    set_stub(nl_filename.c_str());
     ReadNL(nl_filename, filename_no_ext, GetArgvOptions());
     InputExtras();
     

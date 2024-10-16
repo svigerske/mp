@@ -247,7 +247,10 @@ public:
 
   /// Returns the solver version.
   const char *version() const { return version_.c_str(); }
-
+  
+  // Returns the NL file currently read.
+  const char* stub() const { return stub_.c_str(); }
+  void set_stub(const char* stub) { stub_ = stub; }
   /// Returns the solver date in YYYYMMDD format.
   long date() const { return date_; }
 
@@ -583,6 +586,7 @@ private:
   std::string long_name_;
   std::string exe_path_;
   std::string version_;
+  std::string stub_;
   std::string license_info_;
   long date_{0};
   int wantsol_ {0};
