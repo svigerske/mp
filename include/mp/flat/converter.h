@@ -374,12 +374,22 @@ public: // for ConstraintKeeper
   }
 
   /// Query if a constraint type
-  /// is natively accepted by the solver.
+  /// is natively accepted by the solver (and user).
   /// The parameter is only needed for type.
   template <class Con>
   ConstraintAcceptanceLevel GetConstraintAcceptance(Con* ) const {
     return GET_CONST_CONSTRAINT_KEEPER(Con).GetChosenAcceptanceLevel();
   }
+
+  /// Query if an expression type
+  /// is natively accepted by the solver (and user).
+  /// The parameter is only needed for type.
+  template <class Con>
+  ExpressionAcceptanceLevel GetConstraintAcceptanceEXPR(
+      const ExprWrapper< Con >* ) const {
+    return GET_CONST_CONSTRAINT_KEEPER(Con).GetChosenAcceptanceLevelEXPR();
+  }
+
 
   /// Query the number of addable constraints of type.
   template <class Con>
@@ -448,17 +458,30 @@ public: // for ConstraintKeeper
     return false;
   }
 
-  /// Check whether ModelAPI accepts and recommends the constraint
+  /// Check whether ModelAPI and user accept and recommend the constraint
   template <class Constraint>
   bool ModelAPIOk() const {
     return ModelAPIAcceptsAndRecommends((const Constraint*)0);
   }
 
-  /// Check whether ModelAPI accepts and recommends the constraint
+  /// Check whether ModelAPI and user accept and recommend the constraint
   template <class Constraint>
   bool ModelAPIAcceptsAndRecommends(const Constraint* pcon) const {
     return ConstraintAcceptanceLevel::Recommended ==
         GetConstraintAcceptance(pcon);
+  }
+
+  /// Check whether ModelAPI and user accept and recommend the expression
+  template <class Expression>
+  bool ModelAPIOkEXPR() const {
+    return ModelAPIAcceptsAndRecommendsEXPR((const Expression*)0);
+  }
+
+  /// Check whether ModelAPI and user accept and recommend the expression
+  template <class Expression>
+  bool ModelAPIAcceptsAndRecommendsEXPR(const Expression* pcon) const {
+    return ExpressionAcceptanceLevel::Recommended ==
+           GetConstraintAcceptanceEXPR(pcon);
   }
 
   /// Generic adapter for old non-bridged Convert() methods

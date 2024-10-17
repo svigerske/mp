@@ -1293,16 +1293,19 @@ protected:
   class ItemInfo {
   public:
     /// Construct
-    ItemInfo (BasicItemDispatcher& disp, void* pitem
+    ItemInfo (BasicItemDispatcher& disp, void* pitem,
+             bool fLogical
              //, StaticItemTypeID iid, ExpressionTypeID eid
              )
-        : disp_(disp), p_item_(pitem)
+        : disp_(disp), p_item_(pitem), f_logical_(fLogical)
         // no storing, itemID_(iid), exprID_(eid)
     { }
     /// Get dispatcher
     BasicItemDispatcher& GetDispatcher() const { return disp_; }
     /// Get &item
     void* GetPItem() const { return p_item_; }
+    /// Is logical?
+    bool IsLogical() const { return f_logical_; }
     /// Is a static type?
     bool IsItemTypeStatic() const
     { return GetDispatcher().IsItemTypeStatic(); }
@@ -1316,22 +1319,25 @@ protected:
   private:
     BasicItemDispatcher& disp_;
     void* p_item_;
+    bool f_logical_ {};
     // StaticItemTypeID itemID_ {StaticItemTypeID::ID_None};
     // ExpressionTypeID exprID_ {ExpressionTypeID::ID_None};
   };
 
   /// Fill static item info
   template <class Item>
-  ItemInfo MakeItemInfo(const Item& i, StaticItemTypeID ) {
-    return { GetItemDispatcher<Item>(), (void*)&i
+  ItemInfo MakeItemInfo(
+      const Item& i, StaticItemTypeID , bool fLogical) {
+    return { GetItemDispatcher<Item>(), (void*)&i, fLogical
             // , sid, ExpressionTypeID::ID_None
     };
   }
 
   /// Fill expression item info
   template <class Item>
-  ItemInfo MakeItemInfo(const Item& i, ExpressionTypeID ) {
-    return { GetItemDispatcher<Item>(), (void*)&i
+  ItemInfo MakeItemInfo(
+      const Item& i, ExpressionTypeID , bool fLogical) {
+    return { GetItemDispatcher<Item>(), (void*)&i, fLogical
             //, StaticItemTypeID::ID_None, eid
     };
   }

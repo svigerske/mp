@@ -60,7 +60,7 @@ public:
       std::make_tuple< TermCmp, FlatExpr, std::pair<double, double> >(
         {}, GetFlt().Visit(e), {}
       );
-    terms_flt_.push_back(t);
+    terms_flt_.push_back( std::move(t) );
   }
 
 protected:
@@ -88,7 +88,7 @@ protected:
           is_int ? 2 : 3;
       std::get<0>(tpl) = {category, bnds.ub()-bnds.lb() };
       std::get<2>(tpl) =
-          {bnds.lb(), bnds.ub() };
+          {bnds.lb(), bnds.ub()};
     }
     std::sort(terms_flt_.begin(), terms_flt_.end(),
               [](const auto& tpl1, const auto& tpl2) {
@@ -115,7 +115,8 @@ protected:
                std::get<2>(terms_flt_[i]).second -
                    std::get<2>(terms_flt_[i]).first );
         int binvar = GetFlt().Convert2Var(std::move(std::get<1>(terms_flt_[i])));
-        if (-1.0 == std::get<2>(terms_flt_[i]).first) {    // negated binary
+        auto is_lb_minus1 = (-1.0 == std::get<2>(terms_flt_[i]).first);
+        if (is_lb_minus1) {    // negated binary
           coef00 *= -1;
           binvar = GetFlt().Convert2Var( { {-1.0}, {binvar} } );
         } else {
@@ -124,6 +125,7 @@ protected:
         args_forall.push_back( binvar );
       }
       result = GetFlt().AssignResult2Args( AndConstraint{args_forall} );
+      // Context should be set when adding the top contraint
     }
 
     result *= coef00;
@@ -146,9 +148,7 @@ private:
   Flattener& flt_;
   /// tuple: comparator, term, bounds
   std::vector<
-      std::tuple< TermCmp, FlatExpr, std::pair<double, double> > 
-  
-  >
+      std::tuple< TermCmp, FlatExpr, std::pair<double, double> > >
       terms_flt_;
   int n_terms_const_ = 0;
   int n_terms_binary_ = 0;

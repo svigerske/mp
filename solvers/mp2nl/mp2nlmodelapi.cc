@@ -41,7 +41,8 @@ void MP2NLModelAPI::AddVariables(const VarArrayDef& vad) {
 
 void MP2NLModelAPI::SetLinearObjective( int iobj, const LinearObjective& lo ) {
   assert(iobj == (int)obj_info_.size());
-  obj_info_.push_back(MakeItemInfo(lo, StaticItemTypeID::ID_LinearObjective));
+  obj_info_.push_back(
+      MakeItemInfo(lo, StaticItemTypeID::ID_LinearObjective, false));
 }
 
 void MP2NLModelAPI::SetQuadraticObjective(int iobj, const QuadraticObjective& qo) {
@@ -52,21 +53,22 @@ void MP2NLModelAPI::SetQuadraticObjective(int iobj, const QuadraticObjective& qo
 
 void MP2NLModelAPI::SetNLObjective( int iobj, const NLObjective& nlo ) {
   assert(iobj == (int)obj_info_.size());
-  obj_info_.push_back(MakeItemInfo(nlo, StaticItemTypeID::ID_NLObjective));
+  obj_info_.push_back(MakeItemInfo(nlo, StaticItemTypeID::ID_NLObjective, false));
 }
 
 
-void MP2NLModelAPI::AddConstraint(const LinConRange& lc)
-{ alg_con_info_.push_back(MakeItemInfo(lc, StaticItemTypeID::ID_LinConRange)); }
+void MP2NLModelAPI::AddConstraint(const LinConRange& lc) {
+  alg_con_info_.push_back(MakeItemInfo(lc, StaticItemTypeID::ID_LinConRange, false));
+}
 
 void MP2NLModelAPI::AddConstraint(const LinConLE& lc)
-{ alg_con_info_.push_back(MakeItemInfo(lc, StaticItemTypeID::ID_LinConLE)); }
+{ alg_con_info_.push_back(MakeItemInfo(lc, StaticItemTypeID::ID_LinConLE, false)); }
 
 void MP2NLModelAPI::AddConstraint(const LinConEQ& lc)
-{ alg_con_info_.push_back(MakeItemInfo(lc, StaticItemTypeID::ID_LinConEQ)); }
+{ alg_con_info_.push_back(MakeItemInfo(lc, StaticItemTypeID::ID_LinConEQ, false)); }
 
 void MP2NLModelAPI::AddConstraint(const LinConGE& lc)
-{ alg_con_info_.push_back(MakeItemInfo(lc, StaticItemTypeID::ID_LinConGE)); }
+{ alg_con_info_.push_back(MakeItemInfo(lc, StaticItemTypeID::ID_LinConGE, false)); }
 
 
 /// To access information from an NLConstraint,
@@ -76,43 +78,46 @@ void MP2NLModelAPI::AddConstraint(const LinConGE& lc)
 ///
 /// Implementation follows partly reader_nl.cc from SCIP.
 void MP2NLModelAPI::AddConstraint( const NLConstraint& nlc )
-{ alg_con_info_.push_back(MakeItemInfo(nlc, StaticItemTypeID::ID_NLConstraint)); }
+{ alg_con_info_.push_back(MakeItemInfo(nlc, StaticItemTypeID::ID_NLConstraint, false)); }
 
 void MP2NLModelAPI::AddConstraint( const NLAssignEQ& nlae )
-{ alg_con_info_.push_back(MakeItemInfo(nlae, StaticItemTypeID::ID_NLAssignEQ)); }
+{ alg_con_info_.push_back(MakeItemInfo(nlae, StaticItemTypeID::ID_NLAssignEQ, false)); }
 void MP2NLModelAPI::AddConstraint( const NLAssignLE& nlae )
-{ alg_con_info_.push_back(MakeItemInfo(nlae, StaticItemTypeID::ID_NLAssignLE)); }
+{ alg_con_info_.push_back(MakeItemInfo(nlae, StaticItemTypeID::ID_NLAssignLE, false)); }
 void MP2NLModelAPI::AddConstraint( const NLAssignGE& nlae )
-{ alg_con_info_.push_back(MakeItemInfo(nlae, StaticItemTypeID::ID_NLAssignGE)); }
+{ alg_con_info_.push_back(MakeItemInfo(nlae, StaticItemTypeID::ID_NLAssignGE, false)); }
 
 void MP2NLModelAPI::AddConstraint(const NLComplementarity& cc)
-{ alg_con_info_.push_back(MakeItemInfo(cc, StaticItemTypeID::ID_NLComplementarity)); }
+{ alg_con_info_.push_back(MakeItemInfo(cc, StaticItemTypeID::ID_NLComplementarity, false)); }
 
 
 void MP2NLModelAPI::AddConstraint( const NLLogical& nll )
-{ log_con_info_.push_back(MakeItemInfo(nll, StaticItemTypeID::ID_NLLogical)); }
+{ log_con_info_.push_back(MakeItemInfo(nll, StaticItemTypeID::ID_NLLogical, true)); }
 
 void MP2NLModelAPI::AddConstraint( const NLReifEquiv& nll )
-{ log_con_info_.push_back(MakeItemInfo(nll, StaticItemTypeID::ID_NLReifEquiv)); }
+{ log_con_info_.push_back(MakeItemInfo(nll, StaticItemTypeID::ID_NLReifEquiv, true)); }
 void MP2NLModelAPI::AddConstraint( const NLReifImpl& nll )
-{ log_con_info_.push_back(MakeItemInfo(nll, StaticItemTypeID::ID_NLReifImpl)); }
+{ log_con_info_.push_back(MakeItemInfo(nll, StaticItemTypeID::ID_NLReifImpl, true)); }
 void MP2NLModelAPI::AddConstraint( const NLReifRimpl& nll )
-{ log_con_info_.push_back(MakeItemInfo(nll, StaticItemTypeID::ID_NLReifRimpl)); }
+{ log_con_info_.push_back(MakeItemInfo(nll, StaticItemTypeID::ID_NLReifRimpl, true)); }
 
 
 void MP2NLModelAPI::AddConstraint(const IndicatorConstraintLinLE &ic)
-{ log_con_info_.push_back(MakeItemInfo(ic, StaticItemTypeID::ID_IndicatorConstraintLinLE)); }
+{ log_con_info_.push_back(
+      MakeItemInfo(ic, StaticItemTypeID::ID_IndicatorConstraintLinLE, true)); }
 void MP2NLModelAPI::AddConstraint(const IndicatorConstraintLinEQ &ic)
-{ log_con_info_.push_back(MakeItemInfo(ic, StaticItemTypeID::ID_IndicatorConstraintLinEQ)); }
+{ log_con_info_.push_back(
+      MakeItemInfo(ic, StaticItemTypeID::ID_IndicatorConstraintLinEQ, true)); }
 void MP2NLModelAPI::AddConstraint(const IndicatorConstraintLinGE &ic)
-{ log_con_info_.push_back(MakeItemInfo(ic, StaticItemTypeID::ID_IndicatorConstraintLinGE)); }
+{ log_con_info_.push_back(
+      MakeItemInfo(ic, StaticItemTypeID::ID_IndicatorConstraintLinGE, true)); }
 
 
 
 void MP2NLModelAPI::AddConstraint(const SOS1Constraint& sos)
-{ sos_info_.push_back(MakeItemInfo(sos, StaticItemTypeID::ID_SOS1Constraint)); }
+{ sos_info_.push_back(MakeItemInfo(sos, StaticItemTypeID::ID_SOS1Constraint, false)); }
 void MP2NLModelAPI::AddConstraint(const SOS2Constraint& sos)
-{ sos_info_.push_back(MakeItemInfo(sos, StaticItemTypeID::ID_SOS2Constraint)); }
+{ sos_info_.push_back(MakeItemInfo(sos, StaticItemTypeID::ID_SOS2Constraint, false)); }
 
 
 template <class Expr>
@@ -131,7 +136,12 @@ MP2NL_Expr MP2NLModelAPI::AddExpression(
 template <class Expr>
 MP2NL_Expr MP2NLModelAPI::StoreMP2NLExprID(
     const Expr &expr, ExpressionTypeID eid) {
-  expr_info_.push_back(MakeItemInfo(expr, eid));
+  // std::printf("   Storing MP2NL_Expr[%ld]: type %s, logical = %d, @%p\n",
+  //             expr_info_.size(),
+  //             expr.GetFlatConstraint().GetTypeName(),
+  //             IsLogical(expr), &expr);
+  expr_info_.push_back(
+      MakeItemInfo(expr, eid, IsLogical(expr)));
   expr_counter_.push_back(0);
   return MakeExprID( int(expr_info_.size()-1) );
 }
@@ -835,6 +845,8 @@ void MP2NLModelAPI::FdArgs(
 template <class MPExpr, class ArgWriter>
 void MP2NLModelAPI::FdLogicArgs(
     const MPExpr& e, ArgWriter ew_arg) {
+  // std::printf("   Feed '%s':  %d args\n",
+  //             GetItemName(e), GetNumArguments(e));
   for (int i=0; i<GetNumArguments(e); ++i) {
     FeedLogicalExpression(
         GetArgExpression(e, i), ew_arg);
@@ -859,11 +871,22 @@ template <class ArgWriter>
 void MP2NLModelAPI::FeedLogicalExpression(
     MP2NL_Expr mp2nle, ArgWriter& aw) {
   if (mp2nle.IsVariable()) {
-    auto arg2 = aw.OPut2(nl::EQ);
+    auto arg2 = aw.OPut2(nl::NE);
     arg2.EPut(mp2nle);
-    arg2.NPut(1.0);
-  } else
-    aw.EPut(mp2nle);
+    arg2.NPut(0.0);
+  } else {
+    bool f_logical = false;
+    if (mp2nle.IsExpression()) {
+      f_logical
+          = expr_info_.at(mp2nle.GetExprIndex()).IsLogical();
+    }
+    if (!f_logical) {
+      auto argw = aw.OPut2(nl::NE);
+      argw.EPut(mp2nle);
+      argw.NPut(0.0);
+    } else
+      aw.EPut(mp2nle);
+  }
 }
 
 template <class ColSizeWriter>

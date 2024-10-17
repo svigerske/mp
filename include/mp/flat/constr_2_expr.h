@@ -380,7 +380,7 @@ protected:
   template <class RhsOrRange>
   bool HandleLogicalArgs(
       const AlgebraicConstraint<LinTerms, RhsOrRange>& con, int i) {
-    if (HandleLogicalArgs_SpecialCases(con, i))
+    if (false && HandleLogicalArgs_SpecialCases(con, i))
       return true;
     VisitArguments(con, MarkVarIfLogical_);          // Mark as proper vars
     return false;                                    // don't remove immediately
@@ -395,10 +395,15 @@ protected:
   }
 
   /// Special linear cases.
+  /// Not doing any more because these simplifications
+  /// interfere withg result variable marking.
+  /// These simplifications are general presolve
+  /// and should better have been done in normal conversion stage.
   /// @todo atleast, atmost, exactly
   template <class RhsOrRange>
   bool HandleLogicalArgs_SpecialCases(
       const AlgebraicConstraint<LinTerms, RhsOrRange>& con, int ) {
+    /*
     const auto& body = con.GetBody();
     if (!con.lb() && !con.ub()          // == 0.0
         && 2==body.size()) {            // 2 terms
@@ -433,7 +438,7 @@ protected:
         MPD( FixAsTrue(body.var(0)) );
         return true;
       }
-    }
+    } */
     return false;
   }
 
@@ -441,6 +446,8 @@ protected:
   /// if \a NLConstraint's are accepted. Otherwise,
   /// explicify the expression and convert to
   /// \a LinConLE/EQ/GE/Range.
+  /// @return true iff the original constraint should be deleted.
+  /// @todo leave QCP terms here if accepted, even if other expr terms?
   template <class Body, class RhsOrRange>
   bool ConvertToNLCon(
       const AlgebraicConstraint<Body, RhsOrRange>& con, int ) {
@@ -504,7 +511,8 @@ protected:
     LinTerms lt_varsonly;
     LinTerms lt_in_expr = SplitLinTerms(qobj.GetLinTerms(), lt_varsonly);
     // Have expression(s) or QP terms?
-    // Might need to hide them into the expression part
+    // Might need to hide them into the expression part.
+    // @todo leave QP terms here if accepted, even if other expr terms?
     if (lt_in_expr.size()
         || (qobj.GetQPTerms().size()
             && (!MPCD(IfPassQuadObj())         // cannot or want not

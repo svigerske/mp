@@ -77,6 +77,11 @@ public:
 
   /// NL model item accessors
 
+  /// @brief Is expression logical?
+  template <class FlatCon>
+  static bool IsLogical(const ExprWrapper<FlatCon>& expr)
+  { return expr.GetFlatConstraint().IsLogical(); }
+
   /// Get num linear terms
   int GetLinSize(const NLConstraint& nlc) const {
     return nlc.GetMainCon().size();

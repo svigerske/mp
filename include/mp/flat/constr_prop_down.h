@@ -32,7 +32,7 @@ public:
                        Context ctx) {
     MPD( NarrowVarBounds(con.GetResultVar(), lb, ub) );
     con.AddContext(ctx);
-    PropagateResult2LinTerms(con.GetAffineExpr(),
+    PropagateResult2LinTerms(con.GetAffineExpr(),   // @todo better in special cases
                              MPD( MinusInfty() ), MPD( Infty() ), +ctx);
   }
 
