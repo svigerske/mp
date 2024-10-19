@@ -256,13 +256,19 @@ struct BaronmpCommonInfo {
     std::vector<std::string> conNames;
     std::map<std::string, int> varMap;
     std::vector<int> baronToAMPLIndices;
+     int nVarsInteger = 0, nVarsBinary = 0, nVarsContinuous = 0;
   };
   std::shared_ptr <Options> baronOptions_;
   Options& baronOptions() {
     return *baronOptions_;
   }
   
-  int nVarsInteger = 0, nVarsBinary = 0, nVarsContinuous = 0;
+  int nVarsInteger()    const { return lp()->nVarsInteger;} 
+  int nVarsBinary()     const{ return lp()->nVarsBinary;} 
+  int nVarsContinuous() const {return lp()->nVarsContinuous; } 
+  void nVarsInteger(int n)    {  lp()->nVarsInteger=n; }
+  void nVarsBinary(int n)     {  lp()->nVarsBinary=n;}
+  void nVarsContinuous(int n) { lp()->nVarsContinuous=n; }
   
   // Directory where to write baron files
   std::string baronDir;
@@ -320,31 +326,22 @@ public:
   void changeDirectory(const std::string& path);
 };
 
-class GlobalsManager {
-public:
-  struct BaronGlobals {
+class BaronGlobals {
+  public:
     std::string lsolver = "[builtin]";
     int lsolmsg;           // Expect messages for subsolver
-    int nvars;             // from asl0->i.n_var_
+    int nvars;             
     std::string nlfile;    // from getNames
     int v_keepsol;         // from option
-    int lpsol_pvsub;
     std::string initialDir;
     std::string baronDir;
     std::string verbuf;
     std::string lpsol_dll;
-  };
-
-  GlobalsManager() = default;
 
   // Write the globals data to a file
-  static bool writeGlobals(const std::string& filename, const BaronGlobals& globals) ;
-
+  bool serialize(const std::string& filename) ;
   // Read the globals data from a file
-  static std::optional<BaronGlobals> readGlobals(const std::string& filename) ;
-
-  // Utility to display the contents of Globals
-  static void displayGlobals(const BaronGlobals& globals) ;
+  static std::optional<BaronGlobals> deserialize(const std::string& filename) ;
 };
 
 

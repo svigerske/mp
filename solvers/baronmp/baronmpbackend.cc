@@ -64,8 +64,8 @@ void BaronmpBackend::OpenSolver() {
 }
 
 void BaronmpBackend::CloseSolver() {
-  if(!baronOptions().keepsol)
-  recrmdir(baronDir);
+  if((!baronDir.empty()) && (!baronOptions().keepsol))
+    recrmdir(baronDir);
 } 
 
 const char* BaronmpBackend::GetBackendName()
@@ -128,20 +128,19 @@ void BaronmpBackend::SetInterrupter(mp::Interrupter *inter) {
 void BaronmpBackend::Solve() {
   FILE_BAR->close();
 
-  GlobalsManager::BaronGlobals g;
+  BaronGlobals g;
   g.baronDir = baronDir;
   g.initialDir = initialDir;
   g.lsolmsg = baronOptions().lsolmsg;
   if (!baronOptions().lsolver.empty())
     g.lsolver = baronOptions().lsolver;
-  g.lpsol_pvsub = baronOptions().lpsol;
   if (baronOptions().lpsolver == "cplex")
     g.lpsol_dll = baronOptions().cplexlibname;
   g.nlfile = nlFilePath;
-  g.nvars = nVarsInteger + nVarsContinuous + nVarsBinary;
+  g.nvars = nVarsInteger() + nVarsContinuous()+ nVarsBinary();
   g.verbuf = version();
   g.v_keepsol = baronOptions().keepsol;
-  GlobalsManager::writeGlobals(FILENAME_AMPL, g);
+  g.serialize(FILENAME_AMPL);
   int status =  BaronmpCommon::runBaron(filePathBar);
   if (status)
     errorLevel = -1; // Problems running process
@@ -348,6 +347,39 @@ void BaronmpBackend::InitCustomOptions() {
                    } );     // No replacement, make sure they are new
 }
 
+void BaronmpBackend::AddPrimalDualStart(Solution sol0_unpres) {
+  auto mv = GetValuePresolver().PresolveSolution(
+        { sol0_unpres.primal } );
+  auto x0 = mv.GetVarValues()();
+  if(x0.size() > 0){
+    writeBaron("\nSTARTING_POINT {\n");
+    for(int i=0; i<x0.size(); i++)
+    writeBaron("{}: {};\n", lp()->varNames[i], x0[i]);
+    writeBaron("}\n");
+  }
+}
+
+void BaronmpBackend::AddMIPStart(
+    ArrayRef<double> x0_unpres, ArrayRef<int> s0_unpres) {
+    auto mv = GetValuePresolver().PresolveSolution( { x0_unpres } );
+    auto ms = GetValuePresolver().PresolveGenericInt( { s0_unpres } );
+    auto x0 = mv.GetVarValues()();
+    auto s0 = ms.GetVarValues()();
+    bool headerWritten=false;
+      fmt::print("Size={}\n",x0.size() );
+    for (int i=0; i<(int)x0.size(); ++i) {
+    
+      if (s0[i]) {
+        fmt::print("s0[{}]={}\n", i, s0[i]);
+        if(!headerWritten) {
+          headerWritten=true;
+          writeBaron("\nSTARTING_POINT {\n");
+        }
+         writeBaron("{}: {};\n", lp()->varNames[i], x0[i]);
+      }
+    }
+    if(headerWritten) writeBaron("}\n");
+}
 
 void BaronmpBackend::ComputeIIS() {
   // TODO

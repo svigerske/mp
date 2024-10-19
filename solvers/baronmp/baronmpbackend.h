@@ -21,7 +21,7 @@ class BaronmpBackend :
 {
   
   // Define version as follows
-  const int v_day = 8, v_month = 5, v_year = 24;
+  const int v_day = 10, v_month = 10, v_year = 24;
   int errorLevel = 0;
   TimFileData timFileData_;
   ResFileData resFileData_;
@@ -90,6 +90,19 @@ public:
   void ComputeIIS() override;
   /// Retrieve IIS. Elements correspond to IISStatus
   IIS GetIIS() override;
+
+  /**
+  * General warm start
+  * set primal/dual initial guesses for continuous case
+  **/
+  ALLOW_STD_FEATURE( WARMSTART, true )
+  void AddPrimalDualStart(Solution sol0) override;
+  /**
+  * Specifically, MIP warm start
+  **/
+  ALLOW_STD_FEATURE( MIPSTART, true )
+  void AddMIPStart(
+      ArrayRef<double> x0, ArrayRef<int> s0) override;
 
   /**
    * MULTISOL support.

@@ -105,31 +105,28 @@ namespace mp {
     AddVariables(indicesFree, "x", "VARIABLES");
     AddBounds(v.plb(), vtype, true);
     AddBounds(v.pub(), vtype, false);
-    nVarsBinary = indicesBin.size();
-    nVarsContinuous = indicesPos.size() + indicesFree.size();
-    nVarsInteger = indicesInt.size();
+    nVarsBinary(indicesBin.size());
+    nVarsContinuous(indicesPos.size() + indicesFree.size());
+    nVarsInteger(indicesInt.size());
   }
 
 
-  std::string printLinearTerm(double coeff, const char* vname, bool first = false)
+  void appendLinearTerm(fmt::MemoryWriter &w, double coeff, const char* vname, bool first = false)
   {
-    fmt::MemoryWriter w;
-    if ((!first) || (coeff > 0))
+    if ((!first) && (coeff > 0))
       w << "+";
-
     if (std::fabs(coeff) != 1.0) w << coeff << "*";
     w << vname;
-    return w.str();
   }
-  std::string printQuadTerm(double coeff, const char* v1, const char* v2, bool first = false)
+  void appendQuadTerm(fmt::MemoryWriter &w, double coeff, const char* v1, const char* v2=nullptr, bool first = false)
   {
-    fmt::MemoryWriter w;
-    if ((!first) || (coeff < 0))
-      w << " -";
-
+    if ((!first) && (coeff > 0))
+      w << " +";
     if (std::fabs(coeff) != 1.0) w << coeff << "*";
-    w << v1 << "*" << v2;
-    return w.str();
+    if(v2)
+      w << v1 << "*" << v2;
+    else
+      w << v1 << "^2";
   }
 
 
@@ -147,7 +144,7 @@ namespace mp {
       auto vars = lo.GetLinTerms().pvars();
 
       for (size_t i = 0; i < nvars; i++)
-        w << printLinearTerm(coeffs[i], varName(vars[i]).c_str(), i == 0);
+        appendLinearTerm(w, coeffs[i], varName(vars[i]).c_str(), i == 0);
       w<<(";\n");
       obj = w.str();
      
@@ -172,47 +169,49 @@ namespace mp {
     lp()->conNames.push_back(n);
     return n;
   }
-  
-  std::string addRhs(const std::string& body, double lhs, double rhs) {
-    fmt::MemoryWriter w;
+  void appendNameAndLhs(fmt::MemoryWriter &w, const std::string &name, double lhs, double rhs) {
+    w << name << ": ";
     bool hasLhs = lhs != -std::numeric_limits<double>::infinity();
     bool hasRhs = rhs != std::numeric_limits<double>::infinity();
     if ((hasLhs && hasRhs) && (lhs != rhs))
-      w << fmt::format("{} <= ", lhs);
-    w << body;
-    if (hasRhs)
-      w << fmt::format(" {} {}", (lhs != rhs) ? "<=" : "==", rhs);
-    else if (hasLhs)
-      w << fmt::format(" >= {}", lhs);
-    w << ";\n";
-    return w.str();
+      w << lhs << " <= ";
 
   }
+  void appendRhs(fmt::MemoryWriter &w, double lhs, double rhs) {
+     bool hasLhs = lhs != -std::numeric_limits<double>::infinity();
+    bool hasRhs = rhs != std::numeric_limits<double>::infinity();
+    if (hasRhs)
+      w <<  ((lhs != rhs) ? "<=" : "==") << rhs;
+    else if (hasLhs) // range
+      w << " >= " << lhs;
+    w << ";\n";
+
+  }
+
   void BaronmpModelAPI::addLinear(const std::string& name,
     double lhs, double rhs,
     size_t nvars, const int* vars, const double* coeffs){
-    
 
-    fmt::MemoryWriter body;
-    for (size_t i = 0; i < nvars; i++)
-      body << printLinearTerm(coeffs[i], varName(vars[i]).c_str(), i == 0);
     fmt::MemoryWriter w;
-    w << createConName(name) << ": ";
-    w << addRhs(body.str(), lhs, rhs);
+    appendNameAndLhs(w, createConName(name), lhs, rhs);
+    for (size_t i = 0; i < nvars; i++)
+      appendLinearTerm(w, coeffs[i], varName(vars[i]).c_str(), i == 0);
+    appendRhs(w, lhs, rhs);
     cons.push_back(w.str());
 }
 
   void BaronmpModelAPI::addQuadratic(const std::string& name,
     double lhs, double rhs, const mp::LinTerms& lt,
     const mp::QuadTerms& qt) {
-    fmt::MemoryWriter body;
-    for (size_t i = 0; i < lt.size(); i++)
-      body << printLinearTerm(lt.pcoefs()[i], varName(lt.var(i)).c_str(), i == 0);
-    for (size_t i = 0; i < qt.size(); i++)
-      body << printQuadTerm(qt.coef(i), varName(qt.var1(i)).c_str(), varName(qt.var2(i)).c_str(), i == 0);
+
     fmt::MemoryWriter w;
-    w << createConName(name) << ": ";
-    w << addRhs(body.str(), lhs, rhs);
+    appendNameAndLhs(w, createConName(name), lhs, rhs);
+    for (size_t i = 0; i < lt.size(); i++)
+      appendLinearTerm(w, lt.pcoefs()[i], varName(lt.var(i)).c_str(), i == 0);
+    for (size_t i = 0; i < qt.size(); i++)
+       appendQuadTerm(w, qt.coef(i), varName(qt.var1(i)).c_str(), 
+          (qt.var1(i) == qt.var2(i)) ? nullptr : varName(qt.var2(i)).c_str(), i == 0);
+    appendRhs(w, lhs, rhs);
     cons.push_back(w.str());
   }
 
@@ -327,24 +326,8 @@ void BaronmpModelAPI::AddConstraint(const PLConstraint& plc) {
 }
 
 
-void BaronmpModelAPI::FinishProblemModificationPhase() {
-  if (lp()->conNames.size() != 0)
-  {
-    writeBaron("EQUATIONS ");
-    writeBaron(lp()->conNames[0]);
-    for (auto i = 0; i < lp()->conNames.size(); ++i)
-      writeBaron(" ,{}", lp()->conNames[i]);
-    writeBaron(";\n\n");
-
-    for (auto c : cons)
-      writeBaron(c);
-  }
-  writeBaron("\n");
-  writeBaron(obj);
-}
-
-
 template <int SENSE> void BaronmpModelAPI::addTopLevel(const NLBaseAssign<SENSE>& c) {
+    fmt::print("addTopLevel(const NLBaseAssign)\n");
   const auto var = GetVariable(c);
   fmt::MemoryWriter w;
   w << createConName(c.GetName()) << ": ";
@@ -353,19 +336,20 @@ template <int SENSE> void BaronmpModelAPI::addTopLevel(const NLBaseAssign<SENSE>
   const auto& frm = GetExpression(c);
   w << frm.ToString(false); 
   w << ";\n";
+    fmt::print("{}\n", w.str());
   cons.push_back(w.str());
 }
 
 void BaronmpModelAPI::AddConstraint(const NLConstraint& nlc) {
   const auto& exp = GetExpression(nlc);
-  fmt::MemoryWriter body;
-  for (int i = 0; i < GetLinSize(nlc); ++i)
-    body << printLinearTerm(GetLinCoef(nlc, i), varName(GetLinVar(nlc, i)).c_str(), i == 0);
-  if (GetLinSize(nlc) > 0) body <<" + ";
-  body << exp.ToString(false);
+  double lhs=GetLower(nlc), rhs=GetUpper(nlc);
   fmt::MemoryWriter w;
-  w << createConName(nlc.GetName()) << ": ";
-  w << addRhs(body.str(), GetLower(nlc), GetUpper(nlc));
+  appendNameAndLhs(w, createConName(nlc.GetName()), lhs, rhs);
+  for (int i = 0; i < GetLinSize(nlc); ++i)
+      appendLinearTerm(w, GetLinCoef(nlc, i), varName(GetLinVar(nlc, i)).c_str(), i == 0);
+  if (GetLinSize(nlc) > 0) w <<" + ";
+  exp.append(w, false);
+  appendRhs(w, lhs, rhs);
   cons.push_back(w.str());
 }
 
@@ -471,7 +455,22 @@ VExpr BaronmpModelAPI::AddExpression(const AbsExpression& e) {
   return expr;
 }
 
+void BaronmpModelAPI::FinishProblemModificationPhase() {
+  if (lp()->conNames.size() != 0)
+  {
+    writeBaron("EQUATIONS ");
+    writeBaron(lp()->conNames[0]);
+    if(lp()->conNames.size() > 1)
+    for (auto i = 1; i < lp()->conNames.size(); ++i)
+      writeBaron(" ,{}", lp()->conNames[i]);
+    writeBaron(";\n\n");
 
+    for (auto c : cons)
+      writeBaron(c);
+  }
+  writeBaron("\n");
+  writeBaron(obj);
+}
 
 
 

@@ -20,6 +20,10 @@
 #include <process.h>
 #include <windows.h>
 #else
+#ifdef __APPLE__
+    #include <mach-o/dyld.h>
+    #include <crt_externs.h>
+#endif
 #include <sys/wait.h>
 #include <unistd.h>
 #include <chrono>
@@ -31,10 +35,11 @@ namespace mp {
 
 #ifdef WIN32
   constexpr const char* EXENAME = "baronin.exe"; 
+  char SEP = '\\';
 #else
   constexpr const char* EXENAME = "baronin";
+  char SEP = '/';
 #endif
-char SEP = fs::path::preferred_separator;
 
 int BaronmpCommon::runBaron(const std::string& arg) {
   std::vector<std::string> args = { EXENAME, arg };
@@ -116,6 +121,10 @@ int BaronmpCommon::run(const std::vector<std::string>& args) {
   return static_cast<int>(exit_code);
 
 #else
+#ifdef __APPLE__
+  #define environ environ_MACOSX
+  char **environ= *_NSGetEnviron();
+#endif
   // Unix-like system implementation using fork and execve
   pid_t pid = fork();
 
@@ -124,16 +133,14 @@ int BaronmpCommon::run(const std::vector<std::string>& args) {
     return -1;
   }
   else if (pid == 0) {
-    // Child process
     std::vector<char*> exec_args;
     for (const auto& arg : args) {
       exec_args.push_back(const_cast<char*>(arg.c_str()));
     }
     exec_args.push_back(nullptr);  // Null-terminate the argument list
-
+   
     if (execve(cmd_path.c_str(), exec_args.data(), environ) == -1) {
       fmt::print(stderr, "execve failed: {}\n", strerror(errno));
-      exit(EXIT_FAILURE);
       exit(EXIT_FAILURE);
     }
   }
@@ -165,17 +172,12 @@ int BaronmpCommon::run(const std::vector<std::string>& args) {
 void BaronmpCommon::initDirectories(const std::string& stub, 
   const std::string& scratch, bool overwrite) {
   std::string td;
-
-
   try {
     initialDir = fs::current_path().string();
   }
   catch (const fs::filesystem_error& e) {
     fmt::print(stderr, "Error retrieving current directory: {}\n", e.what());
   }
-
-  
-  
   // Check if scratch directory is valid or create it if possible
   if (!scratch.empty()) {
     fs::path scratch_path(scratch);
@@ -340,25 +342,23 @@ void Options::appendInlineParams(fmt::MemoryWriter& m) const {
 void BaronmpCommon::writeBaronOptions() {
   writeBaron("// AMPL/BARON default options\n");
   writeBaron("OPTIONS {\n");
-
   baronOptions().initializeLPSolver();
   writeBaron(baronOptions().serialize());
-
   writeBaron("}\n");
 }
   // Write the globals data to a file
-  bool GlobalsManager::writeGlobals(const std::string& filename, const  BaronGlobals& globals)   {
+  bool BaronGlobals::serialize(const std::string& filename)   {
     try {
       std::ofstream output(filename);
       if (!output) {
         throw std::ios_base::failure("Failed to open file for writing.");
       }
 
-      output << fmt::format("{}\n{}\n{}\n{}\n{}\n{}\n{}\n{}\n{}\n{}\n",
-        globals.baronDir, globals.initialDir,
-        globals.lsolmsg, globals.lsolver, globals.lpsol_pvsub,  globals.nlfile,
-        globals.nvars, globals.v_keepsol, globals.verbuf,
-        globals.lpsol_dll);
+      output << fmt::format("{}\n{}\n{}\n{}\n{}\n{}\n{}\n{}\n{}\n",
+        baronDir, initialDir,
+        lsolmsg, lsolver,  nlfile,
+        nvars, v_keepsol, verbuf,
+        lpsol_dll);
       return true;
     }
     catch (const std::ios_base::failure& e) {
@@ -368,7 +368,7 @@ void BaronmpCommon::writeBaronOptions() {
   }
 
   // Read the globals data from a file
-  std::optional < GlobalsManager::BaronGlobals > GlobalsManager::readGlobals(const std::string& filename)  {
+  std::optional <BaronGlobals> BaronGlobals::deserialize(const std::string& filename)  {
     BaronGlobals globals;
     try {
       std::ifstream input(filename);
@@ -380,7 +380,6 @@ void BaronmpCommon::writeBaronOptions() {
         >> globals.initialDir
         >> globals.lsolmsg
         >> globals.lsolver
-        >> globals.lpsol_pvsub
         >> globals.nlfile
         >> globals.nvars
         >> globals.v_keepsol
@@ -398,14 +397,6 @@ void BaronmpCommon::writeBaronOptions() {
     }
   }
 
-  // Utility to display the contents of Globals
-  void  GlobalsManager::displayGlobals(const  BaronGlobals& globals)  {
-    fmt::print("Solver: {}\nLSolMsg: {}\nLPSubSolver: {}\nNumber of Vars: {}\nNLFile: {}\n"
-      "Keep Solution: {}\nInitial Dir: {}\nBaron Dir: {}\nVerbBuf: {}\nLP DLL: {}\n",
-      globals.lsolver, globals.lsolmsg, globals.lpsol_pvsub, globals.nvars,
-      globals.nlfile, globals.v_keepsol, globals.initialDir, globals.baronDir,
-      globals.verbuf, globals.lpsol_dll);
-  }
   std::string Utils::getLibPath()
   {
     const std::string libName = "baron-lib";
@@ -430,8 +421,7 @@ std::string Utils::getExecutablePath() {
     return std::string(buffer);
 
     #elif __APPLE__
-    // macOS
-    #include <mach-o/dyld.h>
+
     char buffer[PATH_MAX];
     uint32_t size = sizeof(buffer);
     if (_NSGetExecutablePath(buffer, &size) == 0) {

@@ -115,19 +115,14 @@ namespace mp {
       child.parent = this;
       children.push_back(child);
     }
-
-    // Print the expression in-order
-    std::string ToString(bool endl=true) const {
-      
-      assert(opcode >= Opcode::CONSTANT && opcode <= Opcode::ATANH);
-
-      fmt::MemoryWriter w;
+    void append(fmt::MemoryWriter &w, bool endl=true) const {
+            assert(opcode >= Opcode::CONSTANT && opcode <= Opcode::ATANH);
       if (opcode >= Opcode::EXP)
         w << opcodeStrings[(int)opcode];
       if (!children.empty()) {
         w << "(";
         for (size_t i = 0; i < children.size(); ++i) {
-          w << children[i].ToString();
+          children[i].append(w);
           if (i < children.size() - 1) {
             switch (opcode) {
             case Opcode::ADD: w<< " + "; break;
@@ -153,9 +148,14 @@ namespace mp {
       }
         if (endl && (parent == nullptr))
           w << "\n";
-      return w.str();
     }
-    
+    // Print the expression in-order
+    std::string ToString(bool endl=true) const {
+      
+          fmt::MemoryWriter w;
+          append(w, endl);
+          return w.str();
+    }
     
   };
 
