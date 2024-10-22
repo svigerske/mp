@@ -110,19 +110,29 @@ namespace mp {
     nVarsInteger(indicesInt.size());
   }
 
+  void addCoefficient(fmt::MemoryWriter &w, double coeff, bool first)
+  {
+    if (coeff > 0) {
+        if (!first) w << " + ";
+        // Omit '1*' for positive coefficient 1
+        if (coeff != 1) 
+            w << coeff << "*";
+    } 
+    else { // Coefficient is negative
+        // If the coefficient is -1, just print ' - ', otherwise print the coefficient
+        if (coeff == -1)  w << " - ";
+         else  w << coeff << "*";
+    }
+  }
 
   void appendLinearTerm(fmt::MemoryWriter &w, double coeff, const char* vname, bool first = false)
   {
-    if ((!first) && (coeff > 0))
-      w << "+";
-    if (std::fabs(coeff) != 1.0) w << coeff << "*";
+    addCoefficient(w, coeff, first);
     w << vname;
   }
   void appendQuadTerm(fmt::MemoryWriter &w, double coeff, const char* v1, const char* v2=nullptr, bool first = false)
   {
-    if ((!first) && (coeff > 0))
-      w << " +";
-    if (std::fabs(coeff) != 1.0) w << coeff << "*";
+    addCoefficient(w, coeff, first);
     if(v2)
       w << v1 << "*" << v2;
     else
@@ -303,31 +313,30 @@ void BaronmpModelAPI::AddConstraint(const LogConstraint& cc) {
 }
 
 void BaronmpModelAPI::AddConstraint(const ExpAConstraint& cc) {
-  // TODO
-  fmt::print("Adding ExpA constraint \"{}\"\n", cc.GetName());
+  // a^v
+  fmt::MemoryWriter w;
+  w<< createConName(cc.GetName()) << ": ";
+  w << fmt::format("{} = {} ^ {};\n",  varName(cc.GetResultVar()), cc.GetParameters()[0],varName( cc.GetArguments()[0]));
+  cons.push_back(w.str());
 }
 
-
-
 void BaronmpModelAPI::AddConstraint(const LogAConstraint& cc) {
-  // TODO
-  fmt::print("Adding LogA constraint \"{}\"\n", cc.GetName());
+  fmt::MemoryWriter w;
+  w<< createConName(cc.GetName()) << ": ";
+  w << fmt::format("{} = log({})/log({});\n", varName(cc.GetResultVar()), 
+    varName( cc.GetArguments()[0]), cc.GetParameters()[0]);
+  cons.push_back(w.str());
 }
 
 void BaronmpModelAPI::AddConstraint(const PowConstraint& cc) {
-  // TODO
+  // v ^ a
+   fmt::MemoryWriter w;
+  w<< createConName(cc.GetName()) << ": ";
+  w << fmt::format("{} = {} ^ {};\n",  varName(cc.GetResultVar()),varName( cc.GetArguments()[0]), cc.GetParameters()[0]);
+  cons.push_back(w.str());
 }
-
-
-
-void BaronmpModelAPI::AddConstraint(const PLConstraint& plc) {
-  fmt::print("Adding PL constraint \"{}\"\n", plc.GetName());
-  // todo
-}
-
 
 template <int SENSE> void BaronmpModelAPI::addTopLevel(const NLBaseAssign<SENSE>& c) {
-    fmt::print("addTopLevel(const NLBaseAssign)\n");
   const auto var = GetVariable(c);
   fmt::MemoryWriter w;
   w << createConName(c.GetName()) << ": ";
@@ -336,7 +345,6 @@ template <int SENSE> void BaronmpModelAPI::addTopLevel(const NLBaseAssign<SENSE>
   const auto& frm = GetExpression(c);
   w << frm.ToString(false); 
   w << ";\n";
-    fmt::print("{}\n", w.str());
   cons.push_back(w.str());
 }
 

@@ -39,6 +39,7 @@ namespace mp {
 #else
   constexpr const char* EXENAME = "baronin";
   char SEP = '/';
+  volatile pid_t BaronmpCommon::pid=-5;
 #endif
 
 int BaronmpCommon::runBaron(const std::string& arg) {
@@ -102,11 +103,12 @@ int BaronmpCommon::run(const std::vector<std::string>& args) {
   ZeroMemory(&pi, sizeof(pi));
 
   // Create the process
-  if (!CreateProcess(NULL, cmdline.data(), NULL, NULL, FALSE, 0, NULL, NULL, &si, &pi)) {
+  if (!CreateProcess(NULL, cmdline.data(), NULL, 
+  NULL, TRUE, CREATE_NEW_PROCESS_GROUP, NULL, NULL, &si, &pi)) {
     fmt::print(stderr, "CreateProcess failed ({})\n", GetLastError());
     return -1;
   }
-
+  pid = pi.dwProcessId;
   // Wait until the process exits
   WaitForSingleObject(pi.hProcess, INFINITE);
 
@@ -126,7 +128,7 @@ int BaronmpCommon::run(const std::vector<std::string>& args) {
   char **environ= *_NSGetEnviron();
 #endif
   // Unix-like system implementation using fork and execve
-  pid_t pid = fork();
+  pid = fork();
 
   if (pid == -1) {
     fmt::print(stderr, "fork failed: {}\n", strerror(errno));
@@ -147,17 +149,17 @@ int BaronmpCommon::run(const std::vector<std::string>& args) {
   else {
     // Parent process: wait for the child to complete
     int status;
-    if (waitpid(pid, &status, 0) == -1) {
-      fmt::print(stderr, "waitpid failed: {}\n", strerror(errno));
-      return -1;
-    }
+    do {
+          pid = waitpid(pid, &status, 0);
+    } while (pid == -1 && errno == EINTR);  // Retry if interrupted by a signal
+
 
     if (WIFEXITED(status)) {
       return WEXITSTATUS(status);
     }
     else if (WIFSIGNALED(status)) {
       fmt::print(stderr, "Process terminated by signal {}\n", WTERMSIG(status));
-      return -1;
+      return 0;
     }
   }
 #endif

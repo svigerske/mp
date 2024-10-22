@@ -6,6 +6,12 @@
 #include "mp/flat/model_api_base.h"
 #include "baronmpbackend.h"
 
+
+#ifndef WIN32
+#include <csignal>  // for kill()
+#endif
+
+
 extern "C" {
   #include "baronmp-ampls-c-api.h"    // Baronmp AMPLS C API
 }
@@ -15,12 +21,18 @@ namespace {
 
 
 bool InterruptBaronmp(void* prob) {
-
-  //return BARONMP_Interrupt((baronmp_prob*)prob);
+  #ifndef WIN32
+  kill(mp::BaronmpCommon::pid, SIGINT);
+  #else
+  if (!GenerateConsoleCtrlEvent(CTRL_C_EVENT, mp::BaronmpCommon::pid)) {
+        std::cerr << "GenerateConsoleCtrlEvent failed (" << GetLastError() << ").\n";
+        return false;
+    }
+  #endif
   return true;
 }
 
-}  // namespace {}
+}  
 
 std::unique_ptr<mp::BasicBackend> CreateBaronmpBackend() {
   return std::unique_ptr<mp::BasicBackend>{new mp::BaronmpBackend()};
@@ -121,8 +133,6 @@ int BaronmpBackend::BarrierIterations() const {
 
 void BaronmpBackend::SetInterrupter(mp::Interrupter *inter) {
   inter->SetHandler(InterruptBaronmp, lp());
-  // TODO Check interrupter
-  //BARONMP_CCALL( CPXsetterminate (env(), &terminate_flag) );
 }
 
 void BaronmpBackend::Solve() {

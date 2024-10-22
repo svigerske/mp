@@ -297,8 +297,6 @@ public:
 
   /// Some non linear constraints.
   /// See constr_std.h for more.
-  ACCEPT_CONSTRAINT(PLConstraint, Recommended, CG_General)
-  void AddConstraint(const PLConstraint& cc);
   ACCEPT_CONSTRAINT(MaxConstraint, Recommended, CG_General)
     void AddConstraint(const MaxConstraint& mc);
   ACCEPT_CONSTRAINT(MinConstraint, Recommended, CG_General)

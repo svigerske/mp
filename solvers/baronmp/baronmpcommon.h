@@ -298,6 +298,11 @@ class BaronmpCommon :
     public Backend2ModelAPIConnector<BaronmpCommonInfo> {
 public:
 
+#ifndef WIN32
+  static volatile pid_t pid;
+  #else 
+  DWORD pid;
+#endif
   static constexpr double Infinity() { return INFINITY;  }
   static constexpr double MinusInfinity() { return -INFINITY; }
   const std::string FILENAME_BAR = "amplmodel.bar";
@@ -402,6 +407,9 @@ public:
 
 
   double ObjectiveValue() const {
+    
+    if(objective_values.size() == 0)
+    return 0;
     return objective_values[objective_values.size() - 1];
   }
 
