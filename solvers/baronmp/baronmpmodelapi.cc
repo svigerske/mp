@@ -25,7 +25,7 @@ namespace mp {
     {
       if (vtypes[i] == VTYPE::BIN)
         continue;
-      if (lower && vtypes[i] == VTYPE::POS)
+      if (lower &&   bounds[i]==0 && vtypes[i] == VTYPE::POS)
         continue;
       if (bounds[i] != bnd)
       {

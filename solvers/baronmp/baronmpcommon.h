@@ -301,7 +301,7 @@ public:
 #ifndef WIN32
   static volatile pid_t pid;
   #else 
-  DWORD pid;
+  static volatile DWORD pid;
 #endif
   static constexpr double Infinity() { return INFINITY;  }
   static constexpr double MinusInfinity() { return -INFINITY; }

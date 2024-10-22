@@ -36,6 +36,7 @@ namespace mp {
 #ifdef WIN32
   constexpr const char* EXENAME = "baronin.exe"; 
   char SEP = '\\';
+  volatile DWORD BaronmpCommon::pid;
 #else
   constexpr const char* EXENAME = "baronin";
   char SEP = '/';
@@ -167,6 +168,20 @@ int BaronmpCommon::run(const std::vector<std::string>& args) {
   return 0;
 }
 
+std::filesystem::path resolveTilde(const std::filesystem::path& p) {
+    std::string pathStr = p.string();
+
+    // Check if the path starts with a tilde (~)
+    if (!pathStr.empty() && pathStr[0] == '~') {
+        const char* home = std::getenv("HOME");  // Get the HOME environment variable
+        if (home) {
+            // Replace tilde with the home directory
+            pathStr.replace(0, 1, home);
+        }
+    }
+
+    return std::filesystem::path(pathStr);
+}
 
 /**
 * Initialize baronDir and nlFilePath
@@ -183,6 +198,9 @@ void BaronmpCommon::initDirectories(const std::string& stub,
   // Check if scratch directory is valid or create it if possible
   if (!scratch.empty()) {
     fs::path scratch_path(scratch);
+    #ifndef WIN32
+    scratch_path = resolveTilde(scratch_path);
+    #endif
     if (overwrite)
     {
       if (fs::exists(scratch_path))
