@@ -15,9 +15,12 @@ needs_sphinx = "3.2.0"
 
 # Add any Sphinx extension module names here, as strings. They can be extensions
 # coming with Sphinx (named 'sphinx.ext.*') or your custom ones.
-extensions = ["breathe",
-              "sphinx.ext.mathjax", "sphinx.ext.graphviz",
-              "sphinx_tabs.tabs"]
+extensions = [
+    "breathe",
+    "sphinx.ext.mathjax",
+    "sphinx.ext.graphviz",
+    "sphinx_tabs.tabs",
+]
 
 # Configure Breathe.
 # When building with CMake, the path to doxyxml is passed via the command line.
@@ -77,38 +80,17 @@ pygments_style = "sphinx"
 # a list of builtin themes.
 html_theme = "ampl_sphinx_theme"
 html_theme_options = {
-    "logo_link": "index",
     "icon_links": [
         {
             "name": "GitHub",
             "url": "https://github.com/ampl/mp",
             "icon": "fab fa-github",
         },
-        {
-            "name": "AMPL Resources",
-            "url": "https://developers.ampl.com",
-            "icon": "fas fa-book fa-fw",
-            "target": "_self",
-        },
-        {
-            "name": "AMPL Portal",
-            "url": "https://portal.ampl.com",
-            "icon": "fas fa-sign-in-alt fa-fw",
-            "target": "_self",
-        },
-        {
-            "name": "AMPL.com",
-            "url": "https://ampl.com",
-            "icon": "fas fa-home fa-fw",
-            "target": "_self",
-        },
     ],
     "collapse_navigation": True,
-    "external_links": [
-        # {"name": "Try AMPL", "url": "https://ampl.com"}
-    ],
     "logo_text": "MP",
 }
+html_context = {"default_mode": "light"}
 
 html_baseurl = "https://mp.ampl.com"
 
