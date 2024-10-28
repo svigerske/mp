@@ -324,7 +324,7 @@ private:
     if (IsVarProper(i_expr)) {
       is_init_expr_retrieved_[i_expr] = true;             // is being explicified
       Expr result;
-      get_init_expr_(i_expr, &result);
+      get_init_expr_(i_expr, &result);    // TODO we are not caching them.
       return result;
     }
     return GetInitExpression(i_expr);                     // standard case

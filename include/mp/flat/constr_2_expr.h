@@ -75,7 +75,7 @@ public:
   void ConsiderMarkingArguments(
       const Con& con, int i, ExpressionAcceptanceLevel eal) {
     bool fMarkArgs = false;
-    if (con.HasResultVar())    // func cons: non-accepted ones by default
+    if (con.HasResultVar())    // func cons: those not accepted as expr
       fMarkArgs = (ExpressionAcceptanceLevel::NotAccepted==eal);
     else
       fMarkArgs = true;        // static cons: all non-algebraic by default
@@ -128,6 +128,7 @@ public:
     // Otherwise it's a flat con.
     if (ExpressionAcceptanceLevel::NotAccepted != eal) {
       if (1==stage_cvt2expr_) {
+        HandleLogicalArgs(con, i);         // expicify logical args
         if (!con.GetConstraint().GetBody().is_variable()) {  // already a variable
           ConvertConditionalConLHS(con, i);
           return true;
@@ -149,6 +150,9 @@ public:
       const FuncCon& con, int i,
       ConstraintAcceptanceLevel , ExpressionAcceptanceLevel eal) {
     if (ExpressionAcceptanceLevel::NotAccepted != eal) {     // going into an expr
+      if constexpr (std::is_base_of_v<NumericFunctionalConstraintTraits, FuncCon>)
+        if (1==stage_cvt2expr_)
+          HandleLogicalArgs(con, i);
       if (2==stage_cvt2expr_)
         ConsiderExplicifyingExpression(con, i);
     }
@@ -159,6 +163,8 @@ public:
   bool ConvertWithExpressions(
       const LinearFunctionalConstraint& con, int i,
       ConstraintAcceptanceLevel , ExpressionAcceptanceLevel eal) {
+    if (1==stage_cvt2expr_)
+      HandleLogicalArgs(con, i);         // explicify logical args
     if (2==stage_cvt2expr_) {
       return ConsiderExplicifyingAlgebraic(con, i);
     }
@@ -169,6 +175,8 @@ public:
   bool ConvertWithExpressions(
       const QuadraticFunctionalConstraint& con, int i,
       ConstraintAcceptanceLevel , ExpressionAcceptanceLevel eal) {
+    if (1==stage_cvt2expr_)
+      HandleLogicalArgs(con, i);         // explicify logical args
     if (2==stage_cvt2expr_) {
       return ConsiderExplicifyingAlgebraic(con, i);
     }
@@ -183,6 +191,8 @@ public:
       const ComplementarityConstraint<Expr>& con,
       int i,
       ConstraintAcceptanceLevel , ExpressionAcceptanceLevel ) {
+    if (1==stage_cvt2expr_)
+      HandleLogicalArgs(con, i);         // explicify logical args
     if (false                      // TODO check acc for NLCompl
         && 1==stage_cvt2expr_
         && !con.GetExpression().is_variable()) {             // already a variable
@@ -276,6 +286,8 @@ public:
   void ConvertObjectivesWithExpressions() {
     auto& objs = MPD( get_objectives() );
     for (size_t iobj=0; iobj<objs.size(); ++iobj) {
+      HandleLogicalArgs(objs[iobj].GetLinTerms(), iobj);
+      HandleLogicalArgs(objs[iobj].GetQPTerms(), iobj);
       Convert1ObjWithExpressions(iobj, objs[iobj]);
     }
   }
@@ -375,28 +387,17 @@ protected:
     return false;
   }
 
-  /// Handle logical expression in a linear con
+  /// Handle logical expression in an algebraic con
   /// @return whether to remove the original \a con.
-  template <class RhsOrRange>
-  bool HandleLogicalArgs(
-      const AlgebraicConstraint<LinTerms, RhsOrRange>& con, int i) {
-    if (false && HandleLogicalArgs_SpecialCases(con, i))
-      return true;
-    VisitArguments(con, MarkVarIfLogical_);          // Mark as proper vars
-    return false;                                    // don't remove immediately
-  }
-
-  /// Handle logical expression in a quadratic con
-  template <class RhsOrRange>
-  bool HandleLogicalArgs(
-      const AlgebraicConstraint<QuadAndLinTerms, RhsOrRange>& con, int ) {
+  template <class Con>
+  bool HandleLogicalArgs(const Con& con, int ) {
     VisitArguments(con, MarkVarIfLogical_);          // Mark as proper vars
     return false;                                    // don't remove immediately
   }
 
   /// Special linear cases.
   /// Not doing any more because these simplifications
-  /// interfere withg result variable marking.
+  /// interfere with result variable marking.
   /// These simplifications are general presolve
   /// and should better have been done in normal conversion stage.
   /// @todo atleast, atmost, exactly
