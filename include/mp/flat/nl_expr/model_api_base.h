@@ -323,9 +323,11 @@ private:
     assert(!is_init_expr_retrieved_[i_expr]);             // not twice explicified
     if (IsVarProper(i_expr)) {
       is_init_expr_retrieved_[i_expr] = true;             // is being explicified
-      Expr result;
-      get_init_expr_(i_expr, &result);    // TODO we are not caching them.
-      return result;
+      if (!is_init_expr_stored_[i_expr]) {
+        is_init_expr_stored_[i_expr] = true;
+          get_init_expr_(i_expr, &init_expr_stored_[i_expr]);
+      }
+      return init_expr_stored_[i_expr];  // ...............
     }
     return GetInitExpression(i_expr);                     // standard case
   }
@@ -350,6 +352,8 @@ public:
     is_expr_stored_.resize(is_var_proper_.size());    // allocate
     expr_stored_.resize(is_var_proper_.size());
     is_init_expr_retrieved_.resize(is_var_proper_.size());
+    is_init_expr_stored_.resize(is_var_proper_.size());
+    init_expr_stored_.resize(is_var_proper_.size());
   }
 
   /// Is var proper?
@@ -378,10 +382,20 @@ public:
 
 private:
   std::vector<bool> is_var_proper_;
-  std::vector<bool> is_expr_stored_;    // actual Expr's of the result var or the init expressions
+  /// actual Expr's of the result vars (for explicified exprds)
+  /// or the expressions, otherwise
+  std::vector<bool> is_expr_stored_;
   /// Expression cache
   std::deque<ExprType> expr_stored_;    // to keep iterators valid
+
+  /// init exprs: for explicified expressions, whether
+  /// the actual init expr-s retrieved.
+  /// Should be cleared by ResetIniExpr...
+  /// if retrieving repeatedly.
   std::vector<bool> is_init_expr_retrieved_;
+  std::vector<bool> is_init_expr_stored_;
+  /// Expression cache
+  std::deque<ExprType> init_expr_stored_;    // to keep iterators valid
   InitExprGetterType get_init_expr_;
 };
 

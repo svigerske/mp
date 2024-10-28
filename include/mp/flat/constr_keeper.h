@@ -263,6 +263,8 @@ public:
     if constexpr (ExpressionAcceptanceLevel::NotAccepted
         != Backend::ExpressionInterfaceAcceptanceLevel()) {
       assert(!cons_[i].IsBridged());
+      assert(!cons_[i].IsExprAdded());
+      cons_[i].MarkExprAdded();
       *(typename Backend::Expr*)pexpr =
           static_cast<Backend&>(be).AddExpression(cons_[i].GetExpr());
     }
@@ -319,6 +321,11 @@ protected:
       is_unused_=true;
     }
 
+    /// Has the expression been added to the backend?
+    bool IsExprAdded() const { return is_expr_stored_; }
+    /// Mark as added
+    void MarkExprAdded() { is_expr_stored_=true; }
+
     /// Get the flat constraint, const &
     const Constraint& GetCon() const { return con_.GetFlatConstraint(); }
     /// Get the flat constraint &
@@ -336,6 +343,7 @@ protected:
     int depth_ = 0;
     bool is_bridged_ = false;
     bool is_unused_ = false;
+    bool is_expr_stored_ = false;
   };
 
 	/// Convert all new constraints of this type
