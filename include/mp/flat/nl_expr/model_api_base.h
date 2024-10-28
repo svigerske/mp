@@ -325,7 +325,7 @@ private:
       is_init_expr_retrieved_[i_expr] = true;             // is being explicified
       if (!is_init_expr_stored_[i_expr]) {
         is_init_expr_stored_[i_expr] = true;
-          get_init_expr_(i_expr, &init_expr_stored_[i_expr]);
+        get_init_expr_(i_expr, &init_expr_stored_[i_expr]);
       }
       return init_expr_stored_[i_expr];  // ...............
     }
