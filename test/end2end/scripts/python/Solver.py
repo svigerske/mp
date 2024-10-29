@@ -894,6 +894,7 @@ class GurobiDirectSolver(MPDirectSolver):
 
                  ModelTags.socp,      ## MP transforms cones to quadratics
                  ModelTags.socp_hard_to_recognize,
+                 ModelTags.expcones,  ## Although might not have the expconic solver
 
                  ModelTags.nonlinear, ModelTags.log, ModelTags.trigonometric,
 
@@ -1029,20 +1030,21 @@ class MP2NLSolver(MPDirectSolver):
 
             def __init__(self, exeName, timeout=None, nthreads=None, otherOptions=None):
                 stags = {ModelTags.continuous, ModelTags.integer, ModelTags.binary,
-#                ModelTags.plinear,
-#                ModelTags.quadratic,
-#                ModelTags.quadratic_obj,
-#                ModelTags.quadraticnonconvex,
+                ModelTags.plinear,
+                ModelTags.quadratic,
+                ModelTags.quadratic_obj,
+                ModelTags.quadraticnonconvex,
 
-#                ModelTags.socp,      ## MP transforms cones to quadratics
-#                ModelTags.socp_hard_to_recognize,
+                ModelTags.socp,      ## MP transforms cones to quadratics
+                ModelTags.socp_hard_to_recognize,
+                ModelTags.expcones,  ## Although might not have the expconic solver
 
-#                ModelTags.nonlinear, ModelTags.log, ModelTags.trigonometric,
+                ModelTags.nonlinear, ModelTags.log, ModelTags.trigonometric,
 
                 ModelTags.unbdd,
                 ModelTags.qcpdual,
 #                ModelTags.return_mipgap,
-#                ModelTags.sos, ModelTags.presosenc,
+                ModelTags.sos, #ModelTags.presosenc,
                 ModelTags.sens,
                 ModelTags.lazy_user_cuts,
 #                ModelTags.funcpieces,
@@ -1050,7 +1052,7 @@ class MP2NLSolver(MPDirectSolver):
 
                 ModelTags.relax, ModelTags.warmstart, ModelTags.mipstart,
 
-#                ModelTags.multiobj,
+                ModelTags.multiobj,
                 ModelTags.obj_priority,
 #                ModelTags.multisol,
                 ModelTags.sstatus,
