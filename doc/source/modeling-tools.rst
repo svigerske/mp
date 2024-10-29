@@ -117,9 +117,9 @@ Using the explorer
 To produce the input data for the tool, containing the reformulations,
 run an MP solver with the `writegraph` option, as follows.
 
-.. tabs::
+.. tab-set::
 
-   .. tab:: AMPL
+   .. tab-item:: AMPL
 
         .. code-block:: ampl
 
@@ -128,7 +128,7 @@ run an MP solver with the `writegraph` option, as follows.
             ampl: option gurobi_options 'writegraph=model.jsonl lim:time=0';
             ampl: solve;                          # solve the problem
 
-   .. tab:: Python
+   .. tab-item:: Python
 
         How to install using `amplpy <https://amplpy.ampl.com>`_:
 
@@ -155,7 +155,7 @@ run an MP solver with the `writegraph` option, as follows.
 
         Learn more about what we have to offer to implement and deploy `Optimization in Python <https://ampl.com/python/>`_.
 
-   .. tab:: Other APIs
+   .. tab-item:: Other APIs
 
        `AMPL APIs <https://ampl.com/apis/>`_ are interfaces
        that allow developers to access the features of the AMPL interpreter
@@ -168,7 +168,7 @@ run an MP solver with the `writegraph` option, as follows.
        - `Java <https://ampl.com/api/latest/java>`_
        - `MATLAB <https://ampl.com/api/latest/matlab>`_
 
-   .. tab:: Command line
+   .. tab-item:: Command line
 
        .. code-block:: bash
 

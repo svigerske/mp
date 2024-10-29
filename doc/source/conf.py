@@ -19,7 +19,7 @@ extensions = [
     "breathe",
     "sphinx.ext.mathjax",
     "sphinx.ext.graphviz",
-    "sphinx_tabs.tabs",
+    "sphinx_design",
 ]
 
 # Configure Breathe.
