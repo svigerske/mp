@@ -40,20 +40,28 @@ void MP2NLModelAPI::AddVariables(const VarArrayDef& vad) {
 
 
 void MP2NLModelAPI::SetLinearObjective( int iobj, const LinearObjective& lo ) {
-  assert(iobj == (int)obj_info_.size());
-  obj_info_.push_back(
-      MakeItemInfo(lo, StaticItemTypeID::ID_LinearObjective, false));
+  assert(iobj == (int)obj_info_.size()
+         || (!iobj && 1==obj_info_.size()));    // replacing objective
+  auto ii = MakeItemInfo(lo, StaticItemTypeID::ID_LinearObjective, false);
+  if (iobj == (int)obj_info_.size())
+    obj_info_.push_back(std::move(ii));
+  else obj_info_[iobj] = std::move(ii);
 }
 
 void MP2NLModelAPI::SetQuadraticObjective(int iobj, const QuadraticObjective& qo) {
-  assert(iobj == (int)obj_info_.size());
+  assert(iobj == (int)obj_info_.size()
+         || (!iobj && 1==obj_info_.size()));    // replacing objective
   /// @todo ?
   throw std::runtime_error("Quadratic objective not supported");
 }
 
 void MP2NLModelAPI::SetNLObjective( int iobj, const NLObjective& nlo ) {
-  assert(iobj == (int)obj_info_.size());
-  obj_info_.push_back(MakeItemInfo(nlo, StaticItemTypeID::ID_NLObjective, false));
+  assert(iobj == (int)obj_info_.size()
+         || (!iobj && 1==obj_info_.size()));    // replacing objective
+  auto ii = MakeItemInfo(nlo, StaticItemTypeID::ID_NLObjective, false);
+  if (iobj == (int)obj_info_.size())
+    obj_info_.push_back(std::move(ii));
+  else obj_info_[iobj] = std::move(ii);
 }
 
 

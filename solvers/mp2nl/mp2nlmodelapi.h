@@ -1300,6 +1300,16 @@ protected:
         : disp_(disp), p_item_(pitem), f_logical_(fLogical)
         // no storing, itemID_(iid), exprID_(eid)
     { }
+    /// Copy construct
+    ItemInfo(const ItemInfo& ii)
+        : ItemInfo(ii.disp_, ii.p_item_, ii.f_logical_) { }
+    /// operator=
+    ItemInfo& operator=(const ItemInfo& ii) {
+      assert(&disp_==&ii.disp_);
+      p_item_ = ii.p_item_;
+      assert(f_logical_==ii.f_logical_);
+      return *this;
+    }
     /// Get dispatcher
     BasicItemDispatcher& GetDispatcher() const { return disp_; }
     /// Get &item
