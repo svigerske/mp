@@ -1306,7 +1306,7 @@ protected:
         return;
       }
       int i0 = sparse_entry.first;
-      if (0 == (kind & 4))                   // variable suffix
+      if (0 == (kind & 3))                   // variable suffix
         i0 = mapi_.GetOldVarIndex(i0);
       suf[i0] = sparse_entry.second;
     }
