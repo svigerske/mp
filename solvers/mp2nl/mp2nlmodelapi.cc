@@ -943,24 +943,62 @@ void MP2NLModelAPI::FeedInitialDualGuesses(IDGWriter& igw) {
 }
 
 
-/** Feed suffixes.
-     *
-     *  For constraints, assume ordering:
-     *  first algebraic, then logical.
-   *
-   *  Implementation: write all non-0 entries (0 is the default.)
-   *      while (....) {
-   *        auto sw = swf.StartIntSuffix(  // or ...DblSuffix
-   *          suf_name, kind, n_nonzeros);
-   *        for (int i=0; i<n_nonzeros; ++i)
-   *          sw.Write(index[i], value[i]);
-   *      }
-     */
 template <class SuffixWriterFactory>
 void MP2NLModelAPI::FeedSuffixes(SuffixWriterFactory& swf) {
-  // @todo SOS constraints
+  PrepareSOSSuffixes();
+  FeedOriginalSuffixes(swf);
+  // Custom suffixes: SOS
+  Feed1Suffix(suf_sosno_, swf);
+  Feed1Suffix(suf_ref_, swf);
+}
+
+void MP2NLModelAPI::PrepareSOSSuffixes() {
+  suf_sosno_ = MP2NLModelSuffix
+      {"sosno", suf::VAR, "", { std::vector<double>(var_lbs_.size(), 0.0) }};
+  suf_ref_ = MP2NLModelSuffix
+      {"ref", suf::VAR | suf::FLOAT, "",
+                              { std::vector<double>(var_lbs_.size(), 0.0) }};
+  int sosno = 0;
+  for (const auto& sos: sos_info_) {
+    ++sosno;
+    if (StaticItemTypeID::ID_SOS1Constraint == sos.GetStaticTypeID())
+      PrepareSOSConstraint(*(const SOS1Constraint*)sos.GetPItem(), sosno);
+    else {
+      assert(StaticItemTypeID::ID_SOS2Constraint == sos.GetStaticTypeID());
+      PrepareSOSConstraint(*(const SOS2Constraint*)sos.GetPItem(), -sosno);
+    }
+  }
+}
+
+template <int SOSType>
+void MP2NLModelAPI::PrepareSOSConstraint(
+    const SOS_1or2_Constraint<SOSType>& sos, int sosno) {
+  assert(sosno);
+  assert(sosno<0 == (2==SOSType));
+  for (size_t i=0; i<sos.get_vars().size(); ++i) {
+    auto v = sos.get_vars()[i];
+    assert(!suf_sosno_.values_[0][v]);   // single .sosno for all SOS
+    suf_sosno_.values_[0][v] = sosno;
+    suf_ref_.values_[0][v] = sos.get_weights()[i];
+  }
+}
+
+
+template <class SuffixWriterFactory>
+void MP2NLModelAPI::FeedOriginalSuffixes(SuffixWriterFactory& swf) {
   auto p_qc = p_nlsi_->GetCallbacks();
   auto suffixnames = p_qc->GetSuffixNames();
+  for (const auto& sufname: suffixnames) {
+    if ("sosno" != sufname && "ref" != sufname) {
+      auto modelsuffix = p_qc->GetModelSuffix(sufname);
+      Feed1Suffix(modelsuffix, swf);
+    }
+  }
+}
+
+template <class SuffixWriterFactory>
+void MP2NLModelAPI::Feed1Suffix(
+    const MP2NLModelSuffix& modelsuffix, SuffixWriterFactory& swf) {
   auto write1suf = [this](auto& sw, int kind, const auto& vals) {
     for (size_t i=0; i<vals.size(); ++i) {
       if (auto val = vals[i]) {
@@ -971,21 +1009,19 @@ void MP2NLModelAPI::FeedSuffixes(SuffixWriterFactory& swf) {
       }
     }
   };
-  for (const auto& sufname: suffixnames) {
-    auto modelsuffix = p_qc->GetModelSuffix(sufname);
-    for (int kind=0; kind<modelsuffix.values_.size(); ++kind) {
-      const auto& vals = modelsuffix.values_[kind];
-      if (vals.size()) {                 // even all-0 suffixes
-        auto nnz = std::count_if(vals.begin(), vals.end(),
-                                 [](auto n){ return bool(n); });
-        if (modelsuffix.flags_ & suf::FLOAT) {
-          auto sw = swf.StartDblSuffix(sufname.c_str(),
-                                       kind | suf::FLOAT, nnz);
-          write1suf(sw, kind, vals);
-        } else {
-          auto sw = swf.StartIntSuffix(sufname.c_str(), kind, nnz);
-          write1suf(sw, kind, vals);
-        }
+  for (int kind=0; kind<(int)modelsuffix.values_.size(); ++kind) {
+    const auto& vals = modelsuffix.values_[kind];
+    if (vals.size()) {                 // even all-0 suffixes
+      auto nnz = std::count_if(vals.begin(), vals.end(),
+                               [](auto n){ return bool(n); });
+      if (modelsuffix.flags_ & suf::FLOAT) {
+        auto sw = swf.StartDblSuffix(modelsuffix.name_.c_str(),
+                                     kind | suf::FLOAT, nnz);
+        write1suf(sw, kind, vals);
+      } else {
+        auto sw = swf.StartIntSuffix(modelsuffix.name_.c_str(),
+                                     kind, nnz);
+        write1suf(sw, kind, vals);
       }
     }
   }

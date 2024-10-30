@@ -312,9 +312,9 @@ public:
   /// piecewise-linear expressions.
   /// @note Set ``option pl_linearize 0;`` in AMPL if the solver
   ///   supports PL natively.
-  ACCEPT_CONSTRAINT(SOS1Constraint, NotAccepted, CG_SOS)
+  ACCEPT_CONSTRAINT(SOS1Constraint, Recommended, CG_SOS)
   void AddConstraint(const SOS1Constraint& cc);
-  ACCEPT_CONSTRAINT(SOS2Constraint, NotAccepted, CG_SOS)
+  ACCEPT_CONSTRAINT(SOS2Constraint, Recommended, CG_SOS)
   void AddConstraint(const SOS2Constraint& cc);
 
 
@@ -849,22 +849,27 @@ public:
 
 
   ///////////////////// 13. SUFFIXES /////////////////////
-  /** Feed suffixes.
-     *
-     *  For constraints, assume ordering:
-     *  first algebraic, then logical.
-   *
-   *  Implementation: write all non-0 entries (0 is the default.)
-   *      while (....) {
-   *        auto sw = swf.StartIntSuffix(  // or ...DblSuffix
-   *          suf_name, kind, n_nonzeros);
-   *        for (int i=0; i<n_nonzeros; ++i)
-   *          sw.Write(index[i], value[i]);
-   *      }
-     */
-  /// @todo SOS constraints
+  /// @note We feed SOS constraints here as well.
   template <class SuffixWriterFactory>
   void FeedSuffixes(SuffixWriterFactory& );
+
+  /// Prepare SOS suffixes
+  /// @todo Also PLSOS if we globalize them
+  void PrepareSOSSuffixes();
+
+  /// Prepare single SOS constraint
+  template <int SOSType>
+  void PrepareSOSConstraint(
+      const SOS_1or2_Constraint<SOSType>& , int sosno);
+
+  /// Feed all suffixes excl. .sosno, .ref
+  template <class SuffixWriterFactory>
+  void FeedOriginalSuffixes(SuffixWriterFactory& );
+
+  /// Feed single suffix
+  template <class SuffixWriterFactory>
+  void Feed1Suffix(
+      const MP2NLModelSuffix& , SuffixWriterFactory& );
 
 
   //////////////////// 14. ROW/COLUMN NAMES ETC /////////////////////
@@ -1431,6 +1436,7 @@ private:
   ArrayRef<var::Type> var_types_;
   ArrayRef<const char*> var_names_;                 // can be empty
 
+  MP2NLModelSuffix suf_sosno_, suf_ref_;
 
   /// @todo still need permutations of NL constraints?
   std::vector<ItemInfo> obj_info_, alg_con_info_, log_con_info_, sos_info_;
