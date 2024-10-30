@@ -221,6 +221,9 @@ MP2NL_Expr MP2NLModelAPI::AddExpression(const SinExpression &expr)
 MP2NL_Expr MP2NLModelAPI::AddExpression(const CosExpression &expr)
 { return AddExpression(expr, ExpressionTypeID::ID_Cos); }
 
+MP2NL_Expr MP2NLModelAPI::AddExpression(const DivExpression &expr)
+{ return AddExpression(expr, ExpressionTypeID::ID_Div); }
+
 
 void MP2NLModelAPI::FinishProblemModificationPhase() { }
 
@@ -751,6 +754,8 @@ void MP2NLModelAPI::FeedOpcode(Expr expr, ExprWriter& ew) {
     HANDLE_OPCODE_CASE_2_ARG(Pow, POW, FdArgs)
     HANDLE_OPCODE_CASE_1_ARG(Sin, SIN, FdArgs)
     HANDLE_OPCODE_CASE_1_ARG(Cos, COS, FdArgs)
+
+    HANDLE_OPCODE_CASE_2_ARG(Div, DIV, FdArgs)
 
   default:
     MP_RAISE("MP2NL: unknown expression type");

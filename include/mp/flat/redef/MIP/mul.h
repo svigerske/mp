@@ -30,6 +30,13 @@ public:
 		return !GetMC().IfPassQuadCon();
   }
 
+  /// Skip conversion?
+  bool IfDelayConversion(const ItemType& , int ) {
+    return
+        GetMC().IfPassQuadCon()
+        || GetMC().IfWantNLOutput();     // Assume QuadExpr accepted
+  }
+
   /// Conversion
 	void Convert(const ItemType& qc, int ) {
 		LinearizeQPTerms(qc);

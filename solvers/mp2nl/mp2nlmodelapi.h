@@ -94,8 +94,9 @@ public:
   void AddVariables(const VarArrayDef& vad);
   void SetLinearObjective( int iobj, const LinearObjective& lo );
   /// Whether accepting quadratic objectives:
-  /// 0 - no, 1 - convex, 2 - nonconvex
-	static int AcceptsQuadObj() { return 2; }
+  /// 0 - no, 1 - convex, 2 - nonconvex.
+  /// Return 0 because the QP terms go into expression
+  static int AcceptsQuadObj() { return 0; }
   void SetQuadraticObjective(int iobj, const QuadraticObjective& qo);
   /// Whether accepts NLObjective.
   static int AcceptsNLObj() { return 1; }
@@ -413,6 +414,9 @@ public:
   Expr AddExpression(const SinExpression& );
   ACCEPT_EXPRESSION(CosExpression, Recommended)
   Expr AddExpression(const CosExpression& );
+
+  ACCEPT_EXPRESSION(DivExpression, Recommended)
+  Expr AddExpression(const DivExpression& );
 
   // TODO Div; PowVarVar;
 
@@ -1110,7 +1114,9 @@ protected:
     ID_Log,
     ID_Pow,
     ID_Sin,
-    ID_Cos
+    ID_Cos,
+
+    ID_Div
   };
 
 
@@ -1287,6 +1293,7 @@ protected:
   CREATE_EXPRESSION_DISPATCHER(Sin)
   CREATE_EXPRESSION_DISPATCHER(Cos)
 
+  CREATE_EXPRESSION_DISPATCHER(Div)
 
   /// Constraint/objective/expression info.
   /// We rely on the pointers staying valid.
