@@ -135,7 +135,7 @@ public:
   /// NLComplementarity,
   /// NLLogical, NLEquivalence, NLImpl, NLRimpl,
   /// and NLObjective.
-  ACCEPT_EXPRESSION_INTERFACE(AcceptedButNotRecommended);
+  ACCEPT_EXPRESSION_INTERFACE(Recommended)
 
   /// Once expressions are supported, need the following
   /// helper methods.
