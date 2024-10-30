@@ -43,7 +43,10 @@
   {
     "name" : "dietu_stt sensitivity=1",
     "objective" : 74.273820,
-    "options": { "ANYSOLVER_options": "solnsens=1" },
+    "options": {
+      "ANYSOLVER_options": "solnsens=1",
+      "mp2nl_options": "solver_options='solnsens=1'"
+    },
     "tags" : ["linear", "continuous", "sens"],
     "values": {
       "Buy['BEEF'].senslbhi": 7.129251700680272,
@@ -63,7 +66,10 @@
   {
     "name" : "diet_max solnsens=1",
     "files" : ["diet_max.mod", "diet.dat"],
-    "options": { "ANYSOLVER_options": "solnsens=1" },
+    "options": {
+      "ANYSOLVER_options": "solnsens=1",
+      "mp2nl_options": "solver_options='solnsens=1'"
+    },
     "tags" : ["linear", "continuous", "sens"],
     "objective" : 1128.642,
     "values": {
@@ -82,7 +88,10 @@
   {
     "name" : "diet_nonrng_max solnsens=1",
     "files" : ["diet_nonrng_max.mod", "diet.dat"],
-    "options": { "ANYSOLVER_options": "solnsens=1" },
+    "options": {
+      "ANYSOLVER_options": "solnsens=1",
+      "mp2nl_options": "solver_options='solnsens=1'"
+    },
     "tags" : ["linear", "continuous", "sens", "sstatus"],
     "objective" : 1128.642,
     "comment": "Diet_Min{} constraints are converted to <= by AMPL",
@@ -144,7 +153,10 @@
   {
     "name": "mip_lazy_01",
     "tags": [ "linear", "integer", "lazy_user_cuts" ],
-    "options": { "ANYSOLVER_options": "debug=1" },
+    "options": {
+      "ANYSOLVER_options": "debug=1",
+      "mp2nl_options": "debug=1 solver_options='debug=1'"
+    },
     "objective": 1,
     "values": {
       "Initial.test_quad_constr_lazy": 2

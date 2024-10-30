@@ -13,7 +13,7 @@
     "name" : "ellipse_max_02",
     "objective" : 0.5312499452945747,
     "tags" : ["quadratic"],
-    "coment_options": "Not all constraints are cones, Mosek needs QP",
+    "comment_options": "Not all constraints are cones, Mosek needs QP",
     "options": {
       "mosek_options": "cvt:socp=0"
     }
@@ -23,7 +23,8 @@
     "objective" : -3.16227757,
     "tags" : ["quadratic", "qcpdual"],
     "options": {
-      "ANYSOLVER_options": "qcpdual=1"
+      "ANYSOLVER_options": "qcpdual=1",
+      "mp2nl_options": "solver_options='qcpdual=1'"
     },
     "values": {
       "_con[1]": -1.5807796451888148
@@ -34,7 +35,8 @@
     "objective" : 1.4928017587112605,
     "tags" : ["quadratic", "qcpdual"],
     "options": {
-      "ANYSOLVER_options": "qcpdual=1"
+      "ANYSOLVER_options": "qcpdual=1",
+      "mp2nl_options": "solver_options='qcpdual=1'"
     },
     "values": {
       "_con[1]": 0.26111523051780217,
@@ -46,7 +48,8 @@
     "objective" : 0.5312499452945747,
     "tags" : ["quadratic", "qcpdual"],
     "options": {
-      "ANYSOLVER_options": "qcpdual=1"
+      "ANYSOLVER_options": "qcpdual=1",
+      "mp2nl_options": "solver_options='qcpdual=1'"
     },
     "values": {
       "_con[3]": 1.000067023601818
@@ -57,7 +60,8 @@
     "objective" : 0.8,
     "tags" : ["quadraticnonconvex", "mipstart"],
     "options": {
-      "ANYSOLVER_options": "debug=1"
+      "ANYSOLVER_options": "debug=1",
+      "mp2nl_options": "solver_options='debug=1'"
     },
     "values": {
       "_var[1].test_ini_mip": 0.5,
@@ -69,7 +73,8 @@
     "objective" : 3.6,
     "tags" : ["quadraticnonconvex", "mipstart"],
     "options": {
-      "ANYSOLVER_options": "debug=1"
+      "ANYSOLVER_options": "debug=1",
+      "mp2nl_options": "solver_options='debug=1'"
     },
     "values": {
       "_var[1].test_ini_mip": 0.5,
