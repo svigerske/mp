@@ -416,6 +416,10 @@ struct PLPoints {
         0.0 :
         (y_[i1]-y_[i0]) / (x_[i1]-x_[i0]);
   }
+
+  /// operator==
+  bool operator==(const PLPoints& plp) const
+  { return x_==plp.x_ && y_==plp.y_; }
 };
 
 
@@ -433,6 +437,9 @@ public:
       plp_ = pls_;
     return plp_;
   }
+  /// operator==
+  bool operator==(const PLConParams& plcp) const
+  { return GetPLPoints() == plcp.GetPLPoints(); }
 
 private:
   PLSlopes pls_;

@@ -1627,7 +1627,7 @@ protected:
       IndicatorConstraintQuadEQ, "acc:indquadeq")
   STORE_CONSTRAINT_TYPE__NO_MAP(
       IndicatorConstraintQuadGE, "acc:indquadge")
-  STORE_CONSTRAINT_TYPE__NO_MAP(PLConstraint,
+  STORE_CONSTRAINT_TYPE__WITH_MAP(PLConstraint,
                                 "acc:pl acc:pwl acc:piecewise")
   STORE_CONSTRAINT_TYPE__NO_MAP(SOS1Constraint, "acc:sos1")
   STORE_CONSTRAINT_TYPE__NO_MAP(SOS2Constraint, "acc:sos2")

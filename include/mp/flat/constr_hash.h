@@ -15,7 +15,7 @@ namespace std {
 /// Specialize std::hash<> for various expressions and constraints.
 /// Remember we also need operator== for [std::reference_wrapper<> of]
 /// the compared types. Operator=='s are class memebrs, or
-/// defined in ``constraint_keeper.h``.
+/// defined in ``constr_keeper.h``.
 
 /// Partially specialize std::hash<> for CustomFunctionalConstraint<>
 ///
@@ -76,6 +76,35 @@ struct hash< mp::ArrayRef<Element> >
       const mp::ArrayRef<Element>& x) const
   {
     return mp::HashStreamer::HashArray(0, x);
+  }
+};
+
+
+/// Specialize std::hash<> for mp::PLPoints
+template <>
+struct hash< mp::PLPoints >
+{
+  size_t operator()(
+      const mp::PLPoints& plp) const
+  {
+    mp::HashStreamer hs;
+    hs.Add(std::hash< std::vector<double> >{}(plp.x_));
+    hs.Add(std::hash< std::vector<double> >{}(plp.y_));
+    return hs.FinalizeHashValue();
+  }
+};
+
+
+/// Specialize std::hash<> for mp::PLConParams
+template <>
+struct hash< mp::PLConParams >
+{
+  size_t operator()(
+      const mp::PLConParams& plp) const
+  {
+    mp::HashStreamer hs;
+    hs.Add(std::hash<mp::PLPoints>{}(plp.GetPLPoints()));
+    return hs.FinalizeHashValue();
   }
 };
 
