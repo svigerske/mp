@@ -158,8 +158,8 @@ public:
     return false;
   }
 
-  /// Mark whether we could result vars of functional constraints
-  /// as vars, vs using these constraints as expressions
+  /// Mark whether we could use result vars of functional constraints
+  /// as expressions
   void MarkExprResultVars(BasicFlatConverter& cvt) override {
     assert(&cvt == &GetConverter());         // Using the same Converter
     DoMarkForResultVars();

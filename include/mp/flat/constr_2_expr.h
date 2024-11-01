@@ -387,12 +387,21 @@ protected:
     return false;
   }
 
-  /// Handle logical expression in an algebraic con
+  /// Handle logical expressions in an algebraic con
   /// @return whether to remove the original \a con.
   template <class Con>
   bool HandleLogicalArgs(const Con& con, int ) {
     VisitArguments(con, MarkVarIfLogical_);          // Mark as proper vars
     return false;                                    // don't remove immediately
+  }
+
+  /// Handle logical expressions in an IfThen
+  /// @return whether to remove the original \a con.
+  template <>
+  bool HandleLogicalArgs(const IfThenConstraint& con, int ) {
+    MarkVarIfLogical_(con.GetArguments()[1]);    // then part
+    MarkVarIfLogical_(con.GetArguments()[2]);    // else part
+    return false;
   }
 
   /// Special linear cases.

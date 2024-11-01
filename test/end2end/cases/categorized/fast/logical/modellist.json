@@ -45,7 +45,9 @@
     "name" : "ifthen_var cmp:eps=0 chk:fail",
     "tags" : ["logical"],
     "options": {
-      "ANYSOLVER_options": "cvt:cmp:eps=0 chk:fail"
+      "ANYSOLVER_options": "cvt:cmp:eps=0 chk:fail",
+      "mp2nl_options": "solver_options='cvt:cmp:eps=0 chk:fail'"
+
     },
     "values": {
       "solve_result_num": 150
