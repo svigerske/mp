@@ -75,10 +75,16 @@ void BaronmpBackend::OpenSolver() {
           "Failed to create problem, error code {}.", status ) );
 }
 
+
 void BaronmpBackend::CloseSolver() {
-  if((!baronDir.empty()) && (!baronOptions().keepsol))
-    recrmdir(baronDir);
-} 
+  if(!baronDir.empty())
+  {
+    if(baronOptions().keepsol)
+      fmt::print("Keeping temporary files in {}\n", baronDir);
+    else
+      recrmdir(baronDir);
+  } 
+}
 
 const char* BaronmpBackend::GetBackendName()
   { return "BaronmpBackend"; }

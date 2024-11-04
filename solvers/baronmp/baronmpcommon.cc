@@ -208,11 +208,11 @@ void BaronmpCommon::initDirectories(const std::string& stub,
     }
     if (!fs::exists(scratch_path)) {
       if (fs::create_directory(scratch_path)) {
-        baronDir = scratch;
+        baronDir = scratch_path.string();
       }
     }
     else if (fs::is_directory(scratch_path)) {
-      td = scratch;
+      td = scratch_path.string();
     }
   }
 
@@ -241,6 +241,9 @@ void BaronmpCommon::initDirectories(const std::string& stub,
 
   // Construct nlfile path based on whether stub is absolute or relative
   fs::path nlfile_path;
+   #ifndef WIN32
+    nlfile_path = resolveTilde(nlfile_path);
+    #endif
   if (fs::path(stub).is_absolute()
 #ifdef _WIN32
     || (stub.size() > 1 && stub[1] == ':')  // Also handle drive letter case on Windows
@@ -278,7 +281,6 @@ int BaronmpCommon::recrmdir(const std::string& dname) {
     return 0;  // Success
   }
   else {
-    fmt::print(stderr, "recrmdir: \"{}\" is not a directory.\n", dname);
     return 0;
   }
 }
