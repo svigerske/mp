@@ -356,8 +356,8 @@ void BaronmpModelAPI::AddConstraint(const ExpAConstraint& cc) {
 void BaronmpModelAPI::AddConstraint(const LogAConstraint& cc) {
   fmt::MemoryWriter w;
   w<< createConName(cc.GetName()) << ": ";
-  w << fmt::format("{} = log({})/log({});\n", varName(cc.GetResultVar()), 
-    varName( cc.GetArguments()[0]), cc.GetParameters()[0]);
+  w << fmt::format("{} = log({})*;\n", varName(cc.GetResultVar()), 
+    varName( cc.GetArguments()[0]), 1/std::log(cc.GetParameters()[0]));
   cons.push_back(w.str());
 }
 
@@ -487,8 +487,8 @@ VExpr BaronmpModelAPI::AddExpression(const LogExpression& e) {
 }
 VExpr BaronmpModelAPI::AddExpression(const LogAExpression& e) {
   auto logvar = VExpr(Opcode::LOG, GetArgExpression(e, 0));
-  auto logbase = VExpr(Opcode::LOG, VExpr::makeConstant(GetParameter(e, 0)));
-  auto expr = VExpr(Opcode::DIVIDE);
+  auto logbase = VExpr::makeConstant(1/std::log(GetParameter(e, 0)));
+  auto expr = VExpr(Opcode::MULTIPLY);
   expr.AddArgument(logvar);
   expr.AddArgument(logbase);
   return expr;

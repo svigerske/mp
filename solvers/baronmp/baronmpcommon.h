@@ -24,8 +24,7 @@
 #endif
 
 namespace mp {
-#define BARON_TIM "tim.lst"
-#define BARON_RES "res.lst"
+
 
 
 #ifdef _WIN32
@@ -185,11 +184,14 @@ namespace mp {
         {"tech:trace trace", {"trace", "Name of BARON trace file.", std::string("")}}
     };
 
-    const char* description(const std::string& name) {
-      return option_metadata.at(name).description.c_str();
+    void setProblemName(std::string_view stub);
+    const char* description(std::string_view name) {
+      return option_metadata.at(name.data()).description.c_str();
     }
-    void serializeMember(fmt::CStringRef name, OptionMetadata::VT v, fmt::MemoryWriter& m) const {
-      auto md = option_metadata.at(name.c_str());
+
+    void serializeMember(std::string_view name, OptionMetadata::VT v, fmt::MemoryWriter& m) const {
+      
+      auto md = option_metadata.at(name.data());
       if (md.def != v) {
         m << md.key << ": ";
         std::visit([&m](auto&& arg) {
@@ -324,6 +326,10 @@ public:
   const std::string FILENAME_BAR = "amplmodel";
   const std::string FILENAME_DIC = "dictionary";
   const std::string FILENAME_AMPL = ".amplparams";
+  const std::string BARON_TIM = "tim.lst";
+  const std::string BARON_RES = "res.lst";
+
+
 
   std::string appendToDir(const std::string& dir, const std::string& file);
 
@@ -349,6 +355,7 @@ public:
   std::string make_cmdline(const std::vector<std::string>& args);
   int run(const std::vector<std::string>& args);
   void initDirectories(const std::string& stub, const std::string& scratch, bool overwrite);
+
   void initBaronFile();
   void deinitBaronFile();
   int recrmdir(const std::string& dname);

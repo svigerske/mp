@@ -246,6 +246,7 @@ std::pair<int, std::string> BaronmpBackend::GetSolveResult() {
 void BaronmpBackend::FinishOptionParsing() {
   initDirectories(stub(), baronOptions().scratch,
     baronOptions().overwrite);
+  baronOptions().setProblemName(stub());
   copy_common_info_to_other();
   set_verbose_mode(baronOptions().outlev > 0);
 }

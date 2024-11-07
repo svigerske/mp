@@ -203,11 +203,48 @@ void BaronmpCommon::deinitBaronFile() {
     FILE_BAR = 0;
   }
 }
+
+
+bool deleteFilesIfExists(const fs::path& directory, std::string_view file) {
+    fs::path file_path = directory / file;
+    if (fs::exists(file_path)) {
+      try {
+        fs::remove(file_path);
+        return true;
+      }
+      catch (const fs::filesystem_error& e) {
+        std::cerr << "Error deleting " << file_path << ": " << e.what() << std::endl;
+        return true;
+      }
+    }
+    else
+      return false;
+}
+
 /**
 * Initialize baronDir and nlFilePath
 */
 void BaronmpCommon::initDirectories(const std::string& stub, 
   const std::string& scratch, bool overwrite) {
+
+  // Construct nlfile path based on whether stub is absolute or relative
+  fs::path nlfile_path;
+  #ifndef WIN32
+    nlfile_path = resolveTilde(nlfile_path);
+  #endif
+    if (fs::path(stub).is_absolute()
+  #ifdef _WIN32
+      || (stub.size() > 1 && stub[1] == ':')  // Also handle drive letter case on Windows
+  #endif
+    ) {
+    nlfile_path = fs::path(stub);
+  }
+  else {
+    nlfile_path = fs::path(initialDir) / stub;
+  }
+  nlFilePath = nlfile_path.string();
+
+  // Construct scratch dir
   std::string td;
   try {
     initialDir = fs::current_path().string();
@@ -217,14 +254,36 @@ void BaronmpCommon::initDirectories(const std::string& stub,
   }
   // Check if scratch directory is valid or create it if possible
   if (!scratch.empty()) {
+
     fs::path scratch_path(scratch);
+    if (scratch == "local")
+    {
+      scratch_path = nlfile_path.parent_path() / (nlfile_path.filename().string() + "_baron");
+    }
+    
     #ifndef WIN32
     scratch_path = resolveTilde(scratch_path);
     #endif
     if (overwrite)
     {
       if (fs::exists(scratch_path))
-        recrmdir(scratch_path.string());
+      {
+        std::vector<std::string> files_to_delete = {
+          BARON_TIM,
+          BARON_RES,
+          FILENAME_BAR + ".bar",
+          FILENAME_AMPL + ".bar",
+          FILENAME_DIC + "txt"
+        };
+        for(const auto& s : files_to_delete)
+          deleteFilesIfExists(scratch_path, s);
+        for (int i = 1; ; i++)
+        {
+          if (!deleteFilesIfExists(scratch_path, fmt::format("{}_{}.bar", FILENAME_BAR, i)));
+              break;
+        }
+        baronDir = scratch_path.string();
+      }
     }
     if (!fs::exists(scratch_path)) {
       if (fs::create_directory(scratch_path)) {
@@ -259,22 +318,7 @@ void BaronmpCommon::initDirectories(const std::string& stub,
     }
   }
 
-  // Construct nlfile path based on whether stub is absolute or relative
-  fs::path nlfile_path;
-   #ifndef WIN32
-    nlfile_path = resolveTilde(nlfile_path);
-    #endif
-  if (fs::path(stub).is_absolute()
-#ifdef _WIN32
-    || (stub.size() > 1 && stub[1] == ':')  // Also handle drive letter case on Windows
-#endif
-    ) {
-    nlfile_path = fs::path(stub);
-  }
-  else {
-    nlfile_path = fs::path(initialDir) / stub;
-  }
-  nlFilePath=nlfile_path.string();
+
   std::filesystem::current_path(baronDir);
 }
 
@@ -324,7 +368,17 @@ std::string ensureDoubleQuoted(const std::string& str) {
   return fmt::format("\"{}\"", result);
 }
 
+void Options::setProblemName(std::string_view stub) {
+  const int MAXLENGTH = 10;
+  fs::path path(stub);
+  std::string filename = path.stem().string();  
+  // Trim the filename if it exceeds the max length supported by Baron prob name
+  if (filename.size() > MAXLENGTH) {
+    filename = filename.substr(0, MAXLENGTH);
+  }
+  problem = filename;
 
+}
 void Options::initializeLPSolver() {
   const std::vector<std::string> avail = { "cbc", "cplex", "la04", "xpress" };
   if (std::find(avail.begin(), avail.end(), lpsolver) == avail.end())
@@ -375,7 +429,7 @@ void Options::appendInlineParams(fmt::MemoryWriter& m) const {
 }
 
 void BaronmpCommon::writeBaronOptions() {
-  writeBaron("// AMPL/BARON default options\n");
+  writeBaron("// AMPL/BARONMP default options\n");
   writeBaron("OPTIONS {\n");
   baronOptions().initializeLPSolver();
   writeBaron(baronOptions().serialize());
