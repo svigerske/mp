@@ -171,13 +171,13 @@ namespace mp {
                                 "section 7 of the BARON user manual (baron_manual.pdf).  Empty lines "
                                 "and lines that start with # are ignored.", ""}},
         {"tech:outlev outlev", {"", "Output verbosity level.", 0}},
-        {"tech:overwrite overwrite", {"", "TODO REMOVE, debug only.", 0}},
+        {"tech:overwrite overwrite", {"", "If set, overwrite the files in the scratch directory.", 0}},
 
         {"tech:prfreq prfreq", {"PrFreq", "Report progress every prfreq nodes (default 1e6).", 1e6}},
         {"tech:prloc prloc", {"LocRes", "Whether to report local searches:\n\n.. value-table::\n", 0}},
         {"tech:problem problem", {"ProName", "Problem name printed in logfile.", "amplproblem"}},
         {"tech:prtime prtime", {"PrTimeFreq", "Report progress every prtime seconds  (default 30).", 30.0}},
-        {"tech:scratch scratch", {"scratch", "Directory for temporary files.", std::string("")}},
+        {"tech:scratch scratch", {"scratch", "Directory for temporary files; if set to 'local' it uses a subdirectory of the NL file location with the NL file name", std::string("")}},
         {"tech:seed seed", {"seed", "Initial seed for random number generation, must be a positive integer (default 19631963).", 19631963}},
         {"tech:sumfile sumfile", {"SumName", "Name of summary file.", std::string("")}},
         {"tech:threads threads", {"threads", "Maximum number of threads to use (default 1 when integer variables are present)", 1}},
