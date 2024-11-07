@@ -1,5 +1,6 @@
 #include "baronmpmodelapi.h"
 
+#include <limits>
 namespace mp {
 
   std::function<std::string(int)> VExpr::varName = nullptr;
@@ -10,6 +11,7 @@ namespace mp {
     const FlatModelInfo*) {
 
     // Have to be written after eventual additional options are injected
+    initBaronFile();
     writeBaronOptions();
     VExpr::varName = std::bind(&BaronmpModelAPI::varName, this, std::placeholders::_1);
   }
@@ -30,25 +32,25 @@ namespace mp {
       if (bounds[i] != bnd)
       {
         if (!headerWritten) {
-          writeBaron(lower ? "LOWER BOUNDS\{\n" : "UPPER_BOUNDS\{\n");
+          writeVars(vars_buffer, lower ? "LOWER BOUNDS\{\n" : "UPPER_BOUNDS\{\n");
           headerWritten = true;
         }
-        writeBaron(fmt::format("{}: {};\n", lp()->varNames[i], bounds[i]));
+        writeVars(vars_buffer, fmt::format("{}: {};\n", lp()->varNames[i], bounds[i]));
       }
     }
     if (headerWritten)
-      writeBaron("}\n\n");
+      writeVars(vars_buffer, "}\n\n");
   }
   void BaronmpModelAPI::AddVariables(const std::vector<int>& indices, 
     fmt::StringRef prefix, fmt::StringRef header, const char* names) {
     
     if (indices.size() > 0) {
       std::string name;
-      writeBaron(fmt::format("{} ", header.to_string()));
+      writeVars(vars_buffer, fmt::format("{} ", header.to_string()));
       for (int i = 0; i < indices.size(); i++)
       {
         if (i != 0)
-          writeBaron(", ");
+          writeVars(vars_buffer, ", ");
         if (names)
           name = names[indices[i]];
         else
@@ -57,9 +59,9 @@ namespace mp {
         lp()->varNames[indices[i]] = name;
         lp()->baronToAMPLIndices.push_back(indices[i]);
 
-        writeBaron(name);
+        writeVars(vars_buffer, name);
       }
-      writeBaron(";\n");
+      writeVars(vars_buffer, ";\n");
     }
   }
 
@@ -140,15 +142,18 @@ namespace mp {
   }
 
 
+  void AddObjectiveHeader(fmt::MemoryWriter& w, int sense) {
+    w << "OBJ: ";
+    if (sense == mp::obj::Type::MAX)
+      w << "maximize ";
+    else
+      w << "minimize ";
+  }
   void BaronmpModelAPI::SetLinearObjective(int iobj, const LinearObjective& lo) {
     if (iobj < 1) {
       fmt::MemoryWriter w;
-      w << "OBJ: ";
-      if (lo.obj_sense() == mp::obj::Type::MAX)
-        w << "maximize ";
-      else
-        w << "minimize ";
-
+      AddObjectiveHeader(w, lo.obj_sense());
+      
       auto nvars = lo.GetLinTerms().size();
       auto coeffs = lo.GetLinTerms().pcoefs();
       auto vars = lo.GetLinTerms().pvars();
@@ -160,11 +165,48 @@ namespace mp {
      
     }
     else {
-      // TODO
-      fmt::print("Setting {}-th linear objective: {} terms.\n", iobj, lo.num_terms());
+      MP_RAISE("Baron supports only one objective.");
     }
   }
 
+  void BaronmpModelAPI::SetQuadraticObjective(int iobj, const QuadraticObjective& qo) {
+    if (iobj < 1) {
+
+      auto lt = qo.GetLinTerms();
+      auto qt = qo.GetQPTerms();
+      fmt::MemoryWriter w;
+      AddObjectiveHeader(w, qo.obj_sense());
+
+      size_t i;
+      for (i = 0; i < lt.size(); i++)
+        appendLinearTerm(w, lt.pcoefs()[i], varName(lt.var(i)).c_str(), i == 0);
+      bool addedLinearTerms = i > 0;
+      for (i = 0; i < qt.size(); i++)
+        appendQuadTerm(w, qt.coef(i), varName(qt.var1(i)).c_str(),
+          (qt.var1(i) == qt.var2(i)) ? nullptr : varName(qt.var2(i)).c_str(), (!addedLinearTerms) && (i == 0));
+      w << ";\n";
+      obj = w.str();
+    }
+    else {
+      MP_RAISE("Baron supports only one objective.");
+    }
+  }
+  void BaronmpModelAPI::SetNLObjective(int i , const NLObjective& nlo) {
+    if(i > 0) MP_RAISE("Baron supports only one objective.");
+
+    const auto& exp = GetExpression(nlo);
+    fmt::MemoryWriter w;
+    AddObjectiveHeader(w, nlo.obj_sense());
+
+    auto lin = nlo.GetLinTerms();
+    
+    for (int i = 0; i < lin.size(); ++i)
+      appendLinearTerm(w, lin.coef(i), varName(lin.var(i)).c_str(), i == 0);
+    if (lin.size() > 0) w << " + ";
+    exp.append(w, false);
+    w << ";\n";
+    obj = w.str();
+  }
 
   std::string BaronmpModelAPI::varName(int index) {
     return lp()->varNames[index];
@@ -201,7 +243,8 @@ namespace mp {
   void BaronmpModelAPI::addLinear(const std::string& name,
     double lhs, double rhs,
     size_t nvars, const int* vars, const double* coeffs){
-
+    if (nvars == 0)
+      return;
     fmt::MemoryWriter w;
     appendNameAndLhs(w, createConName(name), lhs, rhs);
     for (size_t i = 0; i < nvars; i++)
@@ -214,13 +257,16 @@ namespace mp {
     double lhs, double rhs, const mp::LinTerms& lt,
     const mp::QuadTerms& qt) {
 
+    bool addedLinearTerm = false;
     fmt::MemoryWriter w;
     appendNameAndLhs(w, createConName(name), lhs, rhs);
-    for (size_t i = 0; i < lt.size(); i++)
+    size_t i;
+    for (i = 0; i < lt.size(); i++) 
       appendLinearTerm(w, lt.pcoefs()[i], varName(lt.var(i)).c_str(), i == 0);
-    for (size_t i = 0; i < qt.size(); i++)
+    bool addedLinearTerms = i > 0;
+    for (i = 0; i < qt.size(); i++)
        appendQuadTerm(w, qt.coef(i), varName(qt.var1(i)).c_str(), 
-          (qt.var1(i) == qt.var2(i)) ? nullptr : varName(qt.var2(i)).c_str(), i == 0);
+          (qt.var1(i) == qt.var2(i)) ? nullptr : varName(qt.var2(i)).c_str(), (!addedLinearTerms) && (i==0));
     appendRhs(w, lhs, rhs);
     cons.push_back(w.str());
   }
@@ -232,13 +278,12 @@ namespace mp {
     
     w<< createConName(c.GetName()) << ": ";
 
-    w << fmt::format("{} = {}({}", varName(c.GetResultVar()), func, varName(c.GetArguments()[0]));
+    w << fmt::format("{} - {}({}", varName(c.GetResultVar()), func, varName(c.GetArguments()[0]));
     if (c.GetArguments().size() > 1) {
-      for (auto i = 1; i < c.GetArguments().size() - 1; ++i)
-        w << fmt::format("{}, ", varName(c.GetArguments()[i]));
-      w << varName(c.GetArguments()[c.GetArguments().size() - 1]);
+      for (auto i = 1; i < c.GetArguments().size(); ++i)
+        w << fmt::format(", {}", varName(c.GetArguments()[i]));
     }
-    w << ");\n";
+    w << ") = 0;\n";
     cons.push_back(w.str());
 
   }
@@ -260,7 +305,7 @@ void BaronmpModelAPI::AddConstraint(const LinConEQ& lc) {
 }
 void BaronmpModelAPI::AddConstraint(const LinConGE& lc) {
   addLinear(lc.name(),
-    lc.lb(), std::numeric_limits<double>().max(),
+    lc.lb(), std::numeric_limits<double>::max(),
     lc.size(), lc.pvars(), lc.pcoefs());
 }
 
@@ -280,14 +325,8 @@ void BaronmpModelAPI::AddConstraint( const QuadConGE& qc ) {
   addQuadratic(qc.name(), qc.lb(), qc.ub(), qc.GetLinTerms(), qc.GetQPTerms());
 }
 
-void BaronmpModelAPI::AddConstraint(const MaxConstraint& mc) {
-  addFunctionalConstraint("max", mc);
-}
 
-void BaronmpModelAPI::AddConstraint(const MinConstraint& mc) {
-  addFunctionalConstraint("min", mc);
-}
-
+/*
 void BaronmpModelAPI::AddConstraint(const AbsConstraint& c) {
   assert(c.GetArguments().size() == 1);
   fmt::MemoryWriter w;
@@ -296,13 +335,7 @@ void BaronmpModelAPI::AddConstraint(const AbsConstraint& c) {
   w << "^2 ) ^ 0.5);\n";
   cons.push_back(w.str());
 }
-
-void BaronmpModelAPI::AddConstraint(const AndConstraint& cc) {
-  addFunctionalConstraint("and", cc);
-}
-void BaronmpModelAPI::AddConstraint(const OrConstraint& dc) {
-  addFunctionalConstraint("or", dc);
-}
+*/
 
 void BaronmpModelAPI::AddConstraint(const ExpConstraint& cc) {
   addFunctionalConstraint("exp", cc);
@@ -341,9 +374,14 @@ template <int SENSE> void BaronmpModelAPI::addTopLevel(const NLBaseAssign<SENSE>
   fmt::MemoryWriter w;
   w << createConName(c.GetName()) << ": ";
   const std::string sense[] = { "<=", "=", ">="};
-  w << fmt::format("{} {} ", varName(var), sense[SENSE+1]);
+  // Baron does not accept x >= f(x)
+  //w << fmt::format("{} {} ", varName(var), sense[SENSE+1]);
+  w << fmt::format("{} - ", varName(var));
   const auto& frm = GetExpression(c);
-  w << frm.ToString(false); 
+  w << frm.ToString(false);
+  w << fmt::format("{} 0", sense[SENSE + 1]);
+  
+
   w << ";\n";
   cons.push_back(w.str());
 }
@@ -423,6 +461,14 @@ void BaronmpModelAPI::AppendQuadTerms(
     }
   }
 }
+
+VExpr BaronmpModelAPI::AddExpression(const DivExpression& e) {
+  auto res = VExpr(Opcode::DIVIDE);
+  res.AddArgument(GetArgExpression(e, 0));
+  res.AddArgument(GetArgExpression(e, 1));
+  return res;
+
+}
 VExpr BaronmpModelAPI::AddExpression(const ExpAExpression& e) {
   auto res = VExpr(Opcode::POW);
   // Constant^Variable
@@ -454,16 +500,20 @@ VExpr BaronmpModelAPI::AddExpression(const PowExpression& e) {
     expr.AddArgument(VExpr::makeConstant(GetParameter(e, i)));
   return expr;
 }
-
+/*
 VExpr BaronmpModelAPI::AddExpression(const AbsExpression& e) {
   auto f1 = VExpr(Opcode::POW, GetArgExpression(e, 0)); // x^2
   f1.AddArgument(VExpr::makeConstant(2));
   auto expr = VExpr(Opcode::POW, f1); // (x^2)^0.5
   expr.AddArgument(VExpr::makeConstant(0.5));
   return expr;
-}
+}*/
 
 void BaronmpModelAPI::FinishProblemModificationPhase() {
+  // Write out vars
+  writeBaron(vars_buffer.str());
+
+  // Write out constraints
   if (lp()->conNames.size() != 0)
   {
     writeBaron("EQUATIONS ");
@@ -477,7 +527,12 @@ void BaronmpModelAPI::FinishProblemModificationPhase() {
       writeBaron(c);
   }
   writeBaron("\n");
-  writeBaron(obj);
+
+  // Write objective
+  if (obj.empty()) // Baron does not like no objectives
+    writeBaron("OBJ:\nminimize 0; ");
+  else
+    writeBaron(obj);
 }
 
 

@@ -176,6 +176,7 @@ class BaronmpModelAPI :
   // Can improve memory usage by writing two separate files then appending
   std::vector< std::string> cons;
   std::string obj;
+  fmt::MemoryWriter vars_buffer;
   
   void addLinear(const std::string& name,
           double lhs, double rhs,
@@ -225,8 +226,12 @@ public:
   void SetLinearObjective( int iobj, const LinearObjective& lo );
   /// Whether accepting quadratic objectives:
   /// 0 - no, 1 - convex, 2 - nonconvex
-  static int AcceptsQuadObj() { return 0; }
+  static int AcceptsQuadObj() { return 2; }
+  void SetQuadraticObjective(int iobj, const QuadraticObjective& qo);
 
+  /// Whether accepts NLObjective
+  static int AcceptsNLObj() { return 1; }
+  void SetNLObjective(int, const NLObjective&);
 
   //////////////////////////// GENERAL CONSTRAINTS ////////////////////////////
   /// Handle flat constraints: inherit basic API
@@ -297,16 +302,8 @@ public:
 
   /// Some non linear constraints.
   /// See constr_std.h for more.
-  ACCEPT_CONSTRAINT(MaxConstraint, Recommended, CG_General)
-    void AddConstraint(const MaxConstraint& mc);
-  ACCEPT_CONSTRAINT(MinConstraint, Recommended, CG_General)
-    void AddConstraint(const MinConstraint& mc);
-  ACCEPT_CONSTRAINT(AbsConstraint, Recommended, CG_General)
-    void AddConstraint(const AbsConstraint& absc);
-  ACCEPT_CONSTRAINT(AndConstraint, Recommended, CG_General)
-    void AddConstraint(const AndConstraint& cc);
-  ACCEPT_CONSTRAINT(OrConstraint, Recommended, CG_General)
-    void AddConstraint(const OrConstraint& mc);
+  //ACCEPT_CONSTRAINT(AbsConstraint, Recommended, CG_General)
+ //   void AddConstraint(const AbsConstraint& absc);
   ACCEPT_CONSTRAINT(ExpConstraint, Recommended, CG_General)
     void AddConstraint(const ExpConstraint& cc);
   ACCEPT_CONSTRAINT(ExpAConstraint, Recommended, CG_General)
@@ -317,9 +314,7 @@ public:
     void AddConstraint(const LogAConstraint& cc);
   ACCEPT_CONSTRAINT(PowConstraint, Recommended, CG_General)
     void AddConstraint(const PowConstraint& cc);
-  
-  /// Whether accepts NLObjective
-  static int AcceptsNLObj() { return 0; }
+
 
 
   /// GetVarExpression(\a i): expression representing variable 0<=i<n_var.
@@ -375,8 +370,11 @@ public:
   /////   - don't use PowExpression's methods.
   /// Similar for other expression types.
 
+
+  ACCEPT_EXPRESSION(DivExpression, Recommended)
+  Expr AddExpression(const DivExpression&);
   ACCEPT_EXPRESSION(ExpAExpression, Recommended)
-    Expr AddExpression(const ExpAExpression&);
+  Expr AddExpression(const ExpAExpression&);
   ACCEPT_EXPRESSION(ExpExpression, Recommended)
   Expr AddExpression(const ExpExpression&);
   ACCEPT_EXPRESSION(LogExpression, Recommended)
@@ -388,8 +386,8 @@ public:
   Expr AddExpression(const PowExpression&);
 
 
-  ACCEPT_EXPRESSION(AbsExpression, Recommended)
-    Expr AddExpression(const AbsExpression&);
+  //ACCEPT_EXPRESSION(AbsExpression, Recommended)
+    //Expr AddExpression(const AbsExpression&);
 
 protected:
 

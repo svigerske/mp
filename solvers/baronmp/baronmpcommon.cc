@@ -17,8 +17,9 @@
 
 
 #ifdef _WIN32
-#include <process.h>
 #include <windows.h>
+#include <process.h> // for getpid
+
 #else
 #ifdef __APPLE__
     #include <mach-o/dyld.h>
@@ -182,7 +183,26 @@ std::filesystem::path resolveTilde(const std::filesystem::path& p) {
 
     return std::filesystem::path(pathStr);
 }
+void BaronmpCommon::initBaronFile() {
+  // Write header to baron file
+  
+  std::string suffix = currentObj == 0 ? "" : fmt::format("_{}", currentObj);
+  currentObj++;
+  filePathBar_ = appendToDir(baronDir, fmt::format("{}{}.bar", FILENAME_BAR, suffix));
+  filePathDic_ = appendToDir(baronDir, fmt::format("{}{}.txt", FILENAME_DIC, suffix));
+  filePathAMPL_ = appendToDir(baronDir, fmt::format("{}{}.bar", FILENAME_AMPL, suffix));
 
+
+  FILE_BAR = std::make_shared<fmt::BufferedFile>(filePathBar(), "wb");
+  copy_common_info_to_other();
+  writeBaron("// BARON {}.{}.{} ({}.{}.{})\n", v_year, v_month, v_day, v_year, v_month, v_day);
+}
+void BaronmpCommon::deinitBaronFile() {
+  if (FILE_BAR) {
+    FILE_BAR->close();
+    FILE_BAR = 0;
+  }
+}
 /**
 * Initialize baronDir and nlFilePath
 */
@@ -255,14 +275,7 @@ void BaronmpCommon::initDirectories(const std::string& stub,
     nlfile_path = fs::path(initialDir) / stub;
   }
   nlFilePath=nlfile_path.string();
-
-  filePathBar = appendToDir(baronDir, FILENAME_BAR);
-  filePathDic = appendToDir(baronDir, FILENAME_DIC);
-  filePathAMPL= appendToDir(baronDir, FILENAME_AMPL);
-
-  FILE_BAR = std::make_shared<fmt::BufferedFile>(filePathBar, "wb");
   std::filesystem::current_path(baronDir);
-
 }
 
 /**

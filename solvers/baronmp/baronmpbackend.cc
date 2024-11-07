@@ -1,13 +1,17 @@
 #include <vector>
 #include <climits>
 #include <cfloat>
+#include <iostream> // for cerr
 
 #include "mp/env.h"
 #include "mp/flat/model_api_base.h"
 #include "baronmpbackend.h"
 
 
-#ifndef WIN32
+#ifdef WIN32
+#define WIN32_LEAN_AND_MEAN
+#include "ConsoleApi2.h"
+#else
 #include <csignal>  // for kill()
 #endif
 
@@ -24,7 +28,8 @@ bool InterruptBaronmp(void* prob) {
   #ifndef WIN32
   kill(mp::BaronmpCommon::pid, SIGINT);
   #else
-  if (!GenerateConsoleCtrlEvent(CTRL_C_EVENT, mp::BaronmpCommon::pid)) {
+  // CTRL_C_EVENT = 0
+  if (!GenerateConsoleCtrlEvent(0, mp::BaronmpCommon::pid)) {
         std::cerr << "GenerateConsoleCtrlEvent failed (" << GetLastError() << ").\n";
         return false;
     }
@@ -58,9 +63,6 @@ BaronmpBackend::BaronmpBackend() {
   auto data = CreateBaronmpModelMgr(*this, *this, pPre);
   SetMM( std::move( data ) );
   SetValuePresolver(pPre);
-
-
-
 }
 
 BaronmpBackend::~BaronmpBackend() {
@@ -142,7 +144,8 @@ void BaronmpBackend::SetInterrupter(mp::Interrupter *inter) {
 }
 
 void BaronmpBackend::Solve() {
-  FILE_BAR->close();
+  deinitBaronFile();
+  
 
   BaronGlobals g;
   g.baronDir = baronDir;
@@ -157,7 +160,7 @@ void BaronmpBackend::Solve() {
   g.verbuf = version();
   g.v_keepsol = baronOptions().keepsol;
   g.serialize(FILENAME_AMPL);
-  int status =  BaronmpCommon::runBaron(filePathBar);
+  int status =  BaronmpCommon::runBaron(filePathBar());
   if (status)
     errorLevel = -1; // Problems running process
 
@@ -245,8 +248,6 @@ void BaronmpBackend::FinishOptionParsing() {
     baronOptions().overwrite);
   copy_common_info_to_other();
   set_verbose_mode(baronOptions().outlev > 0);
-  // Write header to baron file
-  writeBaron("// BARON {}.{}.{} ({}.{}.{})\n", v_year, v_month, v_day, v_year, v_month, v_day);
 }
 
 
@@ -364,6 +365,8 @@ void BaronmpBackend::InitCustomOptions() {
 }
 
 void BaronmpBackend::AddPrimalDualStart(Solution sol0_unpres) {
+  if (IsMIP())
+    return;
   auto mv = GetValuePresolver().PresolveSolution(
         { sol0_unpres.primal } );
   auto x0 = mv.GetVarValues()();
@@ -377,6 +380,8 @@ void BaronmpBackend::AddPrimalDualStart(Solution sol0_unpres) {
 
 void BaronmpBackend::AddMIPStart(
     ArrayRef<double> x0_unpres, ArrayRef<int> s0_unpres) {
+    if (!IsMIP())
+      return;
     auto mv = GetValuePresolver().PresolveSolution( { x0_unpres } );
     auto ms = GetValuePresolver().PresolveGenericInt( { s0_unpres } );
     auto x0 = mv.GetVarValues()();

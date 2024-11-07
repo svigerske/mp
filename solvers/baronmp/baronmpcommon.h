@@ -18,6 +18,10 @@
 #include "mp/posix.h" // for BufferedFile
 
 
+#ifdef WIN32
+#define NOMINMAX
+#include <windows.h>
+#endif
 
 namespace mp {
 #define BARON_TIM "tim.lst"
@@ -276,7 +280,16 @@ struct BaronmpCommonInfo {
   std::string nlFilePath;
   // Directory where the execution has initiated
   std::string initialDir;
-  std::string filePathBar, filePathDic, filePathAMPL;
+  std::string filePathBar_, filePathDic_, filePathAMPL_;
+  std::string filePathBar() {
+    return filePathBar_;
+  }
+  std::string filePathDic() {
+    return filePathDic_;
+  }
+  std::string filePathAMPL() {
+    return filePathAMPL_;
+  }
   std::shared_ptr<fmt::BufferedFile> FILE_BAR, FILE_DIC, FILE_AMPL;
 
   BaronProblemInfo* lp() const { return lp_; }
@@ -303,17 +316,26 @@ public:
   #else 
   static volatile DWORD pid;
 #endif
+  // Define version as follows
+  const int v_day = 10, v_month = 10, v_year = 24;
+  int currentObj = 0;
   static constexpr double Infinity() { return INFINITY;  }
   static constexpr double MinusInfinity() { return -INFINITY; }
-  const std::string FILENAME_BAR = "amplmodel.bar";
-  const std::string FILENAME_DIC = "dictionary.txt";
-  const std::string FILENAME_AMPL = ".amplparams.bar";
+  const std::string FILENAME_BAR = "amplmodel";
+  const std::string FILENAME_DIC = "dictionary";
+  const std::string FILENAME_AMPL = ".amplparams";
 
   std::string appendToDir(const std::string& dir, const std::string& file);
 
   void writeBaronOptions();
   void writeBaron(const std::string &s) {
     std::fwrite(s.c_str(), s.size(), 1, FILE_BAR->get());
+  }
+  void writeVars(fmt::MemoryWriter &w, const std::string& s) {
+    w << s;
+  }
+  void writeVars(fmt::MemoryWriter& w, fmt::CStringRef format, const fmt::ArgList& args) {
+    w << fmt::format(format, args);
   }
   /// Formats a string and prints it to stdout or, if an output handler
 /// is registered, sends it to the output handler.
@@ -327,8 +349,11 @@ public:
   std::string make_cmdline(const std::vector<std::string>& args);
   int run(const std::vector<std::string>& args);
   void initDirectories(const std::string& stub, const std::string& scratch, bool overwrite);
+  void initBaronFile();
+  void deinitBaronFile();
   int recrmdir(const std::string& dname);
   void changeDirectory(const std::string& path);
+  
 };
 
 class BaronGlobals {

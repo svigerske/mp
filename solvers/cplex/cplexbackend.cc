@@ -1365,6 +1365,13 @@ static const mp::OptionValueInfo values_varselect[] = {
   { "4", "Branch based on pseudo reduced costs", 4}
 };
 
+static const mp::OptionValueInfo values_mipsearch[] = {
+  { "0", "Automatic (default)",0},
+  { "1", "Traditional branch and cut", 1},
+  { "2", "Dynamic search", 2}
+};
+  
+  
 void CplexBackend::setSolutionMethod() {
   int nFlags = bool(storedOptions_.fBarrier_)
     + bool(storedOptions_.fPrimal_)
@@ -1782,6 +1789,14 @@ void CplexBackend::InitCustomOptions() {
     "Feasibility tolerance for integer variables (default 1e-05, "
     "must be in [0.0, 0.5])",
     CPXPARAM_MIP_Tolerances_Integrality, 0.0, 0.5);
+
+  AddSolverOption("mip:search mipsearch",
+    "Search strategy for mixed-integer problems:\n"
+    "\n.. value-table::\n",
+    CPXPARAM_MIP_Strategy_Search, values_mipsearch, 0);
+
+
+
 
   AddSolverOption("mip:submipalg submipalg",
     "Choice of algorithm used to solve the subproblems of a subMIP: "

@@ -20,8 +20,7 @@ class BaronmpBackend :
     public BaronmpCommon
 {
   
-  // Define version as follows
-  const int v_day = 10, v_month = 10, v_year = 24;
+
   int errorLevel = 0;
   TimFileData timFileData_;
   ResFileData resFileData_;
