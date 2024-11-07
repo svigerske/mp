@@ -110,7 +110,7 @@ html_short_title = "ampl::mp"
 html_logo = "https://raw.githubusercontent.com/ampl/ampl.github.io/master/themes/static/ampl-navbar-logo.png"
 
 # Add favicon
-html_favicon = "https://raw.githubusercontent.com/ampl/ampl.github.io/master/themes/static/ampl-favicon-circle.png"
+html_favicon = "https://raw.githubusercontent.com/ampl/ampl.github.io/master/themes/static/ampl-favicon.png"
 
 # If true, links to the reST sources are added to the pages.
 html_show_sourcelink = False
