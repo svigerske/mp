@@ -38,6 +38,7 @@ def addStdSolvers(solvers: SolverCollection, binPath=""):
     solvers.addSolver(Solver.CPLEXSolver(path.join(binPath,"cplexasl")))
     solvers.addSolver(Solver.CPLEXDirectSolver(path.join(binPath,"cplex"))) 
     solvers.addSolver(Solver.BaronSolver(path.join(binPath,"baron")))
+    solvers.addSolver(Solver.BaronMPSolver(path.join(binPath,"baronmp")))
     solvers.addSolver(Solver.ConoptSolver(path.join(binPath,"conopt4")))
     solvers.addSolver(Solver.ConoptSolver(path.join(binPath,"conopt")))
     solvers.addSolver(Solver.COPTSolver(path.join(binPath,"copt")))

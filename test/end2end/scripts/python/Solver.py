@@ -1064,6 +1064,31 @@ class MP2NLSolver(MPDirectSolver):
                          }
                 super().__init__(exeName, timeout, nthreads, otherOptions, stags)
 
+class BaronMPSolver(MPDirectSolver):
+    def _getAMPLOptionsName(self):
+        return "baron"
+    
+    def _setNThreads(self, threads):
+        return "threads"
+
+    def __init__(self, exeName, timeout=None, nthreads=None, otherOptions=None):
+        stags = {ModelTags.continuous, ModelTags.integer, ModelTags.binary, 
+                 ModelTags.quadratic,
+                 ModelTags.quadratic_obj,
+                 ModelTags.quadratic_obj_nonconvex,
+                 ModelTags.quadraticnonconvex,
+                 ModelTags.socp, ModelTags.socp_hard_to_recognize,
+                 ModelTags.sos,
+                 ModelTags.nonlinear,
+                 ModelTags.log,
+                 #ModelTags.trigonometric,
+                 ModelTags.return_mipgap,
+
+                 ModelTags.writelp, ModelTags.writesol,
+
+                 }
+        super().__init__(exeName, timeout, nthreads, otherOptions, stags)
+
 
 class SCIPSolver(MPDirectSolver):
     def _getAMPLOptionsName(self):
