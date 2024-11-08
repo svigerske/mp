@@ -144,7 +144,8 @@ int BaronmpCommon::run(const std::vector<std::string>& args) {
     exec_args.push_back(nullptr);  // Null-terminate the argument list
    
     if (execve(cmd_path.c_str(), exec_args.data(), environ) == -1) {
-      fmt::print(stderr, "execve failed: {}\n", strerror(errno));
+      fmt::print(stderr, "execve({}, ..., ...) failed: {}\n",
+                 cmd_path.c_str(), strerror(errno));
       exit(EXIT_FAILURE);
     }
   }
