@@ -56,6 +56,14 @@
 
 #include "mp/ampls-cpp-api.h"
 
+#ifdef _WIN32
+#include <cstdlib>  // For _environ on Windows
+#define environ _environ
+#else
+extern char** environ;
+#endif
+
+
 namespace {
 
 const char *SkipSpaces(const char *s) {
@@ -1069,13 +1077,6 @@ void BasicSolver::ParseOptionString(
     }
   }
 }
-#ifdef _WIN32
-#include <cstdlib>  // For _environ on Windows
-#define environ _environ
-#else
-extern char** environ;
-#endif
-
 
 void WarnOnDifferentCapitalizations(const std::string& target_name) {
   // Warn if we find multiple versions of the same environment variable
@@ -1087,7 +1088,7 @@ void WarnOnDifferentCapitalizations(const std::string& target_name) {
   bool has_seen_variant = false;
   bool printed_header = false;
 
-  for (char** env = environ; *env != nullptr; ++env) {
+  for (char** env = ::environ; *env != nullptr; ++env) {
     std::string env_entry = *env;
     auto delimiter_pos = env_entry.find('=');
 
