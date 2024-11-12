@@ -1069,6 +1069,56 @@ void BasicSolver::ParseOptionString(
     }
   }
 }
+#ifdef _WIN32
+#include <cstdlib>  // For _environ on Windows
+#define environ _environ
+#else
+extern char** environ;
+#endif
+
+
+void WarnOnDifferentCapitalizations(const std::string& target_name) {
+  // Warn if we find multiple versions of the same environment variable
+  // that differ by capitalization (e.g. mp_options mP_opTions, ...)
+  std::string target_name_lower = target_name;
+  std::transform(target_name_lower.begin(), target_name_lower.end(), target_name_lower.begin(), ::tolower);
+
+  std::string first_seen_variant;
+  bool has_seen_variant = false;
+  bool printed_header = false;
+
+  for (char** env = environ; *env != nullptr; ++env) {
+    std::string env_entry = *env;
+    auto delimiter_pos = env_entry.find('=');
+
+    if (delimiter_pos != std::string::npos) {
+      std::string var_name = env_entry.substr(0, delimiter_pos);
+      // Convert the variable name to lowercase
+      std::string var_name_lower = var_name;
+      std::transform(var_name_lower.begin(), var_name_lower.end(), var_name_lower.begin(), ::tolower);
+
+      // Check if this environment variable matches the target name (case-insensitively)
+      if (var_name_lower == target_name_lower) {
+        // If this is the first variant seen, record it
+        if (!has_seen_variant) {
+          first_seen_variant = var_name;
+          has_seen_variant = true;
+        }
+        else if (var_name != first_seen_variant) {
+          if (!printed_header) {
+            fmt::print("\nWarning: Multiple capitalizations found for option {}:\n    {}\n", target_name,
+              first_seen_variant);
+            printed_header = true;
+          }
+          fmt::print("    {}\n", var_name);
+        }
+      }
+    }
+  }
+  if (printed_header)
+    fmt::print("\n");
+}
+
 
 bool BasicSolver::ParseOptions(char **argv, unsigned flags, const ASLProblem *, char* additional_options) {
   has_errors_ = false;
@@ -1079,8 +1129,10 @@ bool BasicSolver::ParseOptions(char **argv, unsigned flags, const ASLProblem *, 
     ParseOptionString(additional_options, NO_OPTION_ECHO);
     return false;
   }
+  
   // 1. Try & parse 'mp_options'
   if (const char *s = std::getenv("mp_options")) {
+    WarnOnDifferentCapitalizations("mp_options");
     ParseOptionString(s, flags);
   }
   bool had_exe_name_option_var = false;
@@ -1097,6 +1149,7 @@ bool BasicSolver::ParseOptions(char **argv, unsigned flags, const ASLProblem *, 
     }
     if (const char *s
         = std::getenv((exe_basename + "_options").c_str())) {
+      WarnOnDifferentCapitalizations(exe_basename + "_options");
       ParseOptionString(s, flags);
       had_exe_name_option_var = true;
     }
@@ -1105,6 +1158,7 @@ bool BasicSolver::ParseOptions(char **argv, unsigned flags, const ASLProblem *, 
   // try '<solver_std_name>_options', such as 'gurobi_options'
   if (!had_exe_name_option_var)
   if (const char *s = std::getenv((name_ + "_options").c_str())) {
+    WarnOnDifferentCapitalizations(name_ + "_options");
     ParseOptionString(s, flags);
   }
   // 4. Proceed to command-line options
