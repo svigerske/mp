@@ -292,5 +292,15 @@
       "ANYSOLVER_options": "obj:no=2"
     },
     "objective": 4.3333333333333333333
-  }
+  },
+  {
+    "name" : "obj_expr_01 obj:multi=2",
+    "tags" : ["linear", "integer", "multiobj"],
+    "options": {
+      "ANYSOLVER_options": "obj:multi=2 cvt:bigm=1e6"
+    },
+    "values": {
+      "_sobj[1]": 71.42954735,
+      "_sobj[2]": 218.1608589
+    }  }
 ]

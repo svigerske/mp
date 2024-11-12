@@ -20,6 +20,7 @@ extensions = [
     "sphinx.ext.mathjax",
     "sphinx.ext.graphviz",
     "sphinx_design",
+    "sphinxcontrib.googleanalytics",
 ]
 
 # Configure Breathe.
@@ -87,10 +88,10 @@ html_theme_options = {
             "icon": "fab fa-github",
         },
     ],
-    "collapse_navigation": True,
     "logo_text": "MP",
 }
 html_context = {"default_mode": "light"}
+googleanalytics_id = "G-2K2EEK1LBD"
 
 html_baseurl = "https://mp.ampl.com"
 

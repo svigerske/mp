@@ -27,6 +27,7 @@ void MP2NLModelAPI::InitProblemModificationPhase(const FlatModelInfo* flat_model
       flat_model_info->GetNumberOfConstraintsOfGroup(CG_Logical));
   sos_info_.reserve(
       flat_model_info->GetNumberOfConstraintsOfGroup(CG_SOS));
+  hdr_is_current_ = false;
 }
 
 void MP2NLModelAPI::AddVariables(const VarArrayDef& vad) {
@@ -36,6 +37,8 @@ void MP2NLModelAPI::AddVariables(const VarArrayDef& vad) {
   if (vad.pnames())
     var_names_ = {vad.pnames(), (size_t)vad.size()};
   mark_data_.col_sizes_orig_.resize(var_lbs_.size());
+  is_var_nlo_.resize(vad.size());
+  is_var_nlc_.resize(vad.size());
 }
 
 
@@ -131,19 +134,23 @@ void MP2NLModelAPI::AddConstraint(const SOS2Constraint& sos)
 template <class Expr>
 MP2NL_Expr MP2NLModelAPI::AddExpression(
     const Expr &expr, ExpressionTypeID eid) {
+  SparsityTmp spstmp;
   // Only should visit such arguments
   // which are true expressions, i.e.,
-  // not the pure-variable parts.
-  // Thus, need to specialize for NLDefVar.
-  VisitArguments(expr, [this](MP2NL_Expr mp2nle){
+  // not the pure-variable parts?
+  // Thus, need to specialize for NLDefVar?
+  // But currently seems to be fine as is,
+  // because RegisterExpression() only takes true expressions.
+  VisitArguments(expr, [this,&spstmp](MP2NL_Expr mp2nle){
     RegisterExpression(mp2nle);
+    MergeSparsityTmp(spstmp, mp2nle);
   });
-  return StoreMP2NLExprID(expr, eid);
+  return StoreMP2NLExprID(expr, eid, spstmp);
 }
 
 template <class Expr>
 MP2NL_Expr MP2NLModelAPI::StoreMP2NLExprID(
-    const Expr &expr, ExpressionTypeID eid) {
+    const Expr &expr, ExpressionTypeID eid, const SparsityTmp& spars) {
   // std::printf("   Storing MP2NL_Expr[%ld]: type %s, logical = %d, @%p\n",
   //             expr_info_.size(),
   //             expr.GetFlatConstraint().GetTypeName(),
@@ -151,11 +158,22 @@ MP2NL_Expr MP2NLModelAPI::StoreMP2NLExprID(
   expr_info_.push_back(
       MakeItemInfo(expr, eid, IsLogical(expr)));
   expr_counter_.push_back(0);
+  expr_sparsity_.push_back( {spars.begin(), spars.end()} );
   return MakeExprID( int(expr_info_.size()-1) );
 }
 
 void MP2NLModelAPI::RegisterExpression(MP2NL_Expr expr) {
   CountExpression(expr);
+}
+
+void MP2NLModelAPI::MergeSparsityTmp(
+    MP2NLModelAPI::SparsityTmp& spstmp, MP2NL_Expr expr) {
+  if (expr.IsVariable()) {
+    spstmp.insert(expr.GetVarIndex());
+  } else if (expr.IsExpression()) {
+    const auto& sps4expr =  expr_sparsity_.at(expr.GetExprIndex());
+    spstmp.insert(sps4expr.begin(), sps4expr.end());
+  }     // That's it
 }
 
 /// Count expression depending on its kind.
@@ -164,8 +182,8 @@ void MP2NLModelAPI::RegisterExpression(MP2NL_Expr expr) {
 void MP2NLModelAPI::CountExpression(MP2NL_Expr expr) {
   if (expr.IsExpression()) {
     auto index = expr.GetExprIndex();
-    assert(index >=0 && index < expr_counter_.size()
-           && index < expr_info_.size());
+    assert(index >=0 && index < (int)expr_counter_.size()
+           && index < (int)expr_info_.size());
     ++expr_counter_[index];
   }   // @todo here also variable usage dep. on top-level item?
 }
@@ -243,36 +261,225 @@ void MP2NLModelAPI::PrepareModel() {
   MapExpressions();
   MarkVars();
   SortVars();
-  MarkItems();
+  MarkAlgCons();
+  SortAlgCons();
 }
 
 void MP2NLModelAPI::MapExpressions() {
-  for (const auto& info: obj_info_) {
-    MapExprTreeFromItemInfo(info);
+  ResetObjMetaInfo();
+  is_alg_con_nl_.resize(alg_con_info_.size());  // grow flags array
+  for (int i=0; i<(int)obj_info_.size(); ++i) {
+    MapExprTreeFromItemInfo(i, obj_info_[i], 2);
   }
-  for (const auto& info: alg_con_info_) {
-    MapExprTreeFromItemInfo(info);
+  for (int i=0; i<(int)alg_con_info_.size(); ++i) {
+    if (!alg_con_info_[i].IsExprTreeMarked()) {
+      MapExprTreeFromItemInfo(i, alg_con_info_[i], 0);
+      alg_con_info_[i].SetExprTreeMarked();
+    }
   }
-  for (const auto& info: log_con_info_) {
-    MapExprTreeFromItemInfo(info);
+  for (int i=0; i<(int)log_con_info_.size(); ++i) {
+    if (!log_con_info_[i].IsExprTreeMarked()) {
+      MapExprTreeFromItemInfo(i, log_con_info_[i], 1);
+      log_con_info_[i].SetExprTreeMarked();
+    }
   }
+  FinishMapExpressions();
   ResetIniExprRetrievedFlags();
 }
 
+void MP2NLModelAPI::MapExprTreeFromItemInfo(
+    int i_item, const ItemInfo& info, int kind) {
+  auto mp2nlexpr        // so that AddExpression() is called
+      = info.GetDispatcher().GetExpression(info.GetPItem());
+  RegisterExpression(mp2nlexpr);     // tree root
+  if (1 != kind) {                   // alg con / obj
+    MergeItemSparsity(info, kind, mp2nlexpr);
+    UpdateAlgebraicMetaInfo(info, kind);  // nnz, colsizes, n ranges/eqns
+  }
+  MarkNLVars(i_item, mp2nlexpr, kind);            // also for logical cons
+}
+
+void MP2NLModelAPI::ResetObjMetaInfo() {
+  mark_data_.n_obj_nz_ = 0;
+  mark_data_.nnlo_ = 0;
+  is_var_nlo_.clear();
+  is_var_nlo_.resize(var_lbs_.size());
+}
+
+void MP2NLModelAPI::MergeItemSparsity(
+    const ItemInfo &info, int , MP2NL_Expr expr) {
+  if (expr.IsEmptyExpr()) {    // Just use existing linear part
+    auto lp = GetLinPart(info);
+    info.SetExtLinPart(std::move(lp));
+  } else {                     // proper expr or variable
+    std::unordered_map<int, double> linp_ext;
+    auto lp = GetLinPart(info);
+    for (auto i=lp.size(); i--; )
+      linp_ext[lp.vars()[i]] += lp.coefs()[i];
+    if (expr.IsVariable()) {   // @todo should have been inlined
+      linp_ext[expr.GetVarIndex()] += 1.0;      // Merge 1 var
+    } else {
+      const auto& spars = expr_sparsity_.at(expr.GetExprIndex());
+      for (auto v: spars)
+        linp_ext[v];           // Merge expression sparsity
+    } // https://stackoverflow.com/questions/33325470/
+      // c-is-there-a-way-to-initialize-unordered-map-using-
+      // contents-of-vector-as-keys
+    std::vector<int> vars;     // @todo SmallVec
+    vars.reserve(linp_ext.size());
+    std::vector<double> coefs;
+    coefs.reserve(linp_ext.size());
+    for (const auto& val: linp_ext) {
+      coefs.push_back(val.second);
+      vars.push_back(val.first);
+    }
+    info.SetExtLinPart(        // Put joint result into \a info
+        {std::move(coefs), std::move(vars)} );
+  }
+}
+
+inline
+    MP2NLModelAPI::LinPartRefOrStorage
+    GetLPRoS(const LinTerms& lt) {
+  return {lt.coefs(), lt.vars()};
+}
+
+template <int sense>
+inline
+    MP2NLModelAPI::LinPartRefOrStorage
+    GetLPRoS(const NLBaseAssign<sense>& nla) {
+  std::vector<double> c{1, nla.coef(0)};    // @todo: SmallVec
+  std::vector<int> v{1, nla.var(0)};
+  return {std::move(c), std::move(v)};      // std::move to pass storage
+}
+
+MP2NLModelAPI::LinPartRefOrStorage
+MP2NLModelAPI::GetLinPart(const ItemInfo &info) {
+  const auto* pitem = info.GetPItem();
+  switch (info.GetStaticTypeID()) {
+  case StaticItemTypeID::ID_LinearObjective:
+  case StaticItemTypeID::ID_NLObjective: {
+    return GetLPRoS( ((LinearObjective*)(pitem))->GetLinTerms() );
+  }
+  case StaticItemTypeID::ID_LinConRange: {
+    return GetLPRoS( ((LinConRange*)(pitem))->GetLinTerms() );
+  }
+  case StaticItemTypeID::ID_LinConLE: {
+    return GetLPRoS( ((LinConLE*)(pitem))->GetLinTerms() );
+  }
+  case StaticItemTypeID::ID_LinConEQ: {
+    return GetLPRoS( ((LinConEQ*)(pitem))->GetLinTerms() );
+  }
+  case StaticItemTypeID::ID_LinConGE: {
+    return GetLPRoS( ((LinConGE*)(pitem))->GetLinTerms() );
+  }
+  case StaticItemTypeID::ID_NLConstraint: {
+    return GetLPRoS(
+        ((const NLConstraint*)(pitem))->GetMainCon().GetLinTerms() );
+  }
+  case StaticItemTypeID::ID_NLAssignLE: {
+    return GetLPRoS( *((NLAssignLE*)(pitem)) );
+  }
+  case StaticItemTypeID::ID_NLAssignEQ: {
+    return GetLPRoS( *((NLAssignEQ*)(pitem)) );
+  }
+  case StaticItemTypeID::ID_NLAssignGE: {
+    return GetLPRoS( *((NLAssignGE*)(pitem)) );
+  }
+  case StaticItemTypeID::ID_NLComplementarity: {
+    return GetLPRoS(                 // Do we need the \a compl_var?
+        ((const NLComplementarity*)(pitem))->GetExpression().GetBody() );
+  }
+  default:
+    MP_RAISE("Unknown objective or algebraic constraint type");
+  }
+}
+
+void MP2NLModelAPI::UpdateAlgebraicMetaInfo(
+    const ItemInfo &info, int kind) {
+  const auto& lp_ext = info.GetExtLinPart();
+  if (kind) {
+    mark_data_.n_obj_nz_ += lp_ext.size();
+  } else {
+    mark_data_.n_con_nz_ += lp_ext.size();
+    Add2ColSizes(lp_ext.vars());
+    info.GetDispatcher().MarkRangeOrEqn(info.GetPItem());
+  }
+}
+
+void MP2NLModelAPI::MarkNLVars(
+    int i_item, MP2NL_Expr expr, int kind) {
+  if (expr.IsEmptyExpr()) {
+    // nothing
+  } else {
+    std::vector<bool>& var_nl_flags
+        = kind ? is_var_nlo_ : is_var_nlc_;
+    if (expr.IsVariable()) {         // we still count it as non-linear
+      var_nl_flags.at(expr.GetVarIndex()) = true;
+    } else {
+      for (auto v: expr_sparsity_.at(expr.GetExprIndex())) {
+        assert(v>=0 && v<(int)var_lbs_.size());
+        var_nl_flags[v] = true;
+      }
+    }
+    if (0==kind) {
+      is_alg_con_nl_.at(i_item) = true;   // nonlinear cons
+      ++mark_data_.nnlc_;
+    } else {
+      ++mark_data_.nnlo_;
+    }
+  }
+}
+
+void MP2NLModelAPI::FinishMapExpressions() { }
+
 void MP2NLModelAPI::MarkVars() {
+  mark_data_.var_prior_.clear();
   mark_data_.var_prior_.resize(var_lbs_.size());
-  mark_data_.n_var_lin_bin_ = 0;
-  mark_data_.n_var_lin_int_ = 0;
+  mark_data_.n_bin_var_lin_ = 0;
+  mark_data_.n_int_var_lin_ = 0;
+  mark_data_.n_cont_var_nl_con_ = 0;
+  mark_data_.n_cont_var_nl_obj_ = 0;
+  mark_data_.n_cont_var_nl_both_ = 0;
+  mark_data_.n_int_var_nl_con_ = 0;
+  mark_data_.n_int_var_nl_obj_ = 0;
+  mark_data_.n_int_var_nl_both_ = 0;
   for (auto i=var_lbs_.size(); i--; ) {
     mark_data_.var_prior_[i].second = i;
+    bool f_int_non_bin{}, f_bin{}, f_int_or_bin{};
     if (var::Type::INTEGER == var_types_[i]) {
-      if (!var_lbs_[i] && 1.0==var_ubs_[i]) {
+      f_int_or_bin = true;
+      if (!var_lbs_[i] && 1.0==var_ubs_[i]) {    // binary var
         mark_data_.var_prior_[i].first = 1;
-        ++mark_data_.n_var_lin_bin_;
+        f_bin = true;
       } else {
         mark_data_.var_prior_[i].first = 2;
-        ++mark_data_.n_var_lin_int_;
+        f_int_non_bin = true;
       }
+    }
+    if (is_var_nlc_[i]) {
+      if (is_var_nlo_[i]) {
+        mark_data_.var_prior_[i].first -= 9;
+        f_int_or_bin
+            ? ++mark_data_.n_int_var_nl_both_
+            : ++mark_data_.n_cont_var_nl_both_;
+      } else {
+        mark_data_.var_prior_[i].first -= 6;
+        f_int_or_bin
+            ? ++mark_data_.n_int_var_nl_con_
+            : ++mark_data_.n_cont_var_nl_con_;
+      }
+    } else if (is_var_nlo_[i]) {
+      mark_data_.var_prior_[i].first -= 3;
+      f_int_or_bin
+          ? ++mark_data_.n_int_var_nl_obj_
+          : ++mark_data_.n_cont_var_nl_obj_;
+    } else {               // 'linear' var
+      if (f_bin)
+        ++mark_data_.n_bin_var_lin_;
+      else
+        if (f_int_non_bin)
+          ++mark_data_.n_int_var_lin_;
     }
   }
 }
@@ -287,13 +494,25 @@ void MP2NLModelAPI::SortVars() {
   }
 }
 
-void MP2NLModelAPI::MarkItems() {
-  ItemMarkingData prm;
-  for (auto& info: alg_con_info_)
-    info.GetDispatcher().MarkItem(info.GetPItem(), prm);
+void MP2NLModelAPI::MarkAlgCons() {
+  mark_data_.con_prior_.clear();
+  mark_data_.con_prior_.resize(alg_con_info_.size());
+  for (auto i=alg_con_info_.size(); i--; ) {
+    mark_data_.con_prior_[i] = { -(int)is_alg_con_nl_[i], i };
+  }
 }
 
-void MP2NLModelAPI::Add2ColSizes(const std::vector<int>& vars) {
+void MP2NLModelAPI::SortAlgCons() {
+  std::sort(mark_data_.con_prior_.begin(), mark_data_.con_prior_.end());
+  mark_data_.con_order_12_.resize(alg_con_info_.size());
+  mark_data_.con_order_21_.resize(alg_con_info_.size());
+  for (auto i=alg_con_info_.size(); i--; ) {
+    mark_data_.con_order_12_[i] = mark_data_.con_prior_[i].second;
+    mark_data_.con_order_21_[mark_data_.con_prior_[i].second] = i;
+  }
+}
+
+void MP2NLModelAPI::Add2ColSizes(ArrayRef<int> vars) {
   for (auto v: vars)
     ++mark_data_.col_sizes_orig_[v];
 }
@@ -310,8 +529,8 @@ NLHeader MP2NLModelAPI::DoMakeHeader() {
   hdr.num_logical_cons = log_con_info_.size();
 
   /** Total number of nonlinear constraints. */
-  hdr.num_nl_cons = 0;
-  hdr.num_nl_objs = 0;
+  hdr.num_nl_cons = mark_data_.nnlc_;
+  hdr.num_nl_objs = mark_data_.nnlo_;
   hdr.num_compl_conds = 0;
   hdr.num_nl_compl_conds = 0;
   hdr.num_compl_dbl_ineqs = 0;
@@ -321,20 +540,25 @@ NLHeader MP2NLModelAPI::DoMakeHeader() {
   hdr.num_nl_net_cons = 0;
   hdr.num_linear_net_cons = 0;
 
+  /** Number of nonlinear variables in both constraints and objectives. */
+  hdr.num_nl_vars_in_both
+      = mark_data_.n_cont_var_nl_both_ + mark_data_.n_int_var_nl_both_;
+
   /**
       Number of nonlinear variables in constraints including nonlinear
       variables in both constraints and objectives.
      */
-  hdr.num_nl_vars_in_cons = 0;
+  hdr.num_nl_vars_in_cons
+      = hdr.num_nl_vars_in_both
+        + mark_data_.n_cont_var_nl_con_ + mark_data_.n_int_var_nl_con_;
 
   /**
       Number of nonlinear variables in objectives including nonlinear
       variables in both constraints and objectives.
      */
-  hdr.num_nl_vars_in_objs = 0;
-
-  /** Number of nonlinear variables in both constraints and objectives. */
-  hdr.num_nl_vars_in_both = 0;
+  hdr.num_nl_vars_in_objs
+      = hdr.num_nl_vars_in_cons
+        + mark_data_.n_cont_var_nl_obj_ + mark_data_.n_int_var_nl_obj_;
 
   // Miscellaneous
   // -------------
@@ -349,21 +573,21 @@ NLHeader MP2NLModelAPI::DoMakeHeader() {
   // ------------------------------------
 
   /** Number of linear binary variables. */
-  hdr.num_linear_binary_vars = mark_data_.n_var_lin_bin_;
+  hdr.num_linear_binary_vars = mark_data_.n_bin_var_lin_;
 
   /** Number of linear non-binary integer variables. */
-  hdr.num_linear_integer_vars = mark_data_.n_var_lin_int_;
+  hdr.num_linear_integer_vars = mark_data_.n_int_var_lin_;
 
   /**
       Number of integer nonlinear variables in both constraints and objectives.
      */
-  hdr.num_nl_integer_vars_in_both = 0;
+  hdr.num_nl_integer_vars_in_both = mark_data_.n_int_var_nl_both_;
 
   /** Number of integer nonlinear variables just in constraints. */
-  hdr.num_nl_integer_vars_in_cons = 0;
+  hdr.num_nl_integer_vars_in_cons = mark_data_.n_int_var_nl_con_;
 
   /** Number of integer nonlinear variables just in objectives. */
-  hdr.num_nl_integer_vars_in_objs = 0;
+  hdr.num_nl_integer_vars_in_objs = mark_data_.n_int_var_nl_obj_;
 
   // Information about nonzeros
   // --------------------------
@@ -437,20 +661,7 @@ int MP2NLModelAPI::ObjType(int i) {
 
 template <class ObjGradWriterFactory>
 void MP2NLModelAPI::FeedObjGradient(int i, ObjGradWriterFactory& svwf) {
-  switch (obj_info_.at(i).GetStaticTypeID()) {
-  case StaticItemTypeID::ID_LinearObjective:
-  case StaticItemTypeID::ID_NLObjective: {
-    const auto& obj = *((LinearObjective*)(obj_info_[i].GetPItem()));
-    if (obj.num_terms()) {
-      auto svw = svwf.MakeVectorWriter(obj.num_terms());
-      for (int j=0; j<obj.num_terms(); ++j)
-        svw.Write(GetNewVarIndex( obj.GetLinTerms().var(j) ),      // new ordering
-                  obj.GetLinTerms().coef(j));
-    }
-  } break;
-  default:
-    MP_RAISE("Unknown objective type");
-  }
+  FeedExtLinPart(obj_info_[i], svwf);
 }
 
 template <class ObjExprWriter>
@@ -482,7 +693,8 @@ void MP2NLModelAPI::FeedVarBounds(VarBoundsWriter& vbw) {
 
 template <class ConBoundsWriter>
 void MP2NLModelAPI::FeedConBounds(ConBoundsWriter& cbw) {
-  for (size_t i=0; i<alg_con_info_.size(); ++i) {          // no constraint permutations
+  for (size_t i_new=0; i_new<alg_con_info_.size(); ++i_new) {
+    auto i = GetOldAlgConIndex(i_new);
     switch (alg_con_info_[i].GetStaticTypeID()) {
     case StaticItemTypeID::ID_LinConRange: {
       const auto& lcon = *((LinConRange*)(alg_con_info_[i].GetPItem()));
@@ -548,51 +760,19 @@ void MP2NLModelAPI::FeedConBounds(ConBoundsWriter& cbw) {
 
 template <class ConLinearExprWriterFactory>
 void MP2NLModelAPI::FeedLinearConExpr(int i, ConLinearExprWriterFactory& svwf) {
-  const auto* pitem = alg_con_info_[i].GetPItem();
-  switch (alg_con_info_[i].GetStaticTypeID()) {
-  case StaticItemTypeID::ID_LinConRange: {
-    FeedLinearConBody( *((LinConRange*)(pitem)), svwf);
-  } break;
-  case StaticItemTypeID::ID_LinConLE: {
-    FeedLinearConBody( *((LinConLE*)(pitem)), svwf);
-  } break;
-  case StaticItemTypeID::ID_LinConEQ: {
-    FeedLinearConBody( *((LinConEQ*)(pitem)), svwf);
-  } break;
-  case StaticItemTypeID::ID_LinConGE: {
-    FeedLinearConBody( *((LinConGE*)(pitem)), svwf);
-  } break;
-  case StaticItemTypeID::ID_NLConstraint: {
-    FeedLinearConBody(
-        ((const NLConstraint*)(pitem))->GetMainCon(), svwf);
-  } break;
-  case StaticItemTypeID::ID_NLAssignLE: {
-    FeedLinearConBody( *((NLAssignLE*)(pitem)), svwf);
-  } break;
-  case StaticItemTypeID::ID_NLAssignEQ: {
-    FeedLinearConBody( *((NLAssignEQ*)(pitem)), svwf);
-  } break;
-  case StaticItemTypeID::ID_NLAssignGE: {
-    FeedLinearConBody( *((NLAssignGE*)(pitem)), svwf);
-  } break;
-  case StaticItemTypeID::ID_NLComplementarity: {
-    FeedLinearConBody(
-        ((const NLComplementarity*)(pitem))->GetExpression(), svwf);
-  } break;
-  default:
-    MP_RAISE("Unknown algebraic constraint type");
-  }
+  FeedExtLinPart(alg_con_info_[GetOldAlgConIndex(i)], svwf);
 }
 
-template <class ExprBody, class ConLinearExprWriterFactory>
-void MP2NLModelAPI::FeedLinearConBody(
-    const ExprBody& algcon,
+template <class ConLinearExprWriterFactory>
+void MP2NLModelAPI::FeedExtLinPart(
+    const ItemInfo& item,
     ConLinearExprWriterFactory& svwf) {
-  if (algcon.size()) {
-    auto svw = svwf.MakeVectorWriter(algcon.size());
-    for (int j=0; j<algcon.size(); ++j)
-      svw.Write(GetNewVarIndex( algcon.var(j) ),      // new ordering
-                algcon.coef(j));
+  const auto& lp_ext = item.GetExtLinPart();
+  if (lp_ext.size()) {
+    auto svw = svwf.MakeVectorWriter(lp_ext.size());
+    for (int j=0; j<lp_ext.size(); ++j)
+      svw.Write(GetNewVarIndex( lp_ext.vars()[j]),      // new ordering
+                lp_ext.coefs()[j]);
   }
 }
 
@@ -600,7 +780,7 @@ template <class ConExprWriter>
 void MP2NLModelAPI::FeedConExpression(
     int icon, ConExprWriter& ew) {
   if (icon < (int)alg_con_info_.size())
-    FeedAlgConExpression(icon, ew);
+    FeedAlgConExpression(GetOldAlgConIndex(icon), ew);
   else
     FeedLogicalConExpression(icon - alg_con_info_.size(), ew);
 }
@@ -893,7 +1073,7 @@ void MP2NLModelAPI::FeedLogicalExpression(
       f_logical
           = expr_info_.at(mp2nle.GetExprIndex()).IsLogical();
     }
-    if (!f_logical) {
+    if (!f_logical) {      // Wrap as (expr != 0)
       auto argw = aw.OPut2(nl::NE);
       argw.EPut(mp2nle);
       argw.NPut(0.0);
@@ -937,7 +1117,7 @@ void MP2NLModelAPI::FeedInitialDualGuesses(IDGWriter& igw) {
   if (y0.size()) {
     auto ig = igw.MakeVectorWriter(y0.size());
     for (size_t i=0; i<y0.size(); ++i) {
-      ig.Write(i, y0[i]);
+      ig.Write(GetNewAlgConIndex( i ), y0[i]);
     }
   }
 }
@@ -1005,6 +1185,8 @@ void MP2NLModelAPI::Feed1Suffix(
         int i0=i;
         if (suf::VAR==kind)
           i0 = this->GetNewVarIndex(i);
+        else if (suf::CON==kind && i<alg_con_info_.size())
+          i0 = this->GetNewAlgConIndex(i);
         sw.Write(i0, val);
       }
     }
@@ -1041,7 +1223,12 @@ void MP2NLModelAPI::FeedRowAndObjNames(ColNameWriter& wrt) {
         wrt << (nm ? nm : "..");
       }
     };
-    write_names(alg_con_info_);    // @todo any permutations
+    for (size_t i=0; i<alg_con_info_.size(); ++i) {
+      auto i0 = GetOldAlgConIndex(i);
+      const auto* nm
+          = alg_con_info_[i0].GetDispatcher().GetName(alg_con_info_[i0].GetPItem());
+      wrt << (nm ? nm : "..");
+    }
     write_names(log_con_info_);
     write_names(obj_info_);
   }
@@ -1191,8 +1378,12 @@ public:
             "The subsolver reported fewer duals than algebraic constraints");
       }
       duals_.reserve(nac_sol);
-      while (rd.Size())
-        duals_.push_back( rd.ReadNext() );                  // no cperm
+      int j=0;
+      for ( ; rd.Size(); ++j ) {
+        int j0 = mapi_.GetOldAlgConIndex(j);
+        assert(j0>=0 && j0 < n_alg_cons);
+        duals_[j0] = rd.ReadNext();
+      }
     }
   }
 
@@ -1298,6 +1489,7 @@ protected:
     auto& suf = modelsuf.values_.at(kind & 3);
     suf.clear();
     suf.resize(nitems_[kind & 3]);
+    auto n_alg_cons = Header().num_algebraic_cons;
     while (sr.Size()) {
       auto sparse_entry = sr.ReadNext();
       if (sparse_entry.first<0 || sparse_entry.first>=nmax) {
@@ -1308,6 +1500,9 @@ protected:
       int i0 = sparse_entry.first;
       if (0 == (kind & 3))                   // variable suffix
         i0 = mapi_.GetOldVarIndex(i0);
+      else
+        if (1 == (kind & 3) && i0 < n_alg_cons)
+          i0 = mapi_.GetOldAlgConIndex(i0);
       suf[i0] = sparse_entry.second;
     }
   }

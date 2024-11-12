@@ -80,7 +80,9 @@ public:
 };
 
 
-/// Quadratic objective
+/// Quadratic objective.
+/// @note Should have no expression
+///   but we check HasExpr() to see if it is an NLObjective really
 class QuadraticObjective : public NLObjective {
   QuadTerms qt_;
 public:

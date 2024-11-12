@@ -9,6 +9,7 @@
 #include "mp/valcvt-base.h"
 #include "mp/error.h"
 #include "mp/flat/obj_std.h"
+#include "mp/flat/nl_expr/constr_nl.h"
 
 namespace mp {
 
@@ -216,7 +217,17 @@ protected:
     auto diff = std::max(                 // Apply degradation tolerance
         obj_new_tola_[i_current_obj_-1], std::fabs(lim) * obj_new_tolr_[i_current_obj_-1]);
     lim += diff * (obj::MAX==obj_last.obj_sense() ? -1.0 : 1.0);
-    if (obj_last.GetQPTerms().size()) {
+    if (obj_last.HasExpr()) {
+      assert(obj_last.GetQPTerms().empty());   // not mixing QP and expression term
+      if (obj::MAX == obj_last.obj_sense())
+        MPD( AddConstraint(
+            NLConstraint{ obj_last.GetLinTerms(), obj_last.ExprIndex(),
+                         { lim, MPCD(Inf()) } } ) );
+      else
+        MPD( AddConstraint(
+            NLConstraint{ obj_last.GetLinTerms(), obj_last.ExprIndex(),
+                         { MPCD(MinusInf()), lim } } ) );
+    } else    if (obj_last.GetQPTerms().size()) {
       if (obj::MAX == obj_last.obj_sense())
         MPD( AddConstraint(
 						QuadConGE{ { obj_last.GetLinTerms(), obj_last.GetQPTerms() }, lim } ) );
