@@ -923,10 +923,28 @@ public:
 
 public:
   /// Get new var index for an old var index
-  int GetNewVarIndex(int i) const { return mark_data_.var_order_21_[i]; }
+  int GetNewVarIndex(int i) const {
+    assert(i>=0 && i<mark_data_.var_order_21_.size());
+    return mark_data_.var_order_21_[i];
+  }
 
   /// Get old var index for a new var index
-  int GetOldVarIndex(int i) const { return mark_data_.var_order_12_[i]; }
+  int GetOldVarIndex(int i) const {
+    assert(i>=0 && i<mark_data_.var_order_12_.size());
+    return mark_data_.var_order_12_[i];
+  }
+
+  /// Get new alg con index for an old index
+  int GetNewAlgConIndex(int i) const {
+    assert(i>=0 && i<mark_data_.con_order_21_.size());
+    return mark_data_.con_order_21_[i];
+  }
+
+  /// Get old alg con index for a new index
+  int GetOldAlgConIndex(int i) const {
+    assert(i>=0 && i<mark_data_.con_order_12_.size());
+    return mark_data_.con_order_12_[i];
+  }
 
   /// Item name
   template <class Item>
@@ -961,6 +979,12 @@ protected:
   /// Sort variables
   void SortVars();
 
+  /// Mark alg cons for sorting
+  void MarkAlgCons();
+
+  /// Sort alg cons
+  void SortAlgCons();
+
   NLHeader DoMakeHeader();
 
   /// Parameters passed when marking variables in an expression tree
@@ -990,6 +1014,10 @@ protected:
     std::vector< std::pair< int, int > > var_prior_;        // new index -> var weight, orig. index
     std::vector<int> var_order_12_;                         // new index -> old index
     std::vector<int> var_order_21_;                         // old index -> new index
+
+    std::vector< std::pair< int, int > > con_prior_;        // new index -> con weight, orig. index
+    std::vector<int> con_order_12_;                         // new index -> old index
+    std::vector<int> con_order_21_;                         // old index -> new index
 
     std::vector<int> col_sizes_orig_;                       // column sizes for original sorting
   };

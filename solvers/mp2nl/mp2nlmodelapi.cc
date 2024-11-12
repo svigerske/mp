@@ -261,6 +261,8 @@ void MP2NLModelAPI::PrepareModel() {
   MapExpressions();
   MarkVars();
   SortVars();
+  MarkAlgCons();
+  SortAlgCons();
 }
 
 void MP2NLModelAPI::MapExpressions() {
@@ -492,6 +494,24 @@ void MP2NLModelAPI::SortVars() {
   }
 }
 
+void MP2NLModelAPI::MarkAlgCons() {
+  mark_data_.con_prior_.clear();
+  mark_data_.con_prior_.resize(alg_con_info_.size());
+  for (auto i=alg_con_info_.size(); i--; ) {
+    mark_data_.con_prior_[i] = { -(int)is_alg_con_nl_[i], i };
+  }
+}
+
+void MP2NLModelAPI::SortAlgCons() {
+  std::sort(mark_data_.con_prior_.begin(), mark_data_.con_prior_.end());
+  mark_data_.con_order_12_.resize(alg_con_info_.size());
+  mark_data_.con_order_21_.resize(alg_con_info_.size());
+  for (auto i=alg_con_info_.size(); i--; ) {
+    mark_data_.con_order_12_[i] = mark_data_.con_prior_[i].second;
+    mark_data_.con_order_21_[mark_data_.con_prior_[i].second] = i;
+  }
+}
+
 void MP2NLModelAPI::Add2ColSizes(ArrayRef<int> vars) {
   for (auto v: vars)
     ++mark_data_.col_sizes_orig_[v];
@@ -673,7 +693,8 @@ void MP2NLModelAPI::FeedVarBounds(VarBoundsWriter& vbw) {
 
 template <class ConBoundsWriter>
 void MP2NLModelAPI::FeedConBounds(ConBoundsWriter& cbw) {
-  for (size_t i=0; i<alg_con_info_.size(); ++i) {          // no constraint permutations
+  for (size_t i_new=0; i_new<alg_con_info_.size(); ++i_new) {
+    auto i = GetOldAlgConIndex(i_new);
     switch (alg_con_info_[i].GetStaticTypeID()) {
     case StaticItemTypeID::ID_LinConRange: {
       const auto& lcon = *((LinConRange*)(alg_con_info_[i].GetPItem()));
@@ -739,7 +760,7 @@ void MP2NLModelAPI::FeedConBounds(ConBoundsWriter& cbw) {
 
 template <class ConLinearExprWriterFactory>
 void MP2NLModelAPI::FeedLinearConExpr(int i, ConLinearExprWriterFactory& svwf) {
-  FeedExtLinPart(alg_con_info_[i], svwf);
+  FeedExtLinPart(alg_con_info_[GetOldAlgConIndex(i)], svwf);
 }
 
 template <class ConLinearExprWriterFactory>
@@ -759,7 +780,7 @@ template <class ConExprWriter>
 void MP2NLModelAPI::FeedConExpression(
     int icon, ConExprWriter& ew) {
   if (icon < (int)alg_con_info_.size())
-    FeedAlgConExpression(icon, ew);
+    FeedAlgConExpression(GetOldAlgConIndex(icon), ew);
   else
     FeedLogicalConExpression(icon - alg_con_info_.size(), ew);
 }
@@ -1096,7 +1117,7 @@ void MP2NLModelAPI::FeedInitialDualGuesses(IDGWriter& igw) {
   if (y0.size()) {
     auto ig = igw.MakeVectorWriter(y0.size());
     for (size_t i=0; i<y0.size(); ++i) {
-      ig.Write(i, y0[i]);
+      ig.Write(GetNewAlgConIndex( i ), y0[i]);
     }
   }
 }
@@ -1164,6 +1185,8 @@ void MP2NLModelAPI::Feed1Suffix(
         int i0=i;
         if (suf::VAR==kind)
           i0 = this->GetNewVarIndex(i);
+        else if (suf::CON==kind && i<alg_con_info_.size())
+          i0 = this->GetNewAlgConIndex(i);
         sw.Write(i0, val);
       }
     }
@@ -1200,7 +1223,12 @@ void MP2NLModelAPI::FeedRowAndObjNames(ColNameWriter& wrt) {
         wrt << (nm ? nm : "..");
       }
     };
-    write_names(alg_con_info_);    // @todo any permutations
+    for (size_t i=0; i<alg_con_info_.size(); ++i) {
+      auto i0 = GetOldAlgConIndex(i);
+      const auto* nm
+          = alg_con_info_[i0].GetDispatcher().GetName(alg_con_info_[i0].GetPItem());
+      wrt << (nm ? nm : "..");
+    }
     write_names(log_con_info_);
     write_names(obj_info_);
   }
@@ -1350,8 +1378,12 @@ public:
             "The subsolver reported fewer duals than algebraic constraints");
       }
       duals_.reserve(nac_sol);
-      while (rd.Size())
-        duals_.push_back( rd.ReadNext() );                  // no cperm
+      int j=0;
+      for ( ; rd.Size(); ++j ) {
+        int j0 = mapi_.GetOldAlgConIndex(j);
+        assert(j0>=0 && j0 < n_alg_cons);
+        duals_[j0] = rd.ReadNext();
+      }
     }
   }
 
@@ -1457,6 +1489,7 @@ protected:
     auto& suf = modelsuf.values_.at(kind & 3);
     suf.clear();
     suf.resize(nitems_[kind & 3]);
+    auto n_alg_cons = Header().num_algebraic_cons;
     while (sr.Size()) {
       auto sparse_entry = sr.ReadNext();
       if (sparse_entry.first<0 || sparse_entry.first>=nmax) {
@@ -1467,6 +1500,9 @@ protected:
       int i0 = sparse_entry.first;
       if (0 == (kind & 3))                   // variable suffix
         i0 = mapi_.GetOldVarIndex(i0);
+      else
+        if (1 == (kind & 3) && i0 < n_alg_cons)
+          i0 = mapi_.GetOldAlgConIndex(i0);
       suf[i0] = sparse_entry.second;
     }
   }
