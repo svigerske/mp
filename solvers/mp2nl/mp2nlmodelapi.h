@@ -1,6 +1,8 @@
 #ifndef MP2NLMODELAPI_H
 #define MP2NLMODELAPI_H
 
+#include <unordered_set>
+
 #include "mp/env.h"
 #include "mp2nlcommon.h"
 #include "mp/flat/nl_expr/model_api_base.h"
@@ -17,6 +19,9 @@ namespace mp {
 /// 3. normal expression node.
 ///
 /// @note To create MP2NL_Expr, use MakeMP2NL_... below.
+///
+/// @note We have no 'constant non-zero' expression
+///   because FlatConverter should not produce them
 class MP2NL_Expr {
 public:
   /// Construct
@@ -663,11 +668,6 @@ public:
   template <class ConLinearExprWriterFactory>
   void FeedLinearConExpr(int i, ConLinearExprWriterFactory& svwf);
 
-  template <class ExprBody, class ConLinearExprWriterFactory>
-  void FeedLinearConBody(
-      const ExprBody& algcon,
-      ConLinearExprWriterFactory& svwf);
-
   /** Feed nonlinear expression of constraint \a i.
      *  Algebraic constraints (num_algebraic_cons)
      *  come before logical (num_logical_cons).
@@ -947,6 +947,11 @@ protected:
   void PrepareModel();
 
   /// Map expressions.
+  /// Fill sparsity patterns and merge them with the linear parts,
+  /// fill nonzero counters, column sizes, and variable/constraint
+  /// nonlinearity flags.
+  /// @note Should do this incrementally when called
+  ///   from the MO Emulator.
   void MapExpressions();
 
   /// Mark variables.
@@ -956,22 +961,31 @@ protected:
   /// Sort variables
   void SortVars();
 
-  /// Mark and count constraint and variable kinds
-  /// (non/linear/integer, range/eqns.)
-  void MarkItems();
-
   NLHeader DoMakeHeader();
 
   /// Parameters passed when marking variables in an expression tree
   struct ItemMarkingData {
-    int n_var_lin_bin_ {0};
-    int n_var_lin_int_ {0};
+    int n_bin_var_lin_ {0};
+    int n_int_var_lin_ {0};
+
+    /// NL continuous vars in constraints/obj/both
+    int n_cont_var_nl_con_ {0};
+    int n_cont_var_nl_obj_ {0};
+    int n_cont_var_nl_both_ {0};
+
+    /// NL integer vars in constraints/objs/both
+    int n_int_var_nl_con_ {0};
+    int n_int_var_nl_obj_ {0};
+    int n_int_var_nl_both_ {0};
 
     int n_ranges_ {0};
     int n_eqns_ {0};
 
     std::size_t n_obj_nz_ {0};
     std::size_t n_con_nz_ {0};
+
+    int nnlo_ {0};
+    int nnlc_ {0};
 
     std::vector< std::pair< int, int > > var_prior_;        // new index -> var weight, orig. index
     std::vector<int> var_order_12_;                         // new index -> old index
@@ -987,76 +1001,52 @@ protected:
 
   /// Placeholder for item marker
   template <class Item>
-  void MarkItem(const Item& , ItemMarkingData& ) {
+  void MarkRangeOrEqn(const Item& ) {
     MP_UNSUPPORTED(std::string("MP2NLModelAPI::MarkItem() not supported for ")
                    + typeid(Item).name());
   }
 
   /// Mark linear part of any objective
-  void MarkItem(const LinearObjective& lo, ItemMarkingData& prm) {
-    mark_data_.n_obj_nz_ += lo.vars().size();        // count nnz
-  }
+  void MarkRangeOrEqn(const LinearObjective& ) { }
 
   /// Mark LinConRange
-  void MarkItem(const LinConRange& lcr, ItemMarkingData& prm) {
-    mark_data_.n_con_nz_ += lcr.size();
+  void MarkRangeOrEqn(const LinConRange& lcr) {
     Add2ColSizes(lcr.vars());
     if (lcr.lb() > MinusInfinity()
-        && lcr.ub() < Infinity()
-        && lcr.lb() < lcr.ub())
-      ++prm.n_ranges_;
+        && lcr.ub() < Infinity())
+      if (lcr.lb() < lcr.ub())
+        ++mark_data_.n_ranges_;
+      else
+        ++mark_data_.n_eqns_;
   }
 
   /// Mark LinConEQ
-  void MarkItem(const LinConLE& lcr, ItemMarkingData& prm) {
-    mark_data_.n_con_nz_ += lcr.size();
-    Add2ColSizes(lcr.vars());
+  void MarkRangeOrEqn(const LinConLE& ) { }
+
+  /// Mark LinConEQ
+  void MarkRangeOrEqn(const LinConEQ& ) {
+    ++mark_data_.n_eqns_;
   }
 
   /// Mark LinConEQ
-  void MarkItem(const LinConEQ& lcr, ItemMarkingData& prm) {
-    mark_data_.n_con_nz_ += lcr.size();
-    Add2ColSizes(lcr.vars());
-    ++prm.n_eqns_;
-  }
+  void MarkRangeOrEqn(const LinConGE& ) { }
 
-  /// Mark LinConEQ
-  void MarkItem(const LinConGE& lcr, ItemMarkingData& prm) {
-    mark_data_.n_con_nz_ += lcr.size();
-    Add2ColSizes(lcr.vars());
-  }
-
-  /// Mark NLconstraint
-  void MarkItem(const NLConstraint& nlc, ItemMarkingData& prm) {
-    MarkItem(nlc.GetMainCon(), prm);
+  /// Mark NLConstraint
+  void MarkRangeOrEqn(const NLConstraint& nlc) {
+    MarkRangeOrEqn(nlc.GetMainCon());
   }
 
   /// Mark NLAssign
-  void MarkItem(const NLAssignLE& nlc, ItemMarkingData& prm) {
-    mark_data_.n_con_nz_ += 1;
-    Add2ColSizes({ nlc.GetVar() });
+  void MarkRangeOrEqn(const NLAssignLE& ) { }
+  /// Mark NLAssign
+  void MarkRangeOrEqn(const NLAssignEQ& nlc) {
+    ++mark_data_.n_eqns_;
   }
   /// Mark NLAssign
-  void MarkItem(const NLAssignEQ& nlc, ItemMarkingData& prm) {
-    mark_data_.n_con_nz_ += 1;
-    Add2ColSizes({ nlc.GetVar() });
-    ++prm.n_eqns_;
-  }
-  /// Mark NLAssign
-  void MarkItem(const NLAssignGE& nlc, ItemMarkingData& prm) {
-    mark_data_.n_con_nz_ += 1;
-    Add2ColSizes({ nlc.GetVar() });
-  }
+  void MarkRangeOrEqn(const NLAssignGE& lc) { }
 
   /// Add to col sizes
-  void Add2ColSizes(const std::vector<int>& vars);
-
-  /// Placeholder for bounds writer
-  template <class Item>
-  void WriteBounds(const Item& , const NLWParams&) {
-    MP_UNSUPPORTED(std::string("MP2NLModelAPI::WriteBounds() not supported for ")
-                   + typeid(Item).name());
-  }
+  void Add2ColSizes(ArrayRef<int> vars);
 
 
   /// We need item type ID for manual dispatch.
@@ -1141,9 +1131,9 @@ protected:
     /// ItemName
     virtual const char* GetName(void* pitem) = 0;
 
-    virtual void MarkItem(void* pitem, ItemMarkingData& vmp) = 0;
-    virtual void WriteBounds(void* pitem, const NLWParams& nlwp) = 0;
-    virtual void MarkExprTree(void* pitem) = 0;
+    virtual void MarkRangeOrEqn(void* pitem) = 0;
+    /// Get expression
+    virtual MP2NL_Expr GetExpression(void* pitem) = 0;
 
     /// Placeholder for the item category getter:
     /// static item vs expression
@@ -1173,16 +1163,12 @@ protected:
     { return GetMAPI().GetItemName(*(const Item*)pitem); }
 
     /// Var marking
-    void MarkItem(void* pitem, ItemMarkingData& vmp) override
-    { GetMAPI().MarkItem(*(const Item*)pitem, vmp); }
+    void MarkRangeOrEqn(void* pitem) override
+    { GetMAPI().MarkRangeOrEqn(*(const Item*)pitem); }
 
-    /// Write bounds
-    void WriteBounds(void* pitem, const NLWParams& nlwp) override
-    { GetMAPI().WriteBounds(*(const Item*)pitem, nlwp); }
-
-    /// Add + mark expressions
-    void MarkExprTree(void* pitem) override
-    { GetMAPI().MapExprTreeFromItem(*(const Item*)pitem); }
+    /// Get expression
+    MP2NL_Expr GetExpression(void* pitem) override
+    { return GetMAPI().GetExpression(*(const Item*)pitem); }
 
     /// Item category getter:
     /// static item vs expression
@@ -1300,6 +1286,37 @@ protected:
 
   CREATE_EXPRESSION_DISPATCHER(Div)
 
+
+public:
+  /// Reference/storage for (extended) linear part
+  /// containing the nonlinear expression sparsity pattern
+  /// @todo SmallVec's for storage in ArrayRef
+  ///   - possibly as a template parameter
+  class LinPartRefOrStorage {
+  public:
+    /// Construct default
+    LinPartRefOrStorage() = default;
+    /// Construct
+    /// @note careful when passing with stored data - use std::move
+    /// @todo SmallVec's as data
+    LinPartRefOrStorage(ArrayRef<double> c, ArrayRef<int> v)
+        : coefs_(std::move(c)), vars_(std::move(v))
+    { assert(Check()); }
+    /// Check
+    bool Check() const { return coefs_.size()==vars_.size(); }
+    /// Size
+    int size() const { assert(Check()); return coefs_.size(); }
+    /// Coefs
+    ArrayRef<double> coefs() const { return coefs_; }
+    /// Vars
+    ArrayRef<int> vars() const { return vars_; }
+  private:
+    ArrayRef<double> coefs_;
+    ArrayRef<int> vars_;
+  };
+
+
+protected:
   /// Constraint/objective/expression info.
   /// We rely on the pointers staying valid.
   class ItemInfo {
@@ -1328,6 +1345,11 @@ protected:
     void* GetPItem() const { return p_item_; }
     /// Is logical?
     bool IsLogical() const { return f_logical_; }
+    /// Has the expression tree been marked?
+    /// This is for incremental model modification.
+    bool IsExprTreeMarked() const { return f_marked_; }
+    /// Set expr tree marked status
+    void SetExprTreeMarked() const { f_marked_=true; }
     /// Is a static type?
     bool IsItemTypeStatic() const
     { return GetDispatcher().IsItemTypeStatic(); }
@@ -1338,12 +1360,21 @@ protected:
     ExpressionTypeID GetExprTypeID() const
     { return GetDispatcher().GetExpressionTypeID(); }
 
+    /// Get extended lin part
+    const LinPartRefOrStorage& GetExtLinPart() const
+    { return lin_part_ext_; }
+    /// Set extended linear part
+    void SetExtLinPart(LinPartRefOrStorage lp) const
+    { lin_part_ext_=std::move(lp); }
+
   private:
     BasicItemDispatcher& disp_;
     void* p_item_;
-    bool f_logical_ {};
     // StaticItemTypeID itemID_ {StaticItemTypeID::ID_None};
     // ExpressionTypeID exprID_ {ExpressionTypeID::ID_None};
+    bool f_logical_ {};
+    mutable bool f_marked_ {};   // @todo just see if we have the extended linear part?
+    mutable LinPartRefOrStorage lin_part_ext_ {};
   };
 
   /// Fill static item info
@@ -1370,20 +1401,33 @@ protected:
   void DispatchStaticItem(const ItemInfo& info, Lambda lambda);
 
   /// Map expressions from a single item info
+  /// @param kind: 0 - alg con, 1 - log con, 2 - obj
   /// @note needs to be in .h to be instantiated/inlined,
   ///   at least for Clang 16.
-  void MapExprTreeFromItemInfo(const ItemInfo& info)
-  { info.GetDispatcher().MarkExprTree(info.GetPItem()); }
+  void MapExprTreeFromItemInfo(
+      int i_item, const ItemInfo& info, int kind);
 
-  /// Map expressions from a single item (type-safe)
-  /// @note needs to be in .h to be instantiated/inlined,
-  ///   at least for Clang 16.
-  template <class Item>
-  void MapExprTreeFromItem(const Item& item) {
-    auto mp2nlexpr
-        = GetExpression(item);   // so that AddExpression() is called
-    RegisterExpression(mp2nlexpr);     // mark the tree root
-  }
+  /// Reset objective meta info for resolve
+  /// (NNZ, nlo(i), nlb(i))
+  void ResetObjMetaInfo();
+
+  /// Merge algcon/obj sparsity pattern with jacobian/gradient
+  void MergeItemSparsity(
+      const ItemInfo& info, int item_kind, MP2NL_Expr expr);
+
+  /// Retrieve original linear part of an alg con / obj
+  LinPartRefOrStorage GetLinPart(const ItemInfo& info);
+
+  /// NNZ, col sizes, N ranges and eqns
+  void UpdateAlgebraicMetaInfo(const ItemInfo& info, int kind);
+
+  /// Register NL variables,
+  /// in particular a constraint's nonlinearity
+  void MarkNLVars(int i_item, MP2NL_Expr expr, int kind);
+
+  /// Compute nlvc(i), nlvo(i), nlvb(i) etc
+  /// from mapping data
+  void FinishMapExpressions();
 
   /// Reuse GetExpression()
   using BaseModelAPI::GetExpression;
@@ -1413,11 +1457,20 @@ protected:
   MP2NL_Expr AddExpression(
       const Expr& expr, ExpressionTypeID eid);
 
+  /// Typedef intermediate sparsity pattern
+  using SparsityTmp = std::unordered_set<int>;
+
+  /// Merge sparsity pattern from an expression
+  /// into the 1st param
+  void MergeSparsityTmp(SparsityTmp& , MP2NL_Expr );
+
+  /// Typedef final sparsity pattern for an expression
+  using Sparsity4Expr = SmallVec<int, 6>;
 
   /// Make, store and return MP2NL_Expr for a given expession
   template <class Expr>
   MP2NL_Expr StoreMP2NLExprID(
-      const Expr& expr, ExpressionTypeID eid);
+      const Expr& expr, ExpressionTypeID eid, const SparsityTmp& );
 
   /// Variable name
   const char* GetVarName(int v) const {
@@ -1425,6 +1478,12 @@ protected:
     return
         (int)var_names_.size() > v ? var_names_[v] : nullptr;
   }
+
+  /// Feed extended linear part
+  template <class ConLinearExprWriterFactory>
+  void FeedExtLinPart(
+      const ItemInfo& item,
+      ConLinearExprWriterFactory& svwf);
 
 
 private:
@@ -1443,6 +1502,12 @@ private:
 
   std::vector<ItemInfo> expr_info_;
   std::vector<int>   expr_counter_;   // usage counter
+  std::vector<Sparsity4Expr> expr_sparsity_;
+
+  /// if a var is nonlinear in obj/con
+  std::vector<bool> is_var_nlo_, is_var_nlc_;
+  /// If an alg con is nonlinear
+  std::vector<bool> is_alg_con_nl_;
 
   ItemMarkingData mark_data_;
   bool hdr_is_current_ {};
