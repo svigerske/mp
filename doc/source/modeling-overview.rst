@@ -14,7 +14,7 @@ Currently available MP-based solvers include:
   an interface to the `Gurobi solver <https://ampl.com/products/solvers/solvers-we-sell/gurobi/>`_
 
 - `cplex <https://github.com/ampl/mp/tree/develop/solvers/cplex>`_,
-  an interface to the `Gurobi solver <https://ampl.com/products/solvers/solvers-we-sell/cplex/>`_
+  an interface to the `IBM ILOG CPLEX solver <https://ampl.com/products/solvers/solvers-we-sell/cplex/>`_
 
 - `copt <https://github.com/ampl/mp/tree/develop/solvers/copt>`_,
   an interface to `Cardinal Optimizer <https://ampl.com/products/solvers/solvers-we-sell/copt/>`_
@@ -23,19 +23,20 @@ Currently available MP-based solvers include:
   an interface to `FICO Xpress <https://ampl.com/products/solvers/solvers-we-sell/xpress/>`_
 
 - `mosek <https://github.com/ampl/mp/tree/develop/solvers/mosek>`_,
-  an interface to `MOSEK solver <https://ampl.com/products/solvers/solvers-we-sell/mosek/>`_
+  an interface to the `MOSEK solver <https://ampl.com/products/solvers/solvers-we-sell/mosek/>`_
 
 - `highs <https://github.com/ampl/mp/tree/develop/solvers/highsmp>`_,
-  an interface to the open-source `HiGHS solver <https://highs.dev/>`_
+  an interface to the open-source `HiGHS solver <https://ampl.com/products/solvers/open-source-solvers/>`_
 
 - `cbc <https://github.com/ampl/mp/tree/develop/solvers/cbcmp>`_,
-  an enhanced interface to the `CBC solver <https://ampl.com/products/solvers/open-source-solvers/>`_
+  an enhanced interface to the open-source
+  `CBC solver <https://ampl.com/products/solvers/open-source-solvers/>`_
 
 - `scip <https://github.com/ampl/mp/tree/develop/solvers/scipmp>`_,
-  an interface to `SCIP solver <https://dev.ampl.com/solvers/scip/index.html>`_
+  an interface to the open-source `SCIP solver <https://ampl.com/products/solvers/open-source-solvers/>`_
 
 - `gcg <https://github.com/ampl/mp/tree/develop/solvers/gcgmp>`_,
-  an interface to `GCG solver <https://dev.ampl.com/solvers/gcg/index.html>`_
+  an interface to the open-source `GCG solver <https://ampl.com/products/solvers/open-source-solvers/>`_
 
 Binaries for these solvers can be downloaded, in distribution
 bundles and individually, through the `AMPL Portal <https://portal.ampl.com>`_.
