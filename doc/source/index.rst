@@ -9,10 +9,8 @@ suitable for linear and mixed-integer, non-linear, and
 Constraint Programming solvers. 
 
 MP provides supporting tools, such as a
-:ref:`Model reformulation explorer <reformulation-graph>`.
-
-Moreover, MP library provides
-a :ref:`lightweight NL writer <write-nl-read-sol>`.
+:ref:`Model reformulation explorer <reformulation-graph>`
+and a :ref:`lightweight NL writer <write-nl-read-sol>`.
 
 MP replaces the previous
 `AMPL Solver Library`__ for solvers not requiring automatic differentiation.

@@ -11,10 +11,10 @@ expanded range of model expressions.
 Currently available MP-based solvers include:
 
 - `gurobi <https://github.com/ampl/mp/tree/develop/solvers/gurobi>`_,
-  an enhanced interface to the `Gurobi solver <https://ampl.com/products/solvers/solvers-we-sell/gurobi/>`_
+  an interface to the `Gurobi solver <https://ampl.com/products/solvers/solvers-we-sell/gurobi/>`_
 
-- `cplexmp <https://github.com/ampl/mp/tree/develop/solvers/cplexmp>`_,
-  an enhanced interface to the `Gurobi solver <https://ampl.com/products/solvers/solvers-we-sell/cplex/>`_
+- `cplex <https://github.com/ampl/mp/tree/develop/solvers/cplex>`_,
+  an interface to the `Gurobi solver <https://ampl.com/products/solvers/solvers-we-sell/cplex/>`_
 
 - `copt <https://github.com/ampl/mp/tree/develop/solvers/copt>`_,
   an interface to `Cardinal Optimizer <https://ampl.com/products/solvers/solvers-we-sell/copt/>`_
