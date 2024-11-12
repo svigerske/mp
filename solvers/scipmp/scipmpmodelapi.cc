@@ -536,7 +536,50 @@ SCIP_EXPR* ScipModelAPI::AddExpression(const LogExpression &ee) {
   getPROBDATA()->exprs.push_back(result_expr);
   return result_expr;
 }
+SCIP_EXPR* ScipModelAPI::AddExpression(const LogAExpression& ee) {
+  SCIP_EXPR* log_expr, * mult_expr;
+  SCIP_CCALL(SCIPcreateExprLog(getSCIP(), &log_expr,
+    GetArgExpression(ee, 0), NULL, NULL));
+  
+  SCIP_CCALL(SCIPcreateExprProduct(getSCIP(), &mult_expr,
+    1, &log_expr, 1 / std::log(GetParameter(ee, 0)), NULL, NULL));
 
+  getPROBDATA()->exprs.push_back(log_expr);
+  getPROBDATA()->exprs.push_back(mult_expr);
+  return mult_expr;
+}
+
+void ScipModelAPI::AddConstraint(const LogAConstraint& cc) {
+  SCIP_VAR* x = getPROBDATA()->vars[cc.GetArguments()[0]];
+  SCIP_VAR* res = getPROBDATA()->vars[cc.GetResultVar()];
+
+  assert(x != NULL);
+  assert(res != NULL);
+
+  SCIP_EXPR* xexpr;      // x
+  SCIP_EXPR* logexpr; // ln(x)
+  SCIP_EXPR* terms[2];   // [0] = y   [1] = ln(x)/ln(a) 
+  SCIP_EXPR* sumexpr;    // y - ln(x)/ln(a)
+
+  SCIP_Real coefs[2] = { 1.0, -1.0 };
+
+  SCIP_CCALL(SCIPcreateExprVar(getSCIP(), &xexpr, x, NULL, NULL));
+  SCIP_CCALL(SCIPcreateExprVar(getSCIP(), &terms[0], res, NULL, NULL));
+  /
+  SCIP_CCALL(SCIPcreateExprLog(getSCIP(), &logexpr, xexpr, NULL, NULL));
+  SCIP_CCALL(SCIPcreateExprProduct(getSCIP(), &terms[1], 1, &logexpr, std::log(cc.GetParameters()[0]), NULL, NULL));
+  SCIP_CCALL(SCIPcreateExprSum(getSCIP(), &sumexpr, 2, terms, coefs, 0.0, NULL, NULL));
+
+  SCIP_CONS* cons;
+  SCIP_CCALL(SCIPcreateConsBasicNonlinear(getSCIP(), &cons, cc.GetName(), sumexpr, 0.0, 0.0));
+  SCIP_CCALL(SCIPaddCons(getSCIP(), cons));
+  SCIP_CCALL(SCIPreleaseCons(getSCIP(), &cons));
+
+  SCIP_CCALL(SCIPreleaseExpr(getSCIP(), &sumexpr));
+  SCIP_CCALL(SCIPreleaseExpr(getSCIP(), &terms[1]));
+  SCIP_CCALL(SCIPreleaseExpr(getSCIP(), &terms[0]));
+  SCIP_CCALL(SCIPreleaseExpr(getSCIP(), &xexpr));
+}
 void ScipModelAPI::AddConstraint(const LogConstraint &cc)  {
   SCIP_VAR* x = getPROBDATA()->vars[cc.GetArguments()[0]];
   SCIP_VAR* res = getPROBDATA()->vars[cc.GetResultVar()];

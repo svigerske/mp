@@ -221,7 +221,7 @@ public:
   /// @note Accessors: GetExpression(nle), GetVariable(nle).
   ACCEPT_CONSTRAINT(NLReifRimpl, Recommended, CG_Nonlinear)
   void AddConstraint(const NLReifRimpl& nle);
-
+  
   /// Moreover, once algebraic expressions are accepted
   /// via NLConstraint, subexpressions might be submitted via
   /// NLAffineExpr and NLQuadExpr.
@@ -313,6 +313,11 @@ public:
 
   ACCEPT_EXPRESSION(LogExpression, Recommended)
   SCIP_EXPR* AddExpression(const LogExpression& );
+  ACCEPT_EXPRESSION(LogAExpression, Recommended)
+  SCIP_EXPR* AddExpression(const LogAExpression&);
+
+  ACCEPT_CONSTRAINT(LogAConstraint, Recommended, CG_General)
+  void AddConstraint(const LogAConstraint& cc);
   ACCEPT_CONSTRAINT(LogConstraint, Recommended, CG_General)
   void AddConstraint(const LogConstraint& cc);
 
