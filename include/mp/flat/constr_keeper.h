@@ -64,6 +64,9 @@ public:
   {
     cons_.emplace_back( d, std::move(args)... );
     ExportConstraint(cons_.size()-1, cons_.back());
+    // fmt::MemoryWriter wrt;
+    // WriteCon2JSON(wrt, cons_.size()-1, cons_.back());
+    // printf("%s\n", wrt.c_str());
     return cons_.size()-1;
   }
 
@@ -464,19 +467,24 @@ protected:
   void ExportConstraint(int i_con, const Container& cnt) {
     if (GetLogger()) {
       fmt::MemoryWriter wrt;
-      {
-        MiniJSONWriter jw(wrt);
-        jw["CON_TYPE"] = GetShortTypeName();
-        jw["index"] = i_con;
-        if (*cnt.GetCon().name())
-          jw["name"] = cnt.GetCon().name();
-        jw["depth"] = cnt.GetDepth();
-        WriteJSON(jw["data"], cnt.GetCon());
-      }
+      WriteCon2JSON(wrt, i_con, cnt);
       wrt.write("\n");                     // EOL
       GetLogger()->Append(wrt);
     }
   }
+
+  /// Write constraint in JSON format
+  void WriteCon2JSON(
+      fmt::MemoryWriter& wrt, int i_con, const Container& cnt) {
+    MiniJSONWriter jw(wrt);
+    jw["CON_TYPE"] = GetShortTypeName();
+    jw["index"] = i_con;
+    if (*cnt.GetCon().name())
+      jw["name"] = cnt.GetCon().name();
+    jw["depth"] = cnt.GetDepth();
+    WriteJSON(jw["data"], cnt.GetCon());
+  }
+
   /// Export constraint status.
   /// This is called in the end,
   /// so printing the readable form.

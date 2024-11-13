@@ -314,8 +314,9 @@ void MP2NLModelAPI::MergeItemSparsity(
   } else {                     // proper expr or variable
     std::unordered_map<int, double> linp_ext;
     auto lp = GetLinPart(info);
-    for (auto i=lp.size(); i--; )
+    for (auto i=lp.size(); i--; ) {
       linp_ext[lp.vars()[i]] += lp.coefs()[i];
+    }
     if (expr.IsVariable()) {   // @todo should have been inlined
       linp_ext[expr.GetVarIndex()] += 1.0;      // Merge 1 var
     } else {
@@ -348,8 +349,8 @@ template <int sense>
 inline
     MP2NLModelAPI::LinPartRefOrStorage
     GetLPRoS(const NLBaseAssign<sense>& nla) {
-  std::vector<double> c{1, nla.coef(0)};    // @todo: SmallVec
-  std::vector<int> v{1, nla.var(0)};
+  std::vector<double> c{{nla.coef(0)}};    // @todo: SmallVec
+  std::vector<int> v{{nla.var(0)}};
   return {std::move(c), std::move(v)};      // std::move to pass storage
 }
 
@@ -770,9 +771,10 @@ void MP2NLModelAPI::FeedExtLinPart(
   const auto& lp_ext = item.GetExtLinPart();
   if (lp_ext.size()) {
     auto svw = svwf.MakeVectorWriter(lp_ext.size());
-    for (int j=0; j<lp_ext.size(); ++j)
+    for (int j=0; j<lp_ext.size(); ++j) {
       svw.Write(GetNewVarIndex( lp_ext.vars()[j]),      // new ordering
                 lp_ext.coefs()[j]);
+    }
   }
 }
 
