@@ -1379,7 +1379,7 @@ public:
             "MP2NL_subsolver_solution_fewer_alg_cons",
             "The subsolver reported fewer duals than algebraic constraints");
       }
-      duals_.reserve(nac_sol);
+      duals_.resize(nac_sol);
       int j=0;
       for ( ; rd.Size(); ++j ) {
         int j0 = mapi_.GetOldAlgConIndex(j);
