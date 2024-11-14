@@ -397,7 +397,8 @@ protected:
 
   /// Handle logical expressions in an IfThen
   /// @return whether to remove the original \a con.
-  template <>
+  template <typename fake> // to avoid "specialization" not declared at namespace
+  // with certain versions of gcc
   bool HandleLogicalArgs(const IfThenConstraint& con, int ) {
     MarkVarIfLogical_(con.GetArguments()[1]);    // then part
     MarkVarIfLogical_(con.GetArguments()[2]);    // else part
