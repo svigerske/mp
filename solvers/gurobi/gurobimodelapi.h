@@ -167,7 +167,6 @@ public:
   //////////////////////////////////////////////////////////////////////////
   /// Expressions
 #ifdef GRB_OPCODE_CONSTANT
-  using Expr = GRB_Expr;
 
   /// Whether accepts NLObjective
   static int AcceptsNLObj() { return 0; }
