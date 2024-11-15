@@ -16,7 +16,7 @@ This sections gives a technical list of accepted constraints
 and expressions, as well as control options for their
 reformulations.
 
-.. _flat-vs-expressions
+.. _flat-vs-expressions:
 
 Flat constraints vs expression trees
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^

@@ -632,8 +632,8 @@ Handling in Gurobi
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 For Gurobi, the following univariate nonlinear functions are instead handled natively:
-**exp**, **log**, **^**, **sin**, **cos**, **tan**,
-as part of Gurobi's new MINLP capability ---
+**exp**, **log**, **^**, **sin**, **cos**, **tan**.
+As part of the new MINLP capability, it applies
 `global nonlinear solving <https://www.gurobi.com/>`_ via spatial branching.
 After suitable transformations, MP interface sends Gurobi
 :ref:`expressions trees <flat-vs-expressions>` that use
