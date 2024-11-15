@@ -9,24 +9,99 @@ This section highlights some tools aiding modeling and solving.
 
 .. _supported-constraints:
 
-Supported constraints and reformulations
-************************************************
+Supported constructs and configuring the reformulations
+***************************************************************
 
-Sometimes it is handy to disable all automatic reformulations.
+This sections gives a technical list of accepted constraints
+and expressions, as well as control options for their
+reformulations.
+
+Flat constraints vs expression trees
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+Some solvers require each individual expression
+to be submitted as a *flat constraint*
+with an introduced auxiliary variable for the expression
+result:
+
+```ampl
+    aux_var = max(x, y);
+```
+
+Same or different solvers allow an alternative way, namely
+*expression trees* or *complete formulas*:
+
+```ampl
+   s.t. NLConstraint1: 2*x + 4*exp(16 - 2*sin(x + y^2)) <= 19;
+```
+
+In the latter case, expression ``exp(16 - 2*sin(x + y^2))``
+is passed to the solver as a single formula using
+an expression tree mechanism. This representation allows
+more general treatment of nonlinearities in the solver,
+usually resulting in better performance and numerical precision.
+Examples of MP solvers supporting expression trees are
+SCIP 9.1.1 and Gurobi 12.
+
+Next subsection explains how a user can switch between
+flat constraints and formulas, if available,
+or force reformulation.
+
+Reformulation options
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+Sometimes it is handy to disable all automatic reformulations,
+for example, to test manual modeling of high-level constructs.
 For that, declare all contraints as natively accepted by the solver:
-``acc:_all=2`` (alternatively, disable specific
-reformulations, e.g., ``acc:alldiff=2``.)
+set :ref:`MP solver option <solver-options>` ``acc:_all=2``
 Vice versa, to force full linearization, set ``acc:_all=0``.
 
-To find out which constraints are natively supported by the solver,
+Alternatively, to disable specific
+reformulations, declare them as natively accepted individually:
+e.g., ``acc:alldiff=2``. In detail, a constraint's or expression's
+individual
+acceptance option can have some or all of the following values:
+
+```
+acc:sin
+      Solver acceptance level for 'SinConstraint' as either constraint or
+      expression, default 4:
+
+      0 - Not accepted natively, automatic redefinition will be attempted
+      1 - Accepted as constraint but automatic redefinition will be used
+          where possible
+      2 - Accepted as constraint natively and preferred
+      3 - Accepted as expression but automatic redefinition will be used
+          where possible
+      4 - Accepted as expression natively and preferred
+```
+
+To uniformly control all expressions, use option `acc:_expr`:
+
+```
+acc:_expr
+      Solver acceptance level for all expressions, default 1:
+
+      0 - Not accepted, all expressions will be treated as flat constraints,
+          or redefined
+      1 - Accepted. See the individual acc:... options
+```
+Value 1 passes expression trees to the solver
+(if natively supported; corresponds to value 4 in the individual options),
+value 0 uses flat constraints
+(again, those which are natively supported;
+corresponds to value 2 or 0 in the individual options.)
+
+To find out which constraints or expressions
+are natively supported by the solver,
 or, more generally, understood by MP,
 and to control which are reformulated,
 there are two ways.
 
-Method 1: acceptance options
+Querying acceptance options
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-List the solver's natively supported constraints,
+List the solver's natively supported constraints and expressions,
 by running the solver executable with the ``-=acc`` command-line switch
 which lists all solver options starting with the ``acc:`` prefix:
 
@@ -40,7 +115,7 @@ at `AMPL Development <https://dev.ampl.com/solvers/index.html>`_.
 
 .. _full-cons-list:
 
-Method 2: full constraint list
+Full constraint list
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 List all constraints known by the MP model converter, including some

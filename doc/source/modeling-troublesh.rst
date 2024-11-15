@@ -16,9 +16,10 @@ See sections :ref:`efficiency` and :ref:`numerical_accuracy`.
 Play with `AMPL options <https://dev.ampl.com/ampl/options.html>`_
 and :ref:`solver-options`.
 Prominent ones are AMPL presolve
-(switch off: ``ampl: option presolve 0;``) and solver's presolve
+(switch off: ``ampl: option presolve 0;``), solver's presolve
 (``ampl: option gurobi_options 'presolve=0';``) and others
-(tolerances, *numfocus*, *intfocus*, etc.)
+(tolerances, *numfocus*, *intfocus*, etc.), as well as
+MP reformulation options, see :ref:`supported-constraints`.
 
 To see what MP and/or the solver do with your model, export
 the solver's received model, and, if possible, the solver's presolved model:

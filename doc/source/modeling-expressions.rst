@@ -40,7 +40,8 @@ of various kinds; for example,
                        max((x+1)*x*z, y, y-z)<=3 and exp(y)<=12);
 
 AMPL represents these combinations as expression trees,
-which are sent to MP-based solver interfaces to be processed as solvers require.
+which are sent to MP-based solver interfaces to be processed as solvers require,
+or user desires.
 
 Indexing over sets is a common feature of AMPL expressions.
 The examples below use two kinds of indexing expressions,
@@ -88,9 +89,13 @@ Thus where necessary, the MP interface constructs an approximate closed region b
 use of a small tolerance. For example, if x is minimized subject to x > 5, then any
 x value greater than 5 is not minimal, and any x value less than or equal to 5 is
 not feasible. Thus, to insure that a minimum is well defined, the constraint must
-be changed to x >= 5 + eps for some small constant eps. Each solver has its own
-default value of the eps constant, which can be adjusted through
-an :ref:`option setting <solver-options>`.
+be changed to x >= 5 + eps for some small constant eps. The value of the
+eps constant can be adjusted through the :ref:`MP option setting <solver-options>`
+``cvt:mip:eps``.
+
+The reformulations performed by MP can be configured, as described
+in :ref:`supported-constraints`. Those performed by AMPL itself,
+can be configured by `AMPL options <https://dev.ampl.com/ampl/options.html>`_.
 
 
 Conditional operators
