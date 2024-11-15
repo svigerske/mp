@@ -417,7 +417,8 @@ tools can be adapted to convert the instance for a particular solver.
 Flat model converters
 ~~~~~~~~~~~~~~~~~~~~~
 
-New: expression trees added. See Gurobi and SCIP drivers.
+New: expression trees added. See :ref:`supported-constraints`,
+as well as Gurobi and SCIP drivers.
 
 `mp::FlatConverter` and `mp::MIPFlatConverter` represent and
 convert flat models (i.e., models :ref:`without expression trees <flat-solvers>`).
@@ -441,6 +442,10 @@ via the solver's modeling API wrapper:
 
 Flat model API
 ~~~~~~~~~~~~~~
+
+New: expression trees added. See :ref:`supported-constraints`,
+as well as Gurobi and SCIP drivers.
+
 
 `mp::BasicFlatModelAPI` is the interface via which :ref:`flat-converters` address
 the underlying solver.
