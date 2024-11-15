@@ -9,10 +9,10 @@ This section highlights some tools aiding modeling and solving.
 
 .. _supported-constraints:
 
-Supported constructs and configuring the reformulations
+Reformulation settings
 ***************************************************************
 
-This sections gives a technical list of accepted constraints
+This sections gives a technical list of solver-side constraints
 and expressions, as well as control options for their
 reformulations.
 
@@ -60,8 +60,8 @@ For that, declare all contraints as natively accepted by the solver:
 set :ref:`MP solver option <solver-options>` ``acc:_all=2``.
 Vice versa, to force full linearization, set ``acc:_all=0``.
 
-Alternatively, to disable specific
-reformulations, declare them as natively accepted individually:
+For individual constraint types, to disable reformulations,
+declare them as natively accepted:
 e.g., ``acc:alldiff=2``. Or, to apply MP reformulation,
 despite the solver natively accepting the construct,
 set the option to 0: ``acc:or=0``.
@@ -102,7 +102,7 @@ value 0 uses flat constraints
 (again, those which are natively supported;
 corresponds to value 2 or 0 in the individual options.)
 
-Finally, the kinds of reformulations which are applied when needed,
+Finally, some kinds of reformulations which are applied when needed,
 along with corresponding configuration settings,
 are described in :ref:`expressions_supported`.
 

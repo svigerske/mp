@@ -1,7 +1,7 @@
 .. _modeling-overview:
 
-Modeling overview
------------------
+Modeling overview and implemented solvers
+------------------------------------------
 
 
 AMPL's newly extended C++ solver interface library, MP, is publicly
@@ -61,7 +61,7 @@ for the following categories of operators and expressions:
 - Set membership operator: ``in``
 
 Modeling details and examples are given in the :ref:`expressions_supported` section below.
-Technical details and tools are in the :ref:`modeling-tools` section.
+Technical details, configuration settings, and tools are in the :ref:`modeling-tools` section.
 See also the individual solvers' documentation at
 `AMPL Development <https://dev.ampl.com/solvers/index.html>`_
 for more details of solver-specific features:

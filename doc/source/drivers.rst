@@ -20,11 +20,10 @@ For example, ``max(a, b)`` is translated into a constraint
 which is in turn reformulated for
 MIP or passed to the solver natively (e.g., Gurobi: `GRBaddgenconstrMax`).
 
-A recent extension to MP allows passing expression trees
+A late-2024 extension to MP allows passing expression trees
 to solvers, see :ref:`supported-constraints`.
 
-There are several implementations, see :ref:`modeling-overview`.
-See also the :ref:`modeling-guide`.
+The implemented drivers are listed in :ref:`modeling-overview`.
 
 
 .. _expression-solvers:
