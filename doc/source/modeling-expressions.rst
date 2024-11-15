@@ -632,18 +632,21 @@ Handling in Gurobi
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 For Gurobi, the following univariate nonlinear functions are instead handled natively:
-**exp**, **log**, **^**, **sin**, **cos**, **tan**.
-After suitable transformations, the MP interface sends Gurobi the expressions that use
+**exp**, **log**, **^**, **sin**, **cos**, **tan**,
+as part of Gurobi's new MINLP capability ---
+`global nonlinear solving <https://www.gurobi.com/>`_ via spatial branching.
+After suitable transformations, MP interface sends Gurobi
+:ref:`expressions trees <flat-vs-expressions>` that use
 these functions.
 
-Gurobi 11 defaults to piecewise-linear approximation of these functions
-as part of its preprocessing. However, Gurobi :ref:`option <solver-options>` ``alg:global``
-(``pre:funcnonlinear``) sets the default to the new MINLP capability ---
-`global nonlinear solving <https://www.gurobi.com/>`_ via spatial branching:
+Gurobi 12 defaults to proper nonlinear handling of these functions.
+Alternatively it allows their piecewise-linear approximation
+as part of preprocessing. Gurobi :ref:`option <solver-options>` ``alg:global``
+(``pre:funcnonlinear``) can be used to apply piecewise-linear approximation:
 
 .. code-block:: ampl
 
-  ampl: option gurobi_options 'global=1'; solve;
+  ampl: option gurobi_options 'global=-1'; solve;
 
 For individual constraints and objectives, the choice of global solving vs
 piecewise-linear approximation can be performed via the ``.global`` suffix:

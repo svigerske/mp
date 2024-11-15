@@ -16,6 +16,8 @@ This sections gives a technical list of accepted constraints
 and expressions, as well as control options for their
 reformulations.
 
+.. _flat-vs-expressions
+
 Flat constraints vs expression trees
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
@@ -24,16 +26,18 @@ to be submitted as a *flat constraint*
 with an introduced auxiliary variable for the expression
 result:
 
-```ampl
+.. code-block:: ampl
+
     aux_var = max(x, y);
-```
+
 
 Same or different solvers allow an alternative way, namely
 *expression trees* or *complete formulas*:
 
-```ampl
-   s.t. NLConstraint1: 2*x + 4*exp(16 - 2*sin(x + y^2)) <= 19;
-```
+.. code-block:: ampl
+
+    s.t. NLConstraint1: 2*x + 4*exp(16 - 2*sin(x + y^2)) <= 19;
+
 
 In the latter case, expression ``exp(16 - 2*sin(x + y^2))``
 is passed to the solver as a single formula using
@@ -53,17 +57,21 @@ Reformulation options
 Sometimes it is handy to disable all automatic reformulations,
 for example, to test manual modeling of high-level constructs.
 For that, declare all contraints as natively accepted by the solver:
-set :ref:`MP solver option <solver-options>` ``acc:_all=2``
+set :ref:`MP solver option <solver-options>` ``acc:_all=2``.
 Vice versa, to force full linearization, set ``acc:_all=0``.
 
 Alternatively, to disable specific
 reformulations, declare them as natively accepted individually:
-e.g., ``acc:alldiff=2``. In detail, a constraint's or expression's
+e.g., ``acc:alldiff=2``. Or, to apply MP reformulation,
+despite the solver natively accepting the construct,
+set the option to 0: ``acc:or=0``.
+In detail, a constraint's or expression's
 individual
 acceptance option can have some or all of the following values:
 
-```
-acc:sin
+.. code-block:: bash
+
+    acc:sin
       Solver acceptance level for 'SinConstraint' as either constraint or
       expression, default 4:
 
@@ -74,23 +82,29 @@ acc:sin
       3 - Accepted as expression but automatic redefinition will be used
           where possible
       4 - Accepted as expression natively and preferred
-```
+
 
 To uniformly control all expressions, use option `acc:_expr`:
 
-```
-acc:_expr
+.. code-block:: bash
+
+    acc:_expr
       Solver acceptance level for all expressions, default 1:
 
       0 - Not accepted, all expressions will be treated as flat constraints,
           or redefined
       1 - Accepted. See the individual acc:... options
-```
+
+
 Value 1 passes expression trees to the solver
 (if natively supported; corresponds to value 4 in the individual options),
 value 0 uses flat constraints
 (again, those which are natively supported;
 corresponds to value 2 or 0 in the individual options.)
+
+Finally, the kinds of reformulations which are applied when needed,
+along with corresponding configuration settings,
+are described in :ref:`expressions_supported`.
 
 To find out which constraints or expressions
 are natively supported by the solver,
