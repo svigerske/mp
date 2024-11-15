@@ -36,7 +36,7 @@ Recommended setup
 ~~~~~~~~~~~~~~~~~~~~~
 
 The recommended driver structure is to use the
-:ref:`Backend class hierarchy with FlatModelAPI <recommended-driver-logic>`.
+:ref:`Backend class hierarchy with FlatModelAPI or ExprModelAPI <recommended-driver-logic>`.
 Examples: :ref:`flat-solvers`.
 
 
@@ -203,6 +203,89 @@ the following:
    void AddConstraint(const LinConEQ& lc);
    ACCEPT_CONSTRAINT(LinConGE, Recommended, CG_Linear)
    void AddConstraint(const LinConGE& lc);
+
+   /// NEW: expression trees
+   //////////////////////////// EXPRESSION TREES ////////////////////////////
+   /// Handle expression trees: inherit basic API
+   USE_BASE_EXPRESSION_HANDLERS(BaseModelAPI)
+
+   /// Overall switch
+   ACCEPT_EXPRESSION_INTERFACE(Recommended);
+
+   /// GetVarExpression(\a i): expression representing variable 0<=i<n_var.
+   /// Only called for 'nonlinear' variables.
+   Expr GetVarExpression(int i) { return MakeVarExpr(i); }
+
+   /// GetZeroExpr(): constant 0.0 expression.
+   /// Can be used to represent empty expression in an NLConstraint.
+   Expr GetZeroExpression() { return MakeEmptyExpr(); }
+
+   /// Gurobi 12 has no classical NL range constraint
+   ACCEPT_CONSTRAINT(NLConstraint, NotAccepted, CG_Algebraic)
+
+   /// NLAssignEQ: algebraic expression expicifier.
+   /// Meaning: var == expr.
+   /// @note Accessors: GetName(), GetExpression(nle), GetVariable(nle).
+   ACCEPT_CONSTRAINT(NLAssignEQ, Recommended, CG_General)
+   void AddConstraint(const NLAssignEQ& nle);
+   /// NLAssignLE: algebraic expression expicifier in positive context.
+   /// Meaning: var <= expr.
+   /// @note Accessors: GetName(), GetExpression(nle), GetVariable(nle).
+   ACCEPT_CONSTRAINT(NLAssignLE, Recommended, CG_General)
+   void AddConstraint(const NLAssignLE& nle);
+   /// NLAssignGE: algebraic expression expicifier in negative context.
+   /// Meaning: var >= expr.
+   /// @note Accessors: GetName(), GetExpression(nle), GetVariable(nle).
+   ACCEPT_CONSTRAINT(NLAssignGE, Recommended, CG_General)
+   void AddConstraint(const NLAssignGE& nle);
+
+   /// @brief Accept NLAffineExpr.
+   /// @note Use accessors, not methods;
+   /// - GetLinSize(le), GetLinCoef(le, i), GetLinTerm(le, i);
+   ///   GetConstTerm(le).
+   ACCEPT_EXPRESSION(NLAffineExpression, Recommended);
+   Expr AddExpression(const NLAffineExpression& le);
+
+   /// Accept NLQuadExpr.
+   /// @note Use accessors, not methods;
+   /// - GetLinSize(le), GetLinCoef(le, i), GetLinTerm(le, i);
+   ///   GetQuadSize(le), GetQuadCoef(le, i),
+   ///   GetQuadTerm1(le, i), GetQuadTerm2(le, i);
+   ///   GetConstTerm(le).
+   ACCEPT_EXPRESSION(NLQuadExpression, Recommended);
+   Expr AddExpression(const NLQuadExpression& le);
+
+   /// Each expression can be accepted as a proper expression,
+   /// or as a flat functional constraint var <=/==/>= expr
+   /// (in this case, with variables as arguments).
+   /// The uequality/inqeuality type of the flat constraint is
+   /// determied by GetContext().
+   ///
+   /// @note Use accessor: GetArgExpression(ee, 0)
+   /// - don't AbsExpression's methods.
+   ///
+   /// Similar for other expression types.
+
+
+   ACCEPT_EXPRESSION(ExpExpression, Recommended)
+   Expr AddExpression(const ExpExpression& );
+   ACCEPT_EXPRESSION(ExpAExpression, Recommended)
+   Expr AddExpression(const ExpAExpression& );
+   ACCEPT_EXPRESSION(LogExpression, Recommended)
+   Expr AddExpression(const LogExpression& );
+   ACCEPT_EXPRESSION(LogAExpression, Recommended)
+   Expr AddExpression(const LogAExpression& );
+   /// @note Use accessor: GetParameter(pe, 0)
+   ///   - don't use PowExpression's methods.
+   ACCEPT_EXPRESSION(PowExpression, Recommended)
+   Expr AddExpression(const PowExpression& );
+   ACCEPT_EXPRESSION(SinExpression, Recommended)
+   Expr AddExpression(const SinExpression& );
+   ACCEPT_EXPRESSION(CosExpression, Recommended)
+   Expr AddExpression(const CosExpression& );
+
+   ACCEPT_EXPRESSION(DivExpression, Recommended)
+   Expr AddExpression(const DivExpression& );
 
 
 Note that after `InitProblemModificationPhase()` has been called,

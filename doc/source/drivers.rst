@@ -6,8 +6,8 @@ Solver drivers
 
 .. _flat-solvers:
 
-'Flat API' solvers
-------------------
+'Flat API' and new expression-based solvers
+-----------------------------------------------
 
 For solvers with traditional 'flat' (no expression trees) APIs,
 non-linear AMPL expressions need to be reformulated.
@@ -19,20 +19,24 @@ For example, ``max(a, b)`` is translated into a constraint
 
 which is in turn reformulated for
 MIP or passed to the solver natively (e.g., Gurobi: `GRBaddgenconstrMax`).
-See the :ref:`modeling-guide`.
+
+A recent extension to MP allows passing expression trees
+to solvers, see :ref:`supported-constraints`.
 
 There are several implementations, see :ref:`modeling-overview`.
+See also the :ref:`modeling-guide`.
 
 
 .. _expression-solvers:
 
-Expression-based solvers
-------------------------
+Old-API expression-based solvers
+--------------------------------------
 
-Expression-based solver APIs can efficiently map
-NL forests.
+Some older drivers map directly from NL file's model, without
+exploiting the automatic reformulation capabilites of MP.
 For example, AMPL expression
-``exp()`` maps to IBM ILOG Concert's ``IloExponent``. The library
+``exp()`` maps to IBM ILOG Concert's ``IloExponent``.
+The MP library
 has the following C++ drivers of this kind, all of which support
 `AMPL extensions for logic and constraint programming`__:
 

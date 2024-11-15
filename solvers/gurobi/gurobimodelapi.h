@@ -224,11 +224,11 @@ public:
   /// Each expression can be accepted as a proper expression,
   /// or as a flat functional constraint var <=/==/>= expr
   /// (in this case, with variables as arguments).
-  /// The uequality/inqeuality type of the flat constraint is
+  /// The equality/inequality type of the flat constraint is
   /// determied by GetContext().
   ///
   /// @note Use accessor: GetArgExpression(ee, 0)
-  /// - don't AbsExpression's methods.
+  /// - don't use ...Expression's methods.
   ///
   /// Similar for other expression types.
 
