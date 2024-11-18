@@ -1041,11 +1041,12 @@ protected:
   void MarkRangeOrEqn(const LinConRange& lcr) {
     Add2ColSizes(lcr.vars());
     if (lcr.lb() > MinusInfinity()
-        && lcr.ub() < Infinity())
+        && lcr.ub() < Infinity()) {
       if (lcr.lb() < lcr.ub())
         ++mark_data_.n_ranges_;
       else
         ++mark_data_.n_eqns_;
+    }
   }
 
   /// Mark LinConEQ
@@ -1351,20 +1352,38 @@ protected:
   public:
     /// Construct
     ItemInfo (BasicItemDispatcher& disp, void* pitem,
-             bool fLogical
+             bool fLogical,
+             bool f_m = 0, LinPartRefOrStorage lpe = {}
              //, StaticItemTypeID iid, ExpressionTypeID eid
              )
-        : disp_(disp), p_item_(pitem), f_logical_(fLogical)
+        : disp_(disp), p_item_(pitem), f_logical_(fLogical),
+        f_marked_(f_m), lin_part_ext_(lpe)
         // no storing, itemID_(iid), exprID_(eid)
     { }
     /// Copy construct
     ItemInfo(const ItemInfo& ii)
-        : ItemInfo(ii.disp_, ii.p_item_, ii.f_logical_) { }
+        : ItemInfo(ii.disp_, ii.p_item_, ii.f_logical_,
+                   ii.f_marked_, ii.lin_part_ext_) { }
     /// operator=
     ItemInfo& operator=(const ItemInfo& ii) {
       assert(&disp_==&ii.disp_);
       p_item_ = ii.p_item_;
       assert(f_logical_==ii.f_logical_);
+      f_marked_ = ii.f_marked_;
+      lin_part_ext_ = ii.lin_part_ext_;
+      return *this;
+    }
+    /// Move construct
+    ItemInfo(ItemInfo&& ii)
+        : ItemInfo(ii.disp_, ii.p_item_, ii.f_logical_,
+                   ii.f_marked_, std::move(ii.lin_part_ext_)) { }
+    /// operator=(&&)
+    ItemInfo& operator=(ItemInfo&& ii) {
+      assert(&disp_==&ii.disp_);
+      p_item_ = ii.p_item_;
+      assert(f_logical_==ii.f_logical_);
+      f_marked_ = ii.f_marked_;
+      lin_part_ext_ = std::move(ii.lin_part_ext_);
       return *this;
     }
     /// Get dispatcher

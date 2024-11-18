@@ -98,11 +98,13 @@ public:
         objval_last_ = objs.front();           // 0. save emulated obj value
       // @todo 1. check if the solver correctly reports the current emulated obj
       // 2. Let's recompute the original objectives
+      // and the last iteration's objective, TODO: if needed
       const auto& xx = sol.GetVarValues()();
       if (xx.size()) {                         // This can be invoked w/o solution
         objs.resize( MPCD(num_objs()) );
         for (int i=0; i<(int)objs.size(); ++i)
           objs[i] = ComputeValue(MPCD(get_obj(i)), xx);
+        objval_last_ = ComputeValue(obj_new_[i_current_obj_-1], xx);
       }
     }
   }

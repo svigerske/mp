@@ -90,7 +90,7 @@ protected:
       std::get<2>(tpl) =
           {bnds.lb(), bnds.ub()};
     }
-    std::sort(terms_flt_.begin(), terms_flt_.end(),
+    std::stable_sort(terms_flt_.begin(), terms_flt_.end(),
               [](const auto& tpl1, const auto& tpl2) {
       return std::get<0>(tpl1) < std::get<0>(tpl2);
     });

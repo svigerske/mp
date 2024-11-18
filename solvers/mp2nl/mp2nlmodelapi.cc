@@ -486,7 +486,7 @@ void MP2NLModelAPI::MarkVars() {
 }
 
 void MP2NLModelAPI::SortVars() {
-  std::sort(mark_data_.var_prior_.begin(), mark_data_.var_prior_.end());
+  std::stable_sort(mark_data_.var_prior_.begin(), mark_data_.var_prior_.end());
   mark_data_.var_order_12_.resize(var_lbs_.size());
   mark_data_.var_order_21_.resize(var_lbs_.size());
   for (auto i=var_lbs_.size(); i--; ) {
@@ -504,7 +504,7 @@ void MP2NLModelAPI::MarkAlgCons() {
 }
 
 void MP2NLModelAPI::SortAlgCons() {
-  std::sort(mark_data_.con_prior_.begin(), mark_data_.con_prior_.end());
+  std::stable_sort(mark_data_.con_prior_.begin(), mark_data_.con_prior_.end());
   mark_data_.con_order_12_.resize(alg_con_info_.size());
   mark_data_.con_order_21_.resize(alg_con_info_.size());
   for (auto i=alg_con_info_.size(); i--; ) {
@@ -1352,6 +1352,7 @@ public:
    */
   int OnAMPLOptions(const AMPLOptions& ) {
     suf_map_.clear();              // clear for new solution
+    if_suf_data_registered_ = false;
     return 0;
   }
 
@@ -1496,7 +1497,9 @@ protected:
       auto sparse_entry = sr.ReadNext();
       if (sparse_entry.first<0 || sparse_entry.first>=nmax) {
         sr.SetError(NLW2_SOLRead_Bad_Suffix,
-                    "bad suffix element index");
+                    fmt::format(
+          "bad suffix({}, kind={}) element index: {}, should be in [{}, {})",
+                        name, kind, sparse_entry.first, 0, nmax));
         return;
       }
       int i0 = sparse_entry.first;

@@ -85,11 +85,14 @@ public:
         result.values_[2]
     });
     result.values_[0] = suf_pre.GetVarValues()();
-    result.values_[2] = suf_pre.GetObjValues()();
     result.values_[1] = suf_pre.GetConValues()(CG_Algebraic);
     const auto& suf_log = suf_pre.GetConValues()(CG_Logical);
     result.values_[1].insert(result.values_[1].end(),
                                     suf_log.begin(), suf_log.end());
+    if (be_.multiobj())   // Skip because we compress objectives
+      result.values_[2].clear(); // @todo native multiobj
+    else
+      result.values_[2] = suf_pre.GetObjValues()();
     return result;
   }
 private:
