@@ -2190,7 +2190,8 @@ void GurobiBackend::InitCustomOptions() {
     "with their constraint's or objective's suffix .funcnonlinear "
     "or, if not available, .global unset (or set to 0) are treated "
     "(ATTENTION: different meaning than Gurobi FuncNonLinear "
-                  "parameter and attribute):\n"
+                  "parameter and attribute; ATTENTION: also set acc:_expr=0 "
+                  "with pre:funcnonlinear=-1 to use 'general constraints'):\n"
                   "\n.. value-table::\n"
     "Suffix values mean the same.",
     storedOptions_.fFuncNonlinear_, values_funcnonlinear);

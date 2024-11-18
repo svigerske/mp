@@ -51,7 +51,7 @@ Next subsection explains how a user can switch between
 flat constraints and formulas, if available,
 or force reformulation.
 
-Reformulation options
+Acceptance options
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 Sometimes it is handy to disable all automatic reformulations,
