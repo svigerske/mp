@@ -203,6 +203,14 @@ void BaronmpCommon::deinitBaronFile() {
     FILE_BAR->close();
     FILE_BAR = 0;
   }
+  if (FILE_AMPL) {
+    FILE_AMPL->close();
+    FILE_AMPL = 0;
+  }
+  if (FILE_DIC) {
+    FILE_DIC->close();
+    FILE_DIC = 0;
+  }
 }
 
 
@@ -449,12 +457,15 @@ void BaronmpCommon::writeBaronOptions() {
         lsolmsg, lsolver,  nlfile,
         nvars, v_keepsol, verbuf,
         lpsol_dll);
+      output.close();
       return true;
     }
     catch (const std::ios_base::failure& e) {
       fmt::print(stderr, "File write error: {}\n", e.what());
-      return false;
+    
     }
+    
+    
   }
 
   // Read the globals data from a file

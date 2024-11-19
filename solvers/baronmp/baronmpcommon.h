@@ -129,11 +129,11 @@ namespace mp {
         {"alg:firstloc firstloc", {"FirstLoc", "If set to 1, BARON will terminate once it finds "
             "a local optimum, irrespective of solution quality. Default is 0, "
             "meaning that BARON will search for the best numsol feasible solutions.", 0}},
-
-        {"alg:iisint iisint", {"IISint", "Whether to include integer variables in an IIS:\n\n.. value-table::\n",0}},
+       // TODO
+       /* {"alg:iisint iisint", {"IISint", "Whether to include integer variables in an IIS:\n\n.. value-table::\n",0}},
         {"alg:iismethod iismethod", {"CompIIS", "Which method to use when finding an IIS (irreducible infeasible "
               "set of constraints, including variable bounds):\n\n.. value-table::\n", 0}},
-        {"alg:iisorder iisorder", {"IISorder","How to order constraints when seeking an IIS:\n\n.. value-table::\n",0}},
+        {"alg:iisorder iisorder", {"IISorder","How to order constraints when seeking an IIS:\n\n.. value-table::\n",0}},*/
 
 
 
@@ -189,10 +189,10 @@ namespace mp {
       return option_metadata.at(name.data()).description.c_str();
     }
 
-    void serializeMember(std::string_view name, OptionMetadata::VT v, fmt::MemoryWriter& m) const {
+    void serializeMember(std::string_view name, OptionMetadata::VT v, fmt::MemoryWriter& m, bool alwaysSerialize=false) const {
       
       auto md = option_metadata.at(name.data());
-      if (md.def != v) {
+      if (alwaysSerialize || (md.def != v)) {
         m << md.key << ": ";
         std::visit([&m](auto&& arg) {
           if constexpr (std::is_same_v<std::decay_t<decltype(arg)>, std::string>) {
@@ -224,15 +224,15 @@ namespace mp {
       ADDALGSER(epsr);
       ADDALGSER(firstfeas);
       ADDALGSER(firstloc);
-      ADDALGSER(iisint);
+     /* ADDALGSER(iisint);
       ADDALGSER(iismethod);
-      ADDALGSER(iisorder);
+      ADDALGSER(iisorder);*/
       ADDSER(maxiter, "lim:iter iterlimit maxiter");
       ADDSER(maxtime, "lim:time timelim timelimit maxtime");
       ADDTECHSER(numsol);
       //ADDTECHSER(optfile);
       ADDTECHSER(prfreq);
-      ADDTECHSER(prloc);
+      serializeMember("tech:prloc prloc", prloc, m, true);
       ADDTECHSER(problem);
       ADDTECHSER(prtime);
       ADDTECHSER(seed);

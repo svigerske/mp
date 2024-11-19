@@ -3,6 +3,7 @@
 #include <cfloat>
 #include <iostream> // for cerr
 
+
 #include "mp/env.h"
 #include "mp/flat/model_api_base.h"
 #include "baronmpbackend.h"
@@ -84,7 +85,11 @@ void BaronmpBackend::CloseSolver() {
     if(baronOptions().keepsol)
       fmt::print("Keeping temporary files in {}\n", baronDir);
     else
+    {
+      deinitBaronFile();
       recrmdir(baronDir);
+
+    }
   } 
 }
 
@@ -272,17 +277,6 @@ static const mp::OptionValueInfo iisorder_values[] = {
   { ">=4", "Random order with seed iisorder", 4} 
 }; 
 
-static const mp::OptionValueInfo lp_dualprices_values_[] = {
-  { "-1", "Choose automatically (default)", -1},
-  { "0", "Use Devex pricing algorithm", 0},
-  { "1", "Using dual steepest-edge pricing algorithm", 1}
-};
-
-static const mp::OptionValueInfo lp_barorder_values_[] = {
-  { "-1", "Choose automatically (default)", -1},
-  { "0", "Approximate Minimum Degree (AMD)", 0},
-  { "1", "Nested Dissection (ND)", 1}
-};
 
 void BaronmpBackend::InitCustomOptions() {
 
@@ -299,6 +293,8 @@ void BaronmpBackend::InitCustomOptions() {
 
   #define ADDOPTION(var, n)\
   AddStoredOption(n, baronOptions().description(n), baronOptions().var)
+  #define ADDOPTIONV(var, n, valuetable)\
+  AddStoredOption(n, baronOptions().description(n), baronOptions().var, valuetable)
 
   #define ADDALGOPTION(n) ADDOPTION(n, "alg:"#n " "#n)
   #define ADDTECHOPTION(n) ADDOPTION(n,"tech:"#n " "#n)
@@ -313,9 +309,10 @@ void BaronmpBackend::InitCustomOptions() {
   ADDALGOPTION(epsr);
   ADDALGOPTION(firstfeas);
   ADDALGOPTION(firstloc);
-  ADDALGOPTION(iisint);
-  ADDALGOPTION(iismethod);
-  ADDALGOPTION(iisorder);
+
+  // ADDALGOPTION(iisint);
+  // ADDALGOPTION(iismethod);
+  // ADDALGOPTION(iisorder);
 
   ADDTECHOPTION(barstats);
   ADDTECHOPTION(keepsol);
@@ -337,9 +334,9 @@ void BaronmpBackend::InitCustomOptions() {
 
   
   ADDTECHOPTION(outlev);
-  ADDTECHOPTION(overwrite); // TODORemove
+  ADDTECHOPTION(overwrite); 
   ADDTECHOPTION(prfreq);
-  ADDTECHOPTION(prloc);
+  ADDOPTIONV(prloc, "tech:prloc prloc", values_01_noyes_0default_);
   ADDTECHOPTION(problem);
   ADDTECHOPTION(prtime);
   ADDTECHOPTION(scratch);
