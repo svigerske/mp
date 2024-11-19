@@ -622,20 +622,20 @@ void PLApproximate<LogAConstraint>(
     const LogAConstraint& con, PLApproxParams& laPrm);
 
 
-/// PLApproximator<PowConstraint>
+/// PLApproximator<PowConstExpConstraint>
 template <>
-class PLApproximator<PowConstraint> :
-    public BasicPLApproximator<PowConstraint> {
+class PLApproximator<PowConstExpConstraint> :
+    public BasicPLApproximator<PowConstExpConstraint> {
 public:
-  PLApproximator(const PowConstraint& con, PLApproxParams& p) :
-    BasicPLApproximator<PowConstraint>(con, p) {
+  PLApproximator(const PowConstExpConstraint& con, PLApproxParams& p) :
+    BasicPLApproximator<PowConstExpConstraint>(con, p) {
     InitPowDomain();
   }
   /// Constraint name. This should normally go via some
   /// printing facilities
   const char* GetConTypeName() const override {
     static std::string nm {
-      "PowConstraint ^ " + std::to_string(GetConParams()[0])
+      "PowConstExpConstraint ^ " + std::to_string(GetConParams()[0])
     };
     return nm.c_str();
   }
@@ -705,10 +705,10 @@ private:
   BreakpointList bpl_{{-1e6, 0.0, 1e6}};
 };
 
-/// Instantiate PLApproximate<PowConstraint>
+/// Instantiate PLApproximate<PowConstExpConstraint>
 template
-void PLApproximate<PowConstraint>(
-    const PowConstraint& con, PLApproxParams& laPrm);
+void PLApproximate<PowConstExpConstraint>(
+    const PowConstExpConstraint& con, PLApproxParams& laPrm);
 
 
 /// PLApproximator<SinConstraint>

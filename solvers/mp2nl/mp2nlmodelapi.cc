@@ -234,6 +234,8 @@ MP2NL_Expr MP2NLModelAPI::AddExpression(const LogExpression &expr)
 { return AddExpression(expr, ExpressionTypeID::ID_Log); }
 MP2NL_Expr MP2NLModelAPI::AddExpression(const PowExpression &expr)
 { return AddExpression(expr, ExpressionTypeID::ID_Pow); }
+MP2NL_Expr MP2NLModelAPI::AddExpression(const PowConstExpExpression &expr)
+{ return AddExpression(expr, ExpressionTypeID::ID_PowConstExp); }
 MP2NL_Expr MP2NLModelAPI::AddExpression(const SinExpression &expr)
 { return AddExpression(expr, ExpressionTypeID::ID_Sin); }
 MP2NL_Expr MP2NLModelAPI::AddExpression(const CosExpression &expr)
@@ -934,6 +936,7 @@ void MP2NLModelAPI::FeedOpcode(Expr expr, ExprWriter& ew) {
     HANDLE_OPCODE_CASE_1_ARG(Exp, EXP, FdArgs)
     HANDLE_OPCODE_CASE_1_ARG(Log, LOG, FdArgs)
     HANDLE_OPCODE_CASE_2_ARG(Pow, POW, FdArgs)
+    HANDLE_OPCODE_CASE_2_ARG(PowConstExp, POW, FdArgs)
     HANDLE_OPCODE_CASE_1_ARG(Sin, SIN, FdArgs)
     HANDLE_OPCODE_CASE_1_ARG(Cos, COS, FdArgs)
 

@@ -251,7 +251,7 @@ void XpressmpModelAPI::AddConstraint(const DivConstraint& cc) {
   AddGlobalConstraint(params);
 }
 
-void XpressmpModelAPI::AddConstraint(const PowConstraint& cc) {
+void XpressmpModelAPI::AddConstraint(const PowConstExpConstraint& cc) {
   double exponent = cc.GetParameters()[0];
   if (exponent == 0.5)
     AddGlobalConstraint(cc.GetResultVar(), cc.GetArguments()[0], XPRS_IFUN_SQRT);

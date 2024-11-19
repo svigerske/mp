@@ -8,22 +8,22 @@
 
 namespace mp {
 
-/// Converts PowConstraint (const exponent) for MIP
+/// Converts PowConstExpConstraint for MIP
 template <class ModelConverter>
-class PowConstExponentConverter_MIP :
-    public FuncConConverter_MIP_CRTP<      // Derive from PL Approximator
-      PowConstExponentConverter_MIP<ModelConverter>,
-      ModelConverter,
-      PowConstraint> {
+class PowConstExponentConverter_MIP
+    : public FuncConConverter_MIP_CRTP<      // Derive from PL Approximator
+          PowConstExponentConverter_MIP<ModelConverter>,
+          ModelConverter,
+          PowConstExpConstraint> {
 public:
   /// Base class
   using Base = FuncConConverter_MIP_CRTP<
     PowConstExponentConverter_MIP<ModelConverter>,
-    ModelConverter, PowConstraint>;
+    ModelConverter, PowConstExpConstraint>;
   /// Constructor
   PowConstExponentConverter_MIP(ModelConverter& mc) : Base(mc) { }
   /// Converted item type
-  using ItemType = PowConstraint;
+  using ItemType = PowConstExpConstraint;
 
   /// Check whether the constraint
   /// needs to be converted despite being accepted by ModelAPI.
@@ -64,9 +64,9 @@ protected:
       auto pwr2 = pwr-pwr1;
       assert(pwr2>0.0);
       arg1 = GetMC().AssignResultVar2Args(
-            PowConstraint{ {arg}, DblParamArray1{pwr1} });
+            PowConstExpConstraint{ {arg}, DblParamArray1{pwr1} });
       arg2 = GetMC().AssignResultVar2Args(
-            PowConstraint{ {arg}, DblParamArray1{pwr2} });
+            PowConstExpConstraint{ {arg}, DblParamArray1{pwr2} });
     }
     GetMC().RedefineVariable(con.GetResultVar(),
           QuadraticFunctionalConstraint(
@@ -82,6 +82,54 @@ protected:
   /// PL approximate
   void Convert2PL(const ItemType& con, int i) {
     Base::Convert(con, i);
+  }
+
+  /// Reuse the stored ModelConverter
+  using Base::GetMC;
+};
+
+
+/// Converts PowConstraint for MIP
+template <class ModelConverter>
+class PowConverter_MIP
+    : public BasicFuncConstrCvt<
+          PowConverter_MIP<ModelConverter>,
+          ModelConverter> {
+public:
+  /// Base class
+  using Base = BasicFuncConstrCvt<
+      PowConverter_MIP<ModelConverter>,
+      ModelConverter>;
+  /// Constructor
+  PowConverter_MIP(ModelConverter& mc) : Base(mc) { }
+  /// Converted item type
+  using ItemType = PowConstraint;
+
+  /// Convert in any context
+  void Convert(const ItemType& con, int i) {
+    assert(!con.GetContext().IsNone());
+    Convert2ExpLog(con, i);
+  }
+
+
+protected:
+  void Convert2ExpLog(const ItemType& con, int ) {
+    auto x = con.GetArguments()[0];
+    auto y = con.GetArguments()[1];
+    auto logx = GetMC().AssignResultVar2Args(
+        LogConstraint{ {x} });
+    auto y_logx = GetMC().AssignResultVar2Args(
+        QuadraticFunctionalConstraint(
+            QuadraticExpr(
+                QuadAndLinTerms( { }, { {1.0}, {y}, {logx} } ),
+                0.0) ));
+    GetMC().RedefineVariable(con.GetResultVar(),
+                             ExpConstraint({y_logx}));
+
+    /// propagate ctx into new constr,
+    /// particularly into the arguments which are new constraints
+    GetMC().PropagateResultOfInitExpr(
+        con.GetResultVar(), con.GetContext());
   }
 
   /// Reuse the stored ModelConverter

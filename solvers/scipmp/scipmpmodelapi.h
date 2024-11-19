@@ -322,11 +322,11 @@ public:
   void AddConstraint(const LogConstraint& cc);
 
   /// @note Use accessor: GetParameter(pe, 0)
-  ///   - don't use PowExpression's methods.
-  ACCEPT_EXPRESSION(PowExpression, Recommended)
-  SCIP_EXPR* AddExpression(const PowExpression& );
-  ACCEPT_CONSTRAINT(PowConstraint, Recommended, CG_General)
-  void AddConstraint(const PowConstraint& cc);
+  ///   - don't use PowConstExpExpression's methods.
+  ACCEPT_EXPRESSION(PowConstExpExpression, Recommended)
+  SCIP_EXPR* AddExpression(const PowConstExpExpression& );
+  ACCEPT_CONSTRAINT(PowConstExpConstraint, Recommended, CG_General)
+  void AddConstraint(const PowConstExpConstraint& cc);
 
   ACCEPT_EXPRESSION(SinExpression, Recommended)
   SCIP_EXPR* AddExpression(const SinExpression& );

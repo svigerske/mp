@@ -93,8 +93,12 @@ DEF_NUMERIC_FUNC_CONSTR_WITH_PRM( LogA,
                   VarArray1, DblParamArray1, "r = log(v)/log(a)");
 
 ////////////////////////////////////////////////////////////////////////
+DEF_NUMERIC_FUNC_CONSTR_WITH_PRM( PowConstExp,
+                                 VarArray1, DblParamArray1, "r = v ** a (a is constant)");
+
+////////////////////////////////////////////////////////////////////////
 DEF_NUMERIC_FUNC_CONSTR_WITH_PRM( Pow,
-                  VarArray1, DblParamArray1, "r = v ** a (a is constant)");
+                                 VarArray2, ParamArray0, "r = x ** y (both variable)");
 
 ////////////////////////////////////////////////////////////////////////
 DEF_NUMERIC_FUNC_CONSTR( Sin, VarArray1,

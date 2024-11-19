@@ -179,8 +179,39 @@ public:
 
   //////////////////////////// NONLINEAR /////////////////////////////
 
+  /// \brief PropagateResult(PowConstraint)
   void PropagateResult(
       PowConstraint& con, double , double , Context ctx) {
+    con.AddContext(ctx);           // merge context
+    auto x = con.GetArguments()[0];
+    auto y = con.GetArguments()[1];
+    Context ctx_x, ctx_y;
+    if (MPCD( lb(x) )>=0.0 ) {     // x >= 0
+      ctx_x = (MPCD( lb(y) ) >= 0.0)
+                  ? +ctx
+                  : MPCD( ub(y) ) <= 0.0
+                        ? -ctx: Context::CTX_MIX;
+      ctx_y = (MPCD( ub(x) ) <= 1.0)  // 0<=x<=1
+                  ? -ctx
+                  : MPCD( lb(x) ) >= 1.0  // x>=1
+                        ? +ctx
+                        : Context::CTX_MIX;
+    } else {
+      ctx_x = ctx_y = Context::CTX_MIX;
+    }
+    VarArray1 xx {x};
+    PropagateResult2Args(xx,
+                         MPD( MinusInfty() ), MPD( Infty() ),
+                         ctx_x);
+    VarArray1 yy {y};
+    PropagateResult2Args(yy,
+                         MPD( MinusInfty() ), MPD( Infty() ),
+                         ctx_y);
+  }
+
+
+  void PropagateResult(
+      PowConstExpConstraint& con, double , double , Context ctx) {
     con.AddContext(ctx);           // merge context
     auto pwr = con.GetParameters()[0];
     auto arg = con.GetArguments()[0];
@@ -192,14 +223,15 @@ public:
     if (is_pow_odd_pos) {            // some monotone cases
       ctx_new = +ctx;
     } else
-      if (MPD( lb(arg)>=0.0 )) {     // arg >= 0
+      if (MPD( lb(arg) )>=0.0 ) {     // arg >= 0
         ctx_new = (pwr >= 0.0) ? +ctx : -ctx;
       } else
-        if (MPD( ub(arg)<=0.0 ) && is_pow_int) {
+        if (MPD( ub(arg) )<=0.0 && is_pow_int) {
           if (pwr >= 0.0)
             ctx_new = -ctx;          // arg<=0, pwr even >=0
-          else
-            ctx_new = is_pow_odd ? -ctx : +ctx;
+          else                       // pwr < 0
+            ctx_new = is_pow_odd ?
+                          -ctx : +ctx;
         } else
           ctx_new.Add(Context::CTX_MIX);  // undecidable
     PropagateResult2Args(con.GetArguments(),

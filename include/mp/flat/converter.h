@@ -1600,6 +1600,7 @@ protected:
   STORE_CONSTRAINT_TYPE__WITH_MAP(ExpAConstraint, "acc:expa acc:expA")
   STORE_CONSTRAINT_TYPE__WITH_MAP(LogConstraint, "acc:log")
   STORE_CONSTRAINT_TYPE__WITH_MAP(LogAConstraint, "acc:loga acc:logA")
+  STORE_CONSTRAINT_TYPE__WITH_MAP(PowConstExpConstraint, "acc:powconstexp")
   STORE_CONSTRAINT_TYPE__WITH_MAP(PowConstraint, "acc:pow")
   STORE_CONSTRAINT_TYPE__WITH_MAP(SinConstraint, "acc:sin")
   STORE_CONSTRAINT_TYPE__WITH_MAP(CosConstraint, "acc:cos")

@@ -832,9 +832,9 @@ public:          // need to be public due to CRTP
       auto el = Convert2EExpr(e.lhs());
       return QuadratizeOrLinearize(el, el);
     }
-    return AssignResult2Args( PowConstraint(
-      PowConstraint::Arguments{ Convert2Var(e.lhs()) },
-      PowConstraint::Parameters{ c } ) );
+    return AssignResult2Args( PowConstExpConstraint(
+      PowConstExpConstraint::Arguments{ Convert2Var(e.lhs()) },
+      PowConstExpConstraint::Parameters{ c } ) );
   }
 
   EExpr VisitPow2(UnaryExpr e) {
@@ -842,9 +842,9 @@ public:          // need to be public due to CRTP
       auto el = Convert2EExpr(e.arg());
       return QuadratizeOrLinearize(el, el);
     }
-    return AssignResult2Args( PowConstraint(
-      PowConstraint::Arguments{ Convert2Var(e.arg()) },
-      PowConstraint::Parameters{ 2.0 } ) );
+    return AssignResult2Args( PowConstExpConstraint(
+      PowConstExpConstraint::Arguments{ Convert2Var(e.arg()) },
+      PowConstExpConstraint::Parameters{ 2.0 } ) );
   }
 
   EExpr VisitPow(BinaryExpr e) {
@@ -856,20 +856,25 @@ public:          // need to be public due to CRTP
         return QuadratizeOrLinearize(el, el);
       }
       return AssignResult2Args(
-            PowConstraint(
-              PowConstraint::Arguments{ Convert2Var(std::move(el)) },
-              PowConstraint::Parameters{ er.constant_term() } ) );
+            PowConstExpConstraint(
+              PowConstExpConstraint::Arguments{ Convert2Var(std::move(el)) },
+              PowConstExpConstraint::Parameters{ er.constant_term() } ) );
     }
     else if (el.is_constant())
       return VisitPowConstBase(e);
     else
-      MP_RAISE("Unsupported: operator ^ with variable base and exponent");
+      return AssignResult2Args(
+          PowConstraint(
+              PowConstraint::Arguments{ {
+                                       Convert2Var(std::move(el)),
+                                       Convert2Var(std::move(el)) } },
+              {} ) );
   }
 
   EExpr VisitSqrt(UnaryExpr e) {
-    return AssignResult2Args( PowConstraint(
-      PowConstraint::Arguments{ Convert2Var(e.arg()) },
-      PowConstraint::Parameters{ 0.5 } ) );
+    return AssignResult2Args( PowConstExpConstraint(
+      PowConstExpConstraint::Arguments{ Convert2Var(e.arg()) },
+      PowConstExpConstraint::Parameters{ 0.5 } ) );
   }
 
   EExpr VisitExp(UnaryExpr e) {
@@ -1061,7 +1066,7 @@ public:         // More utilities
            ellt.var(0) == erlt.var(0));
     auto coef = ellt.coef(0) * erlt.coef(0);
     auto pow2var = GetFlatCvt().AssignResultVar2Args(
-          PowConstraint{ {{ellt.var(0)}}, {2.0} });
+          PowConstExpConstraint{ {{ellt.var(0)}}, {2.0} });
     return { coef, pow2var };
   }
 
@@ -1069,7 +1074,7 @@ public:         // More utilities
   EExpr Convert2Pow2(EExpr&& el) {
     auto affexpr2var = Convert2Var( std::move(el) );
     auto pow2var = GetFlatCvt().AssignResultVar2Args(
-          PowConstraint{ {{affexpr2var}}, {2.0} });
+          PowConstExpConstraint{ {{affexpr2var}}, {2.0} });
     return EExpr::Variable{ pow2var };
   }
 

@@ -307,6 +307,15 @@
     }
   },
   {
+    "name" : "pow_07_varvar",
+    "tags" : ["continuous", "nonlinear", "quadraticnonconvex"],
+    "objective": -0.6115765155,
+    "values": {
+      "x": 2.38842,
+      "y": -3
+    }
+  },
+  {
     "name" : "asin_01",
     "tags" : ["continuous", "nonlinear"],
     "values": {

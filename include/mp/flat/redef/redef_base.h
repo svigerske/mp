@@ -17,7 +17,7 @@ public:
   /// Generic check whether the constraint
   /// needs to be converted despite being recommended for
   /// acceptance by ModelAPI.
-  /// Example: PowConstraint(x, ...) with lb(x)<0.
+  /// Example: PowConstExpConstraint(x, ...) with lb(x)<0.
   /// Default: false.
   template <class ItemType>
   bool IfNeedsConversion(const ItemType& , int ) {

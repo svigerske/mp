@@ -132,8 +132,8 @@ public:
   void AddConstraint(const LogConstraint& cc);
   void AddConstraint(const LogAConstraint& cc);
 
-  ACCEPT_CONSTRAINT(PowConstraint, GLOBAL_LEVEL, CG_General)
-    void AddConstraint(const PowConstraint& cc);
+  ACCEPT_CONSTRAINT(PowConstExpConstraint, GLOBAL_LEVEL, CG_General)
+    void AddConstraint(const PowConstExpConstraint& cc);
   ACCEPT_CONSTRAINT(ExpConstraint, GLOBAL_LEVEL, CG_General)
   void AddConstraint(const ExpConstraint& cc);
   ACCEPT_CONSTRAINT(ExpAConstraint, GLOBAL_LEVEL, CG_General)

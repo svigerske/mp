@@ -305,7 +305,7 @@ void VisitorModelAPI::AddConstraint(const LogAConstraint& cc) {
     cc.GetArguments()[0], cc.GetResultVar(), cc.GetParameters()[0], ""));*/
 }
 
-void VisitorModelAPI::AddConstraint(const PowConstraint& cc) {
+void VisitorModelAPI::AddConstraint(const PowConstExpConstraint& cc) {
   fmt::print("Adding Pow constraint \"{}\"\n", cc.GetName());
   lp()->addEntity(Solver::CONS_POW);
   /*

@@ -184,7 +184,13 @@ double ComputeValue(const LogAConstraint& con, const VarVec& x) {
 template <class VarVec>
 double ComputeValue(const PowConstraint& con, const VarVec& x) {
   return std::pow(
-        x[con.GetArguments()[0]], con.GetParameters()[0]);
+      x[con.GetArguments()[0]], x[con.GetArguments()[1]]);
+}
+
+template <class VarVec>
+double ComputeValue(const PowConstExpConstraint& con, const VarVec& x) {
+  return std::pow(
+      x[con.GetArguments()[0]], con.GetParameters()[0]);
 }
 
 /// Compute result of the sin constraint.

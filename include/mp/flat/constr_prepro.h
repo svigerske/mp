@@ -62,6 +62,35 @@ public:
   template <class PreprocessInfo>
   void PreprocessConstraint(
       PowConstraint& c, PreprocessInfo& prepro) {
+    auto x = c.GetArguments()[0];
+    auto lbx = MPCD( lb(x) );
+    if (lbx >= 0.0) {
+      auto y = c.GetArguments()[1];
+      auto ubx = MPCD( ub(x) );
+      auto lby = MPCD( lb(y) );
+      auto uby = MPCD( ub(y) );
+      if (lbx >= 1e-10 || lby >= 1e-10) {
+        std::array<double, 4> rb
+            {std::pow(lbx, lby), std::pow(lbx, uby),
+                                 std::pow(ubx, lby), std::pow(ubx, uby)};
+        prepro.narrow_result_bounds(
+            *std::min_element(rb.begin(), rb.end()),
+            *std::max_element(rb.begin(), rb.end()) );
+      } else {
+        std::array<double, 4> rb
+            {std::pow(1e-10, lby), std::pow(1e-10, uby),
+             std::pow(ubx, lby), std::pow(ubx, uby)};
+        prepro.narrow_result_bounds(
+            *std::min_element(rb.begin(), rb.end()),
+            *std::max_element(rb.begin(), rb.end()) );
+      }
+    }
+  }
+
+  /// Preprocess PowConstExp
+  template <class PreprocessInfo>
+  void PreprocessConstraint(
+      PowConstExpConstraint& c, PreprocessInfo& prepro) {
     auto pwr = c.GetParameters()[0];
     if (0.0==std::fabs(pwr)) {              // decidable case
       prepro.narrow_result_bounds(1.0, 1.0);
@@ -511,8 +540,8 @@ public:
   void PreprocessConstraint(
       LogConstraint& c, PreprocessInfo& ) {
     auto x = c.GetArguments()[0];  // if no positive lb,
-    if (MPD(lb(x))<=0.0)           // set (fixed) lb=1e-6
-      MPD( NarrowVarBounds(x, 1e-6, MPD( Infty() )) );
+    if (MPD(lb(x))<0.0)            // set (fixed) lb=0
+      MPD( NarrowVarBounds(x, 0.0, MPD( Infty() )) );
   }
 
   template <class PreprocessInfo>

@@ -94,6 +94,8 @@ public:
   INSTALL_ITEM_CONVERTER(OrConverter_MIP)
   /// PLConstraint
   INSTALL_ITEM_CONVERTER(PLConverter_MIP)
+  /// Pow
+  INSTALL_ITEM_CONVERTER(PowConverter_MIP)
   /// PowConstExp
   INSTALL_ITEM_CONVERTER(PowConstExponentConverter_MIP)
   /// SOS2

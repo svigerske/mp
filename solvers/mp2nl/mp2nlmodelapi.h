@@ -411,10 +411,12 @@ public:
   Expr AddExpression(const ExpExpression& );
   ACCEPT_EXPRESSION(LogExpression, Recommended)
   Expr AddExpression(const LogExpression& );
-  /// @note Use accessor: GetParameter(pe, 0)
-  ///   - don't use PowExpression's methods.
   ACCEPT_EXPRESSION(PowExpression, Recommended)
   Expr AddExpression(const PowExpression& );
+  /// @note Use accessor: GetParameter(pe, 0)
+  ///   - don't use PowConstExpExpression's methods.
+  ACCEPT_EXPRESSION(PowConstExpExpression, Recommended)
+  Expr AddExpression(const PowConstExpExpression& );
   ACCEPT_EXPRESSION(SinExpression, Recommended)
   Expr AddExpression(const SinExpression& );
   ACCEPT_EXPRESSION(CosExpression, Recommended)
@@ -1137,6 +1139,7 @@ protected:
     ID_Exp,
     ID_Log,
     ID_Pow,
+    ID_PowConstExp,
     ID_Sin,
     ID_Cos,
 
@@ -1310,6 +1313,7 @@ protected:
   CREATE_EXPRESSION_DISPATCHER(Exp)
   CREATE_EXPRESSION_DISPATCHER(Log)
   CREATE_EXPRESSION_DISPATCHER(Pow)
+  CREATE_EXPRESSION_DISPATCHER(PowConstExp)
   CREATE_EXPRESSION_DISPATCHER(Sin)
   CREATE_EXPRESSION_DISPATCHER(Cos)
 

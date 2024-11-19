@@ -210,7 +210,7 @@ void GurobiModelAPI::AddConstraint(const LogAConstraint &cc)  {
               cc.GetArguments()[0], cc.GetResultVar(), cc.GetParameters()[0], "") );
 }
 
-void GurobiModelAPI::AddConstraint(const PowConstraint &cc)  {
+void GurobiModelAPI::AddConstraint(const PowConstExpConstraint &cc)  {
   GRB_CALL( GRBaddgenconstrPow(model(), cc.name(),
               cc.GetArguments()[0], cc.GetResultVar(), cc.GetParameters()[0], "") );
 }
@@ -343,7 +343,7 @@ GRB_Expr GurobiModelAPI::AddExpression(const LogAExpression& e) {
   return MakeExpr(new_pos);
 }
 
-GRB_Expr GurobiModelAPI::AddExpression(const PowExpression& e) {
+GRB_Expr GurobiModelAPI::AddExpression(const PowConstExpExpression& e) {
   return CreateFormula(e, GRB_OPCODE_POW);
 }
 GRB_Expr GurobiModelAPI::AddExpression(const SinExpression& e) {

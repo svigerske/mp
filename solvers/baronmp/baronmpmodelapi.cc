@@ -361,7 +361,7 @@ void BaronmpModelAPI::AddConstraint(const LogAConstraint& cc) {
   cons.push_back(w.str());
 }
 
-void BaronmpModelAPI::AddConstraint(const PowConstraint& cc) {
+void BaronmpModelAPI::AddConstraint(const PowConstExpConstraint& cc) {
   // v ^ a
    fmt::MemoryWriter w;
   w<< createConName(cc.GetName()) << ": ";
@@ -494,7 +494,7 @@ VExpr BaronmpModelAPI::AddExpression(const LogAExpression& e) {
   return expr;
 }
 
-VExpr BaronmpModelAPI::AddExpression(const PowExpression& e) {
+VExpr BaronmpModelAPI::AddExpression(const PowConstExpExpression& e) {
   auto expr=VExpr(Opcode::POW, GetArgExpression(e, 0));
   for (int i = 0; i < GetNumParameters(e); ++i)
     expr.AddArgument(VExpr::makeConstant(GetParameter(e, i)));

@@ -155,8 +155,8 @@ public:
     void AddConstraint(const LogConstraint& cc);
   ACCEPT_CONSTRAINT(LogAConstraint, Recommended, CG_General)
     void AddConstraint(const LogAConstraint& cc);
-  ACCEPT_CONSTRAINT(PowConstraint, Recommended, CG_General)
-    void AddConstraint(const PowConstraint& cc);
+  ACCEPT_CONSTRAINT(PowConstExpConstraint, Recommended, CG_General)
+    void AddConstraint(const PowConstExpConstraint& cc);
   ACCEPT_CONSTRAINT(SinConstraint, Recommended, CG_General)
     void AddConstraint(const SinConstraint& cc);
   ACCEPT_CONSTRAINT(CosConstraint, Recommended, CG_General)

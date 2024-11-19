@@ -608,7 +608,7 @@ void ScipModelAPI::AddConstraint(const LogConstraint &cc)  {
   SCIP_CCALL( SCIPreleaseExpr(getSCIP(), &xexpr) );
 }
 
-SCIP_EXPR* ScipModelAPI::AddExpression(const PowExpression &ee) {
+SCIP_EXPR* ScipModelAPI::AddExpression(const PowConstExpExpression &ee) {
   SCIP_EXPR* result_expr;
   SCIP_CCALL( SCIPcreateExprPow(getSCIP(), &result_expr,
                                GetArgExpression(ee, 0),
@@ -618,7 +618,7 @@ SCIP_EXPR* ScipModelAPI::AddExpression(const PowExpression &ee) {
   return result_expr;
 }
 
-void ScipModelAPI::AddConstraint(const PowConstraint &cc)  {
+void ScipModelAPI::AddConstraint(const PowConstExpConstraint &cc)  {
   SCIP_VAR* x = getPROBDATA()->vars[cc.GetArguments()[0]];
   SCIP_VAR* res = getPROBDATA()->vars[cc.GetResultVar()];
 

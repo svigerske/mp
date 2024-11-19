@@ -96,15 +96,15 @@ protected:
           LinearFunctionalConstraint{{  // = x+y
                                         { {1.0, 1.0}, {x, y} }, 0.0 }} );
     auto x_plus_y_pow2 = GetMC().AssignResultVar2Args(
-          PowConstraint{  // no context as of now
+          PowConstExpConstraint{  // no context as of now
                           VarArray1{x_plus_y}, {2.0} } );
     lt.add_term(0.5*c, x_plus_y_pow2);
     auto x_pow2 = GetMC().AssignResultVar2Args(
-          PowConstraint{  // no context as of now
+          PowConstExpConstraint{  // no context as of now
                           VarArray1{x}, {2.0} } );
     lt.add_term(-0.5*c, x_pow2);
     auto y_pow2 = GetMC().AssignResultVar2Args(
-          PowConstraint{  // no context as of now
+          PowConstExpConstraint{  // no context as of now
                           VarArray1{y}, {2.0} } );
     lt.add_term(-0.5*c, y_pow2);
     return lt;

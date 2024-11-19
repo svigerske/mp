@@ -152,8 +152,8 @@ public:
   void AddConstraint(const LogConstraint& cc);
   ACCEPT_CONSTRAINT(LogAConstraint, Recommended, CG_General)
   void AddConstraint(const LogAConstraint& cc);
-  ACCEPT_CONSTRAINT(PowConstraint, Recommended, CG_General)
-  void AddConstraint(const PowConstraint& cc);
+  ACCEPT_CONSTRAINT(PowConstExpConstraint, Recommended, CG_General)
+  void AddConstraint(const PowConstExpConstraint& cc);
   ACCEPT_CONSTRAINT(SinConstraint, Recommended, CG_General)
   void AddConstraint(const SinConstraint& cc);
   ACCEPT_CONSTRAINT(CosConstraint, Recommended, CG_General) // y = cos(x)
@@ -242,9 +242,9 @@ public:
   ACCEPT_EXPRESSION(LogAExpression, Recommended)
   Expr AddExpression(const LogAExpression& );
   /// @note Use accessor: GetParameter(pe, 0)
-  ///   - don't use PowExpression's methods.
-  ACCEPT_EXPRESSION(PowExpression, Recommended)
-  Expr AddExpression(const PowExpression& );
+  ///   - don't use PowConstExpExpression's methods.
+  ACCEPT_EXPRESSION(PowConstExpExpression, Recommended)
+  Expr AddExpression(const PowConstExpExpression& );
   ACCEPT_EXPRESSION(SinExpression, Recommended)
   Expr AddExpression(const SinExpression& );
   ACCEPT_EXPRESSION(CosExpression, Recommended)
@@ -252,7 +252,6 @@ public:
 
   ACCEPT_EXPRESSION(DivExpression, Recommended)
   Expr AddExpression(const DivExpression& );
-  // TODO PowVarVar; ...
 
 public:
   /// Formula

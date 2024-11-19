@@ -101,7 +101,7 @@ protected:
   }
 
   void RunQConesFromNonQC() {
-    if (MC().GetNumberOfAddable((PowConstraint*)0)>0 ||
+    if (MC().GetNumberOfAddable((PowConstExpConstraint*)0)>0 ||
         MC().GetNumberOfAddable((AbsConstraint*)0)>0) {
       Walk<LinConRange, Convert1QC>();
       Walk<LinConLE, Convert1QC>();
@@ -433,7 +433,7 @@ protected:
   ConeArgs CheckNorm2(int res_var) {
     if (MC().HasInitExpression(res_var)) {
       const auto& init_expr = MC().GetInitExpression(res_var);
-      if (MC().template IsConInfoType<PowConstraint>(init_expr))
+      if (MC().template IsConInfoType<PowConstExpConstraint>(init_expr))
         return CheckNorm2_Pow(init_expr, res_var);
       if (MC().template IsConInfoType<AbsConstraint>(init_expr))
         return CheckNorm2_Abs(init_expr, res_var);
@@ -446,7 +446,7 @@ protected:
   template <class ConInfo>
   ConeArgs CheckNorm2_Pow(const ConInfo& ci, int res_var) {
     const auto& con_pow = MC().template
-        GetConstraint<PowConstraint>(ci);
+        GetConstraint<PowConstExpConstraint>(ci);
     const auto arg_pow = con_pow.GetArguments()[0];
     if (0.5 == con_pow.GetParameters()[0] &&     // sqrt(arg_pow)
         MC().HasInitExpression(arg_pow)) {
@@ -500,7 +500,7 @@ protected:
   ConeArgs CheckSqrtXnXmNonneg(int res_var) {
     ConeArgs result;
     if (const auto& pConPow = MC().template
-        GetInitExpressionOfType<PowConstraint>(res_var)) {
+        GetInitExpressionOfType<PowConstExpConstraint>(res_var)) {
       if (0.5 == pConPow->GetParameters()[0]) {     // sqrt(arg_pow)
         const auto arg_pow = pConPow->GetArguments()[0];
         if (auto pConQfc = MC().template

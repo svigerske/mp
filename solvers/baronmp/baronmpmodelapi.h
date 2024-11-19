@@ -312,8 +312,8 @@ public:
     void AddConstraint(const LogConstraint& cc);
   ACCEPT_CONSTRAINT(LogAConstraint, Recommended, CG_General)
     void AddConstraint(const LogAConstraint& cc);
-  ACCEPT_CONSTRAINT(PowConstraint, Recommended, CG_General)
-    void AddConstraint(const PowConstraint& cc);
+  ACCEPT_CONSTRAINT(PowConstExpConstraint, Recommended, CG_General)
+    void AddConstraint(const PowConstExpConstraint& cc);
 
 
 
@@ -367,7 +367,7 @@ public:
   /// @note Use accessor: GetArgExpression(ee, 0)
   /// - don't AbsExpression's methods.
   /// @note Use accessor: GetParameter(pe, 0)
-  /////   - don't use PowExpression's methods.
+  /////   - don't use PowConstExpExpression's methods.
   /// Similar for other expression types.
 
 
@@ -382,8 +382,8 @@ public:
   ACCEPT_EXPRESSION(LogAExpression, Recommended)
     Expr AddExpression(const LogAExpression&);
 
-  ACCEPT_EXPRESSION(PowExpression, Recommended)
-  Expr AddExpression(const PowExpression&);
+  ACCEPT_EXPRESSION(PowConstExpExpression, Recommended)
+  Expr AddExpression(const PowConstExpExpression&);
 
 
   //ACCEPT_EXPRESSION(AbsExpression, Recommended)
