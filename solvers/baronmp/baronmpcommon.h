@@ -262,7 +262,8 @@ struct BaronmpCommonInfo {
     std::vector<std::string> conNames;
     std::map<std::string, int> varMap;
     std::vector<int> baronToAMPLIndices;
-     int nVarsInteger = 0, nVarsBinary = 0, nVarsContinuous = 0;
+    int nVarsInteger = 0, nVarsBinary = 0, nVarsContinuous = 0;
+    int obj_sense;
   };
   std::shared_ptr <Options> baronOptions_;
   Options& baronOptions() {

@@ -425,6 +425,22 @@ pre::ValueMapInt BaronmpBackend::ConsIIS() {
   return { {{ 0, std::vector<int>()}} };
 }
 
+double BaronmpBackend::MIPGap() {
+  // implementation taken from ASL driver for consistency
+  return MIPGapAbs() / (1e-10 + std::abs(ObjectiveValue()));
+}
+double BaronmpBackend::BestDualBound() {
+  if(lp()->obj_sense == mp::obj::MAX)
+    return timFileData_.printub;
+  else
+    return timFileData_.printlb;
+}
+
+double BaronmpBackend::MIPGapAbs() {
+  return std::fabs(
+    ObjectiveValue() - BestDualBound());
+}
+
 } // namespace mp
 
 

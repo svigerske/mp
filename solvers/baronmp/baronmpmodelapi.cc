@@ -142,12 +142,14 @@ namespace mp {
   }
 
 
-  void AddObjectiveHeader(fmt::MemoryWriter& w, int sense) {
+  void BaronmpModelAPI::AddObjectiveHeader(fmt::MemoryWriter& w, int sense) {
     w << "OBJ: ";
     if (sense == mp::obj::Type::MAX)
       w << "maximize ";
     else
       w << "minimize ";
+    lp()->obj_sense = sense;
+
   }
   void BaronmpModelAPI::SetLinearObjective(int iobj, const LinearObjective& lo) {
     if (iobj < 1) {
@@ -369,6 +371,7 @@ void BaronmpModelAPI::AddConstraint(const PowConstExpConstraint& cc) {
   cons.push_back(w.str());
 }
 
+
 template <int SENSE> void BaronmpModelAPI::addTopLevel(const NLBaseAssign<SENSE>& c) {
   const auto var = GetVariable(c);
   fmt::MemoryWriter w;
@@ -500,14 +503,8 @@ VExpr BaronmpModelAPI::AddExpression(const PowConstExpExpression& e) {
     expr.AddArgument(VExpr::makeConstant(GetParameter(e, i)));
   return expr;
 }
-/*
-VExpr BaronmpModelAPI::AddExpression(const AbsExpression& e) {
-  auto f1 = VExpr(Opcode::POW, GetArgExpression(e, 0)); // x^2
-  f1.AddArgument(VExpr::makeConstant(2));
-  auto expr = VExpr(Opcode::POW, f1); // (x^2)^0.5
-  expr.AddArgument(VExpr::makeConstant(0.5));
-  return expr;
-}*/
+
+
 
 void BaronmpModelAPI::FinishProblemModificationPhase() {
   // Write out vars

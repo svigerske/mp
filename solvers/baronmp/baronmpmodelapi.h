@@ -315,8 +315,6 @@ public:
   ACCEPT_CONSTRAINT(PowConstExpConstraint, Recommended, CG_General)
     void AddConstraint(const PowConstExpConstraint& cc);
 
-
-
   /// GetVarExpression(\a i): expression representing variable 0<=i<n_var.
   /// Only called for 'nonlinear' variables.
   Expr GetVarExpression(int i) { return  VExpr::makeVariable(i); }
@@ -385,10 +383,7 @@ public:
   ACCEPT_EXPRESSION(PowConstExpExpression, Recommended)
   Expr AddExpression(const PowConstExpExpression&);
 
-
-  //ACCEPT_EXPRESSION(AbsExpression, Recommended)
-    //Expr AddExpression(const AbsExpression&);
-
+  
 protected:
 
 
@@ -397,6 +392,9 @@ protected:
 
   template <class MPExpr>
   void AppendQuadTerms(Expr&, const MPExpr&);
+
+  private:
+    void AddObjectiveHeader(fmt::MemoryWriter& w, int sense);
 };
 
 } // namespace mp

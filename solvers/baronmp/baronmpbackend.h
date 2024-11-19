@@ -110,7 +110,17 @@ public:
    **/
   ALLOW_STD_FEATURE(MULTISOL, true)
 
-  /////////////////////////// Model attributes /////////////////////////
+  ALLOW_STD_FEATURE(RETURN_BEST_DUAL_BOUND, true)
+  double BestDualBound() override;
+  /**
+   * Get MIP Gap
+   **/
+  ALLOW_STD_FEATURE(RETURN_MIP_GAP, true)
+  double MIPGap() override;
+  double MIPGapAbs() override;
+
+
+    /////////////////////////// Model attributes /////////////////////////
 
   /// Reimplement if the solver gives more information
   /// than just the number of non-fixed integer variables
