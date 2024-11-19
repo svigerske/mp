@@ -1,6 +1,12 @@
 Summary of recent updates to gurobi for AMPL
 ============================================
 
+
+## 20241119
+- MP changes: added support for x^y expressions, where x and y
+  are variables
+
+
 ## 20241114
 - Updated to Gurobi 12.0 which provides performance improvements 
   across a variety of model families
