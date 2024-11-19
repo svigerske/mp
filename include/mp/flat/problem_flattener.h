@@ -867,7 +867,7 @@ public:          // need to be public due to CRTP
           PowConstraint(
               PowConstraint::Arguments{ {
                                        Convert2Var(std::move(el)),
-                                       Convert2Var(std::move(el)) } },
+                                       Convert2Var(std::move(er)) } },
               {} ) );
   }
 

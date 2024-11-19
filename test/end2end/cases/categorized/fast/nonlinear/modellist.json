@@ -309,10 +309,10 @@
   {
     "name" : "pow_07_varvar",
     "tags" : ["continuous", "nonlinear", "quadraticnonconvex"],
-    "objective": -0.6115765155,
+    "objective":  4.769378236,
     "values": {
-      "x": 2.38842,
-      "y": -3
+      "x": 2.49268,
+      "y": 2.2767
     }
   },
   {
