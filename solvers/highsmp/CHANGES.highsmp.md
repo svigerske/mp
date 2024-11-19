@@ -2,6 +2,10 @@ Summary of recent updates to HiGHS for AMPL
 ===========================================
 
 
+## 20241119
+- Updated to HiGHS 1.8.1
+
+
 ## 20240724
 - Option *acc:_all*
 	- Useful to disable all reformulations (acc:_all=2),
