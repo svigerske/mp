@@ -1,5 +1,5 @@
-#ifndef POWER_CONST_H
-#define POWER_CONST_H
+#ifndef POWER_MIP_H
+#define POWER_MIP_H
 
 #include <cmath>
 #include <cassert>
@@ -8,7 +8,8 @@
 
 namespace mp {
 
-/// Converts PowConstExpConstraint for MIP
+/// Converts PowConstExpConstraint for MIP;
+/// for PowConstraint see below.
 template <class ModelConverter>
 class PowConstExponentConverter_MIP
     : public FuncConConverter_MIP_CRTP<      // Derive from PL Approximator
@@ -138,4 +139,4 @@ protected:
 
 } // namespace mp
 
-#endif // POWER_CONST_H
+#endif // POWER_MIP_H

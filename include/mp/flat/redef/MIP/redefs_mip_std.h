@@ -27,7 +27,7 @@
 #include "mp/flat/redef/MIP/numberof_const.h"
 #include "mp/flat/redef/MIP/numberof_var.h"
 #include "mp/flat/redef/MIP/piecewise_linear.h"
-#include "mp/flat/redef/MIP/power_const.h"
+#include "mp/flat/redef/MIP/power.h"
 #include "mp/flat/redef/MIP/sos2.h"
 
 

@@ -398,7 +398,7 @@ add_prefix(MP_FLAT_REDEF_MIP_HEADERS include/mp/flat/redef/MIP/
   logical_and.h logical_or.h logical_not.h
   min_max.h mul.h numberof_const.h numberof_var.h
   piecewise_linear.h
-  power_const.h sos2.h)
+  power.h sos2.h)
 
 add_prefix(MP_FLAT_NL_EXPR_HEADERS include/mp/flat/nl_expr/
   model_api_base.h constr_nl.h)

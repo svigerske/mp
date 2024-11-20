@@ -856,7 +856,7 @@ public:          // need to be public due to CRTP
         return QuadratizeOrLinearize(el, el);
       }
       return AssignResult2Args(
-            PowConstExpConstraint(
+          PowConstExpConstraint(
               PowConstExpConstraint::Arguments{ Convert2Var(std::move(el)) },
               PowConstExpConstraint::Parameters{ er.constant_term() } ) );
     }
@@ -866,8 +866,8 @@ public:          // need to be public due to CRTP
       return AssignResult2Args(
           PowConstraint(
               PowConstraint::Arguments{ {
-                                       Convert2Var(std::move(el)),
-                                       Convert2Var(std::move(er)) } },
+                                        Convert2Var(std::move(el)),
+                                        Convert2Var(std::move(er)) } },
               {} ) );
   }
 
