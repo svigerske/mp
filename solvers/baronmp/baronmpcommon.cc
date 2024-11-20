@@ -211,6 +211,7 @@ void BaronmpCommon::deinitBaronFile() {
     FILE_DIC->close();
     FILE_DIC = 0;
   }
+  changeDirectory(initialDir);
 }
 
 
@@ -327,17 +328,10 @@ void BaronmpCommon::initDirectories(const std::string& stub,
     }
   }
 
-
-  std::filesystem::current_path(baronDir);
+  changeDirectory(baronDir);
 }
-
-/**
-* Recursively remove the directory and its contents
-*/
 int BaronmpCommon::recrmdir(const std::string& dname) {
-  
   if (fs::is_directory(dname)) {
-    
     std::error_code ec;
     fs::remove_all(dname, ec);
     if (ec) {
