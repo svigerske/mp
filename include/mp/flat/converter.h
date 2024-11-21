@@ -273,14 +273,14 @@ protected:
       // MP_DISPATCH( PreprocessIntermediate() );     // preprocess after each level
       constr_depth_ = 1;  // Workaround. TODO have maps as special constraints
 			MP_DISPATCH( ConvertMaps() );
-      MP_DISPATCH( PreprocessFlatFinal() );               // final flat model prepro
+      MP_DISPATCH( PreprocessFlatFinal() );           // final flat model prepro
+      MP_DISPATCH( ConsiderEmulatingMultiobj() );     // Before NL conversion
       if constexpr (IfAcceptingNLOutput()) {
         if (IfWantNLOutput()) {
-          MPD( Convert2NL() );
+          MPD( Convert2NL() );                        // Possibly for emulated objectives
           MPD( PreprocessNLFinal() );
         }
       }
-      MP_DISPATCH( ConsiderEmulatingMultiobj() );     // After NL conversion
     } catch (const ConstraintConversionFailure& cff) {
       MP_RAISE(cff.message());
     }

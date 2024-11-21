@@ -38,6 +38,13 @@ protected:
 
 
 public:
+  /// Retrieve emulated objectives, const
+  const std::vector<QuadraticObjective>&
+  get_emulated_objectives() const { return obj_new_; }
+  /// Retrieve emulated objectives
+  std::vector<QuadraticObjective>&
+  get_emulated_objectives() { return obj_new_; }
+
   /// Is MOManager active?
   /// This is relevant after initialization via
   /// ConsiderEmulatingMultiobj().
@@ -138,17 +145,20 @@ protected:
     obj_new_tolr_.reserve(pr_map.size());
     for (const auto& pr_level: pr_map) {
       const auto& i0_vec = pr_level.second;
-      obj_new_.push_back(obj_orig.at(i0_vec.front()));
-      obj_new_.back().set_sense(obj_orig.front().obj_sense());      // "Legacy" obj:multi:weight
+      const auto& obj_orig_1st = obj_orig.at(i0_vec.front());
+      const auto objwgt_1st = objwgt.at(i0_vec.front());
+      obj_new_.push_back(obj_orig_1st);
+      obj_new_.back().set_sense(obj_orig.front().obj_sense());  // "Legacy" obj:multi:weight
       obj_new_.back().set_sense_true(obj_orig.front().obj_sense_true());
-      obj_new_.back().GetLinTerms() *= objwgt.at(i0_vec.front());   // Use weight
-      obj_new_.back().GetQPTerms() *= objwgt.at(i0_vec.front());
+      obj_new_.back().GetLinTerms() *= objwgt_1st;   // Use weight
+      obj_new_.back().GetQPTerms() *= objwgt_1st;
       obj_new_tola_.push_back(objtola.at(i0_vec.front()));
       obj_new_tolr_.push_back(objtolr.at(i0_vec.front()));
+      assert (!obj_orig_1st.HasExpr());              // should be before NL conversion
       for (auto i0i=i0_vec.size(); --i0i; ) {
         // Add next objective with weight and sense factor
         double sensef
-            = (obj_orig.at(i0_vec.front()).obj_sense() == obj_orig.at(i0_vec[i0i]).obj_sense())
+            = (obj_orig_1st.obj_sense() == obj_orig.at(i0_vec[i0i]).obj_sense())
                   ? 1.0 : -1.0;
         auto lt1 = obj_orig.at(i0_vec[i0i]).GetLinTerms();
         lt1 *= sensef * objwgt.at(i0_vec[i0i]);
@@ -156,6 +166,7 @@ protected:
         qt1 *= sensef * objwgt.at(i0_vec[i0i]);
         obj_new_.back().GetLinTerms().add(lt1);
         obj_new_.back().GetQPTerms().add(qt1);
+        assert (!obj_orig.at(i0_vec[i0i]).HasExpr());
         // Max the tolerances
         obj_new_tola_.back() = std::max(obj_new_tola_.back(), objtola.at(i0_vec[i0i]));
         obj_new_tolr_.back() = std::max(obj_new_tolr_.back(), objtolr.at(i0_vec[i0i]));
@@ -289,6 +300,7 @@ protected:
           objw[i] = -objw[i];
     }
   }
+
 
 private:
   MOManagerStatus status_ {MOManagerStatus::NOT_SET};

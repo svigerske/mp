@@ -284,7 +284,10 @@ public:
 
   /// Convert objectives
   void ConvertObjectivesWithExpressions() {
-    auto& objs = MPD( get_objectives() );
+    auto& objs_emulated = MPD( get_emulated_objectives() );
+    auto& objs_original = MPD( get_objectives() );
+    auto& objs
+        = objs_emulated.size() ? objs_emulated : objs_original;
     for (size_t iobj=0; iobj<objs.size(); ++iobj) {
       HandleLogicalArgs(objs[iobj].GetLinTerms(), iobj);
       HandleLogicalArgs(objs[iobj].GetQPTerms(), iobj);
