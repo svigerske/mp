@@ -2,6 +2,11 @@ Summary of recent updates to CBCMP for AMPL
 ===========================================
 
 
+## 20241124
+- Greatly improved model generation time by pushing all the model
+  at once to CBC
+
+
 ## 20240724
 - Option *acc:_all*
 	- Useful to disable all reformulations (acc:_all=2),
