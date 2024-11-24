@@ -473,16 +473,16 @@ Quadratic and power operators
 - *expr1* / *expr2*
     *expr-valued:* Division of *expr1* by *expr2*.
 - *expr1* ^ *expr2*
-    *expr-valued:* *expr1* raised to the *expr2* power, for the special cases where
-    either *expr1* or *expr2* is a constant. For *expr2* positive integer, the operator
+    *expr-valued:* *expr1* raised to the *expr2* power.
+    For *expr2* constant positive integer, the operator
     is passed to the solver natively if supported, otherwise
     decomposed into quadratic constraints if the solver supports them,
-    otherwise approximated by a piecewise-linear function. See :ref:`nonlinear-functions`
-    for details.
+    otherwise approximated by a piecewise-linear function.
+    See :ref:`nonlinear-functions` for details.
 
 For quadratic expressions of the form *linear \* linear* and *linear^2*, the operands
 are multiplied out so that coefficients of individual quadratic terms can be extracted.
-For example, $(x-2)(y+3)$ is multiplied out as $xy-2y+3x-6$.
+For example, :math:`(x-2)(y+3)` is multiplied out as :math:`xy-2y+3x-6`.
 If the solver natively handles quadratic terms, then the quadratic coefficients are
 passed to the solver, which decides whether and how to handle them. Otherwise, quadratic
 terms are linearized where possible, such as where one of the operands is a binary variable,
@@ -608,12 +608,21 @@ Supported functions
     *expr-valued:* The hyperbolic sine, cosine, tangent of *expr* and the corresponding
     inverse functions.
 - *expr1* ^ *expr2*
-    *expr-valued:* *expr1* raised to the *expr2* power, for the special cases where
-    either *expr1* or *expr2* is a constant. For *expr2* positive integer, the operator
+    *expr-valued:* *expr1* raised to the *expr2* power.
+    For *expr1* and *expr2* both variable, the operator is passed
+    to the solver natively if supported, otherwise
+    reformulated as ``exp(expr2 * log(expr1))``.
+    For *expr1* constant positive, the operator is passed to the solver
+    natively if supported, otherwise :ref:`nonlinear-pl-approx` is applied.
+    For *expr2* constant positive integer, the operator
     is passed to the solver natively if supported, otherwise
     decomposed into quadratic constraints if the solver supports them,
-    otherwise approximated by a piecewise-linear function. To avoid using native handling
-    of the ^ operator, set option `acc:pow=0`.
+    otherwise approximated by a piecewise-linear function.
+    To avoid using native handling
+    of the ^ operator, set options `acc:pow=0`, `acc:expa=0`, or `acc:powconstexp=0`,
+    respectively.
+
+.. _nonlinear-pl-approx:
 
 Piecewise-linear approximation
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^

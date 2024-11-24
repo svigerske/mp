@@ -289,7 +289,7 @@ void BaronmpCommon::initDirectories(const std::string& stub,
           deleteFilesIfExists(scratch_path, s);
         for (int i = 1; ; i++)
         {
-          if (!deleteFilesIfExists(scratch_path, fmt::format("{}_{}.bar", FILENAME_BAR, i)));
+          if (!deleteFilesIfExists(scratch_path, fmt::format("{}_{}.bar", FILENAME_BAR, i)))
               break;
         }
         baronDir = scratch_path.string();
@@ -438,40 +438,39 @@ void BaronmpCommon::writeBaronOptions() {
   writeBaron(baronOptions().serialize());
   writeBaron("}\n");
 }
-  // Write the globals data to a file
-  bool BaronGlobals::serialize(const std::string& filename)   {
-    try {
-      std::ofstream output(filename);
-      if (!output) {
-        throw std::ios_base::failure("Failed to open file for writing.");
-      }
 
-      output << fmt::format("{}\n{}\n{}\n{}\n{}\n{}\n{}\n{}\n{}\n",
-        baronDir, initialDir,
-        lsolmsg, lsolver,  nlfile,
-        nvars, v_keepsol, verbuf,
-        lpsol_dll);
-      output.close();
-      return true;
+// Write the globals data to a file
+bool BaronGlobals::serialize(const std::string& filename)   {
+  try {
+    std::ofstream output(filename);
+    if (!output) {
+      throw std::ios_base::failure("Failed to open file for writing.");
     }
-    catch (const std::ios_base::failure& e) {
-      fmt::print(stderr, "File write error: {}\n", e.what());
-    
-    }
-    
-    
+
+    output << fmt::format("{}\n{}\n{}\n{}\n{}\n{}\n{}\n{}\n{}\n",
+                          baronDir, initialDir,
+                          lsolmsg, lsolver,  nlfile,
+                          nvars, v_keepsol, verbuf,
+                          lpsol_dll);
+    output.close();
+    return true;
   }
+  catch (const std::ios_base::failure& e) {
+    fmt::print(stderr, "File write error: {}\n", e.what());
+  }
+  return false;
+}
 
-  // Read the globals data from a file
-  std::optional <BaronGlobals> BaronGlobals::deserialize(const std::string& filename)  {
-    BaronGlobals globals;
-    try {
-      std::ifstream input(filename);
-      if (!input) {
-        throw std::ios_base::failure("Failed to open file for reading.");
-      }
+// Read the globals data from a file
+std::optional <BaronGlobals> BaronGlobals::deserialize(const std::string& filename)  {
+  BaronGlobals globals;
+  try {
+    std::ifstream input(filename);
+    if (!input) {
+      throw std::ios_base::failure("Failed to open file for reading.");
+    }
 
-      input >> globals.baronDir
+    input >> globals.baronDir
         >> globals.initialDir
         >> globals.lsolmsg
         >> globals.lsolver
@@ -481,64 +480,64 @@ void BaronmpCommon::writeBaronOptions() {
         >> globals.verbuf
         >> globals.lpsol_dll;
 
-      if (input.fail()) {
-        throw std::ios_base::failure("Error reading data from file.");
-      }
-      return globals;
+    if (input.fail()) {
+      throw std::ios_base::failure("Error reading data from file.");
     }
-    catch (const std::ios_base::failure& e) {
-      fmt::print(stderr, "File read error: {}\n", e.what());
-      return std::nullopt;
-    }
+    return globals;
   }
+  catch (const std::ios_base::failure& e) {
+    fmt::print(stderr, "File read error: {}\n", e.what());
+    return std::nullopt;
+  }
+}
 
-  std::string Utils::getLibPath()
-  {
-    const std::string libName = "baron-lib";
-    std::string libExtension;
+std::string Utils::getLibPath()
+{
+  const std::string libName = "baron-lib";
+  std::string libExtension;
 
 #ifdef _WINDOWS
-    libExtension = "dll";
+  libExtension = "dll";
 #elif __APPLE__
-    libExtension = "dylib";
+  libExtension = "dylib";
 #else
-    libExtension = "so";
+  libExtension = "so";
 #endif
 
-    return fmt::format("{}/{}.{}", getMyPath(true), libName, libExtension);
-  }
+  return fmt::format("{}/{}.{}", getMyPath(true), libName, libExtension);
+}
 
 std::string Utils::getExecutablePath() {
-    #ifdef _WIN32
-    // Windows
-    char buffer[MAX_PATH];
-    GetModuleFileName(nullptr, buffer, MAX_PATH);
+#ifdef _WIN32
+  // Windows
+  char buffer[MAX_PATH];
+  GetModuleFileName(nullptr, buffer, MAX_PATH);
+  return std::string(buffer);
+
+#elif __APPLE__
+
+  char buffer[PATH_MAX];
+  uint32_t size = sizeof(buffer);
+  if (_NSGetExecutablePath(buffer, &size) == 0) {
     return std::string(buffer);
+  }
+  return "";
 
-    #elif __APPLE__
+#elif __linux__
+// Linux
+#include <unistd.h>
+#include <limits.h>
+  char buffer[PATH_MAX];
+  ssize_t len = readlink("/proc/self/exe", buffer, sizeof(buffer) - 1);
+  if (len != -1) {
+    buffer[len] = '\0';
+    return std::string(buffer);
+  }
+  return "";
 
-    char buffer[PATH_MAX];
-    uint32_t size = sizeof(buffer);
-    if (_NSGetExecutablePath(buffer, &size) == 0) {
-      return std::string(buffer);
-    }
-    return "";
-
-    #elif __linux__
-    // Linux
-    #include <unistd.h>
-    #include <limits.h>
-    char buffer[PATH_MAX];
-    ssize_t len = readlink("/proc/self/exe", buffer, sizeof(buffer) - 1);
-    if (len != -1) {
-      buffer[len] = '\0';
-      return std::string(buffer);
-    }
-    return "";
-
-    #else
-    #error "Unsupported platform"
-    #endif
+#else
+#error "Unsupported platform"
+#endif
 }
 std::string Utils::getMyPath(bool getDir, const std::string& appendPath) {
   // Get the full executable path

@@ -289,7 +289,8 @@ private:
   /// or for the implicit InitExpression().
   Expr GetInitExpression(int i_expr) {
     /// FlatConverter should have marked all expressions;
-    assert(i_expr < (int)is_expr_stored_.size());
+    MP_ASSERT_ALWAYS(i_expr < (int)is_expr_stored_.size(),
+                     "unexpected expression index");
     // if (i_expr >= (int)is_expr_stored_.size()) {
   //     is_expr_stored_.resize(int(i_expr*1.3)+1);
   //     expr_stored_.resize(int(i_expr*1.3)+1);
