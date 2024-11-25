@@ -175,6 +175,9 @@ protected:
 	/// Dual solution for the LP part only.
 	/// @return empty vector if none.
   ArrayRef<double> DualSolution_LP();
+  /// Dual solution for the QP part only.
+  /// @return empty vector if none.
+  ArrayRef<double> DualSolution_QP();
 
   void WindupVISITORSolve();
 
@@ -218,6 +221,8 @@ private:
 
 	  std::string paramread_, paramwrite_;
     std::list<std::string> inlineparams_;
+
+    int verbosity_= 1;
   };
   Options storedOptions_;
   void printModelStats();

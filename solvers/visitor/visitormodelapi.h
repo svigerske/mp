@@ -7,6 +7,7 @@
 
 namespace mp {
 
+
 /// VisitorModelAPI.
 /// @note For expression tree solvers,
 ///   see existing drivers, such as scipmp and mp2nl.
@@ -15,7 +16,7 @@ class VisitorModelAPI :
     public BasicFlatModelAPI
 {
   using BaseModelAPI = BasicFlatModelAPI;
-
+  std::function<std::string_view(int)> GetVarName;
 public:
   /// Construct
   VisitorModelAPI(Env& e) : EnvKeeper(e) { }
@@ -116,11 +117,11 @@ public:
   /// auxiliary constraints for logical conditions.
   /// If not handled, the compared expressions need
   /// deducible finite bounds for a big-M redefinition.
-  ACCEPT_CONSTRAINT(IndicatorConstraintLinLE, AcceptedButNotRecommended, CG_General)
+  ACCEPT_CONSTRAINT(IndicatorConstraintLinLE, Recommended, CG_General)
   void AddConstraint(const IndicatorConstraintLinLE& mc);
-  ACCEPT_CONSTRAINT(IndicatorConstraintLinEQ, AcceptedButNotRecommended, CG_General)
+  ACCEPT_CONSTRAINT(IndicatorConstraintLinEQ, Recommended, CG_General)
   void AddConstraint(const IndicatorConstraintLinEQ& mc);
-  ACCEPT_CONSTRAINT(IndicatorConstraintLinGE, AcceptedButNotRecommended, CG_General)
+  ACCEPT_CONSTRAINT(IndicatorConstraintLinGE, Recommended, CG_General)
   void AddConstraint(const IndicatorConstraintLinGE& mc);
 
   /// SOS constraints can be used by AMPL for redefinition of
@@ -157,6 +158,8 @@ public:
     void AddConstraint(const LogAConstraint& cc);
   ACCEPT_CONSTRAINT(PowConstExpConstraint, Recommended, CG_General)
     void AddConstraint(const PowConstExpConstraint& cc);
+  ACCEPT_CONSTRAINT(PowConstraint, Recommended, CG_General)
+  void AddConstraint(const PowConstraint& cc);
   ACCEPT_CONSTRAINT(SinConstraint, Recommended, CG_General)
     void AddConstraint(const SinConstraint& cc);
   ACCEPT_CONSTRAINT(CosConstraint, Recommended, CG_General)

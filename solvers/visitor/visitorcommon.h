@@ -2,115 +2,14 @@
 #define VISITORCOMMON_H
 
 #include <string>
-#include <vector>
 
 #include "mp/backend-to-model-api.h"
 
-extern "C" {
+//extern "C" {
 // TODO Typically import here the solver's C API headers
-//  #include "visitor.h"
-}
-
-/// Instead, faking a typical solver namespace and defs:
-namespace Solver {
-
-  enum ATTRIBS {
-    NVARS_INT,
-    NVARS_CONT,
-
-    NCONS,
-    NCONS_TYPE,
-
-    NOBJS,
-    ISQOBJ
-
-  };
-  enum TYPE {
-    CONS_LIN,
-    CONS_QUAD,
-    CONS_QUAD_CONE,
-    CONS_QUAD_CONE_ROTATED,
-    CONS_INDIC,
-    CONS_SOS,
-
-    CONS_MAX,
-    CONS_MIN,
-    CONS_ABS,
-    CONS_AND,
-    CONS_OR,
-
-    CONS_EXP,
-    CONS_EXPA,
-    CONS_LOG,
-    CONS_LOGA,
-
-    CONS_POW,
-    CONS_SIN,
-    CONS_COS,
-    CONS_TAN,
-
-    CONS_PL
-  };
-  
-  const int NTYPES=20;
-  class SolverModel {
-    
-    int nEntities_[NTYPES];
-
-    std::vector<bool> vars_;
-    int nobj_ = 0;
-    bool quadObj_ = false;
-  public:
-
-    int getAttribute(ATTRIBS a, TYPE t) {
-      if (a == NCONS)
-      {
-        int n = 0;
-        for (int i = 0; i < NTYPES; i++)
-          n += nEntities_[i];
-        return n;
-      }
-      if (a==NCONS_TYPE)
-        return nEntities_[t];
-      if (a == NVARS_CONT)
-        return getNumVars(false);
-      if (a == NVARS_INT)
-        return getNumVars(true);
-      if (a == NOBJS)
-        return nobj_;
-      if (a == ISQOBJ)
-        return quadObj_;
-      return -1;
-    }
-    void allocateVars(int nvars) {
-      vars_.resize(nvars);
-    }
-    void setVariable(int index, bool integer) {
-      vars_[index]=integer;
-    }
-    std::size_t getNumVars(bool integer) {
-      std::size_t count = 0;
-      for (auto v : vars_)
-        if (v == integer) count++;
-      return count;
-    }
-    void addEntity(TYPE type) {
-      nEntities_[type]++;
-    }
-
-    void addObjective() {
-      nobj_++;
-    }
-    void addQuadTerms() {
-      quadObj_ = true;
-    }
-  };
-
-  SolverModel* CreateSolverModel(); 
-}
-
-
-/// The below would go into actual ...common.h:
+// Here we use a cplus plus stub instead
+   #include "visitor-solvermodel.h"
+//}
 
 #include "mp/format.h"
 
@@ -119,6 +18,7 @@ namespace mp {
 /// Information shared by both
 /// `VisitorBackend` and `VisitorModelAPI`
 struct VisitorCommonInfo {
+
   // TODO provide accessors to the solver's in-memory model/environment
   //visitor_env* env() const { return env_; }
   Solver::SolverModel* lp() const { return lp_; }
@@ -153,15 +53,14 @@ public:
   static constexpr double MinusInfinity() { return -INFINITY; }
 
 protected:
-  int getIntAttr(Solver::ATTRIBS name, Solver::TYPE subtype=Solver::CONS_ABS) const;
+  int getIntAttr(Solver::ATTRIBS name, Solver::ConsType subtype=Solver::ConsType::CONS_LIN) const;
   double getDblAttr(const char* name) const;
 
   int NumLinCons() const;
   int NumVars() const;
   int NumObjs() const;
   int NumQPCons() const;
-  int NumSOSCons() const;
-  int NumIndicatorCons() const;
+
 
 protected:
   // TODO if desirable, provide function to create the solver's environment

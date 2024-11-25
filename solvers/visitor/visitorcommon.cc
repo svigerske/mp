@@ -8,9 +8,9 @@ namespace Solver {
 }
 namespace mp {
 
-int VisitorCommon::getIntAttr(Solver::ATTRIBS name, Solver::TYPE subtype)  const {
+int VisitorCommon::getIntAttr(Solver::ATTRIBS name, Solver::ConsType subtype)  const {
   int value = 0;
-  return lp()->getAttribute(name, subtype);
+  return lp()->GetAttribute(name, subtype);
   /* TODO Utility function to get the value of an integer attribute 
   * from the solver API 
   VISITOR_CCALL(VISITOR_GetIntAttr(lp_, name, &value)); */
@@ -25,7 +25,7 @@ double VisitorCommon::getDblAttr(const char* name) const  {
 }
 
 int VisitorCommon::NumLinCons() const {
-  return getIntAttr(Solver::NCONS_TYPE, Solver::CONS_LIN);
+  return getIntAttr(Solver::NCONS_TYPE, Solver::ConsType::CONS_LIN);
   // TODO Get number of linear constraints using solver API
   // return getIntAttr(VISITOR_INTATTR_ROWS);
 }
@@ -45,19 +45,7 @@ int VisitorCommon::NumObjs() const {
 int VisitorCommon::NumQPCons() const {
   // TODO Get number of quadratic constraints using solver API
   // return getIntAttr(VISITOR_INTATTR_QCONSTRS);
-  return getIntAttr(Solver::NCONS_TYPE, Solver::CONS_QUAD);
-}
-
-int VisitorCommon::NumSOSCons() const {
-  // TODO Get number of SOS constraints using solver API
-  // return getIntAttr(VISITOR_INTATTR_SOSS);
-  return getIntAttr(Solver::NCONS_TYPE, Solver::CONS_SOS);
-}
-
-int VisitorCommon::NumIndicatorCons() const {
-  // TODO Get number of indicator constraints using solver API
-  // return getIntAttr(VISITOR_INTATTR_INDICATORS);
-  return getIntAttr(Solver::NCONS_TYPE, Solver::CONS_INDIC);
+  return getIntAttr(Solver::NCONS_TYPE, Solver::ConsType::CONS_QUAD);
 }
 
 void VisitorCommon::GetSolverOption(const char* key, int &value) const {
