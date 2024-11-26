@@ -279,9 +279,10 @@ public:
     return result;
   }
 
-  /// Override PostsolveSolution().
-  /// Check solution if checker provided.
-  /// mv's ExtraData() is passed to the checker.
+  /// Override PostsolveSolution(). As follows:
+  /// 1. Call preposts_() if provided.
+  /// 2. Check solution if checker provided.
+  /// 3. mv's ExtraData() is passed to the checker.
   MVOverEl<double> PostsolveSolution (
       const MVOverEl<double>& mv) override {
     auto mv_copy = mv;

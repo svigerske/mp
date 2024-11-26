@@ -114,10 +114,10 @@ void WriteModelItem(fmt::MemoryWriter& wrt, const QuadraticObjective& obj,
 template <class VarVec>
 double ComputeValue(
     const QuadraticObjective& obj, const VarVec& x) {
-  return
-      obj.GetLinTerms().ComputeValue(x)
-         + (obj.HasExpr() ? x[obj.ExprIndex()] : 0.0)
-      + obj.GetQPTerms().ComputeValue(x);
+  double linp = obj.GetLinTerms().ComputeValue(x);
+  double qp = obj.GetQPTerms().ComputeValue(x);
+  double nlp = (obj.HasExpr() ? x[obj.ExprIndex()] : 0.0);
+  return linp + qp + nlp;
 }
 
 } // namespace mp

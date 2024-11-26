@@ -79,10 +79,15 @@ using VarsRecomputeFn
 class VarVecRecomp {
 public:
   /// Construct
+  /// @param is_final: if provided, which values are final
   VarVecRecomp(std::vector<double> x,
-               VarsRecomputeFn rec_fn)
-      : x_(std::move(x)), is_recomp_(x_.size()),
-      recomp_fn_(rec_fn) { assert(recomp_fn_); }
+               VarsRecomputeFn rec_fn,
+               std::vector<bool> is_final = {})
+      : x_(std::move(x)), is_recomp_(std::move(is_final)),
+      recomp_fn_(rec_fn) {
+    assert(recomp_fn_);
+    is_recomp_.resize(x_.size());   // x_ now
+  }
   /// Set p_var_info_recomp_
   void set_p_var_info(const VarInfoRecomp* p) const
   { p_var_info_recomp_ = p; }
@@ -103,7 +108,7 @@ public:
   std::vector<double>::iterator begin() { return x_.begin(); }
   /// Expose end()
   std::vector<double>::iterator end() { return x_.end(); }
-  /// Move out x
+  /// x can be moved out
   std::vector<double>& get_x() const { return x_; }
 
 private:
@@ -119,6 +124,7 @@ using VarVecStatic = std::vector<double>;
 
 
 /// Variable information used by solution check
+/// @param VarVec should provide recomputation info
 template <class VarVec>
 class VarInfoImpl {
 public:
@@ -194,12 +200,13 @@ public:
   /// sol_rnd as string
   std::string solution_round() const
   { return sol_rnd_ < 100 ? std::to_string(sol_rnd_) : ""; }
-  /// sol_rnd as string
+  /// sol_prec as string
   std::string solution_precision() const
   { return sol_prec_ < 100 ? std::to_string(sol_prec_) : ""; }
 
 
 protected:
+  /// AMPL options solution_round, solution_prec
   void apply_precision_options(
       int sol_rnd, int sol_prec) {
     try {                 // Apply sol_rnd
