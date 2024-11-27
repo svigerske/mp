@@ -31,6 +31,18 @@
     }
   },
   {
+    "name" : "ellipse_min_rot qcpdual=1",
+    "objective" : -4.09096180,
+    "tags" : ["quadratic", "qcpdual"],
+    "options": {
+      "ANYSOLVER_options": "qcpdual=1",
+      "mp2nl_options": "solver_options='qcpdual=1'"
+    },
+    "values": {
+      "_con[1]": -2.04401
+    }
+  },
+  {
     "name" : "ellipse_max qcpdual=1",
     "objective" : 1.4928017587112605,
     "tags" : ["quadratic", "qcpdual"],

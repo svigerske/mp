@@ -1335,6 +1335,16 @@ public:
     LinPartRefOrStorage(ArrayRef<double> c, ArrayRef<int> v)
         : coefs_(std::move(c)), vars_(std::move(v))
     { assert(Check()); }
+    /// Copy construct: delete, too risky with ArrayRef
+    LinPartRefOrStorage(const LinPartRefOrStorage& lp) noexcept = delete;
+    /// operator=(const &): delete, too risky
+    LinPartRefOrStorage& operator=(const LinPartRefOrStorage& lp) noexcept
+        = delete;
+    /// Move construct
+    LinPartRefOrStorage(LinPartRefOrStorage&& ) noexcept = default;
+    /// operator=(&&)
+    LinPartRefOrStorage& operator=(LinPartRefOrStorage&& ) noexcept
+        = default;
     /// Check
     bool Check() const { return coefs_.size()==vars_.size(); }
     /// Size
@@ -1359,35 +1369,28 @@ protected:
              bool fLogical,
              bool f_m = 0, LinPartRefOrStorage lpe = {}
              //, StaticItemTypeID iid, ExpressionTypeID eid
-             )
+             ) noexcept
         : disp_(disp), p_item_(pitem), f_logical_(fLogical),
-        f_marked_(f_m), lin_part_ext_(lpe)
+        f_marked_(f_m), lin_part_ext_(std::move(lpe))
         // no storing, itemID_(iid), exprID_(eid)
     { }
-    /// Copy construct
-    ItemInfo(const ItemInfo& ii)
-        : ItemInfo(ii.disp_, ii.p_item_, ii.f_logical_,
-                   ii.f_marked_, ii.lin_part_ext_) { }
-    /// operator=
-    ItemInfo& operator=(const ItemInfo& ii) {
-      assert(&disp_==&ii.disp_);
-      p_item_ = ii.p_item_;
-      assert(f_logical_==ii.f_logical_);
-      f_marked_ = ii.f_marked_;
-      lin_part_ext_ = ii.lin_part_ext_;
-      return *this;
-    }
+    /// Copy construct: delete, too risky with \a lin_part_ext_
+    ItemInfo(const ItemInfo& ii) = delete;
+    /// operator=(const &): delete
+    ItemInfo& operator=(const ItemInfo& ii) = delete;
     /// Move construct
-    ItemInfo(ItemInfo&& ii)
+    ItemInfo(ItemInfo&& ii) noexcept
         : ItemInfo(ii.disp_, ii.p_item_, ii.f_logical_,
                    ii.f_marked_, std::move(ii.lin_part_ext_)) { }
     /// operator=(&&)
-    ItemInfo& operator=(ItemInfo&& ii) {
+    ItemInfo& operator=(ItemInfo&& ii) noexcept {
       assert(&disp_==&ii.disp_);
       p_item_ = ii.p_item_;
       assert(f_logical_==ii.f_logical_);
       f_marked_ = ii.f_marked_;
+      auto sz = ii.lin_part_ext_.size();
       lin_part_ext_ = std::move(ii.lin_part_ext_);
+      assert(lin_part_ext_.size() == sz);
       return *this;
     }
     /// Get dispatcher
