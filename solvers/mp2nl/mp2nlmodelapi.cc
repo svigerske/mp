@@ -48,7 +48,8 @@ void MP2NLModelAPI::SetLinearObjective( int iobj, const LinearObjective& lo ) {
   auto ii = MakeItemInfo(lo, StaticItemTypeID::ID_LinearObjective, false);
   if (iobj == (int)obj_info_.size())
     obj_info_.push_back(std::move(ii));
-  else obj_info_[iobj] = std::move(ii);
+  else
+    obj_info_[iobj] = std::move(ii);
 }
 
 void MP2NLModelAPI::SetQuadraticObjective(int iobj, const QuadraticObjective& qo) {

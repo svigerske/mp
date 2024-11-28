@@ -1086,7 +1086,9 @@ protected:
   enum class StaticItemTypeID {
     ID_None,
     ID_LinearObjective,
+    ID_ObjFirst = ID_LinearObjective,
     ID_NLObjective,
+    ID_ObjLast = ID_NLObjective,
 
     ID_LinConRange,
     ID_LinConLE,
@@ -1384,7 +1386,8 @@ protected:
                    ii.f_marked_, std::move(ii.lin_part_ext_)) { }
     /// operator=(&&)
     ItemInfo& operator=(ItemInfo&& ii) noexcept {
-      assert(&disp_==&ii.disp_);
+      assert (&disp_==&ii.disp_            // same type, just moving;
+             || (IsObjective() && ii.IsObjective())); // or, replace obj
       p_item_ = ii.p_item_;
       assert(f_logical_==ii.f_logical_);
       f_marked_ = ii.f_marked_;
@@ -1410,6 +1413,14 @@ protected:
     /// Get static item type ID, if any
     StaticItemTypeID GetStaticTypeID() const
     { return GetDispatcher().GetStaticItemTypeID(); }
+    /// Is an objective?
+    bool IsObjective() const {
+      return IsItemTypeStatic()
+      && (StaticItemTypeID::ID_LinearObjective
+             ==GetStaticTypeID()
+         || StaticItemTypeID::ID_NLObjective
+                ==GetStaticTypeID());
+    }
     /// Get expression type ID, if any
     ExpressionTypeID GetExprTypeID() const
     { return GetDispatcher().GetExpressionTypeID(); }
