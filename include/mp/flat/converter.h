@@ -1504,8 +1504,11 @@ private:
         return !this->options_.solcheckmode_   // not desired
                || MPD( CheckSolution(x, y, obj, p_extra) );
       },
-      [this](pre::ModelValuesDbl& sol)
-      { MPD( ProcessMOIterationUnpostsolvedSolution(sol) ); }
+      [this](pre::ModelValuesDbl& sol)  // Solution pre-postsolver
+      {
+        MPD( RecomputeNLAuxVars(sol) );
+        MPD( ProcessMOIterationUnpostsolvedSolution(sol) );
+      }
   };
   pre::CopyLink copy_link_ { GetValuePresolver() }; // the copy links
   pre::One2ManyLink one2many_link_ { GetValuePresolver() }; // the 1-to-many links

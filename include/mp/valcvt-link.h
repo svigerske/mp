@@ -45,8 +45,10 @@ public:
   /// Postsolves should usually loop the range backwards
 #undef PRESOLVE_KIND
 #define PRESOLVE_KIND(name, ValType) \
-  virtual void Presolve ## name (LinkIndexRange ) = 0; \
-  virtual void Postsolve ## name(LinkIndexRange ) = 0;
+  virtual void Presolve ## name (LinkIndexRange, \
+    ValueResolution ) = 0; \
+  virtual void Postsolve ## name(LinkIndexRange, \
+    ValueResolution ) = 0;
 
   LIST_PRESOLVE_METHODS
 
@@ -159,9 +161,9 @@ public:
   /// Copy everything, MaxAmongNon0 should not apply
 #undef PRESOLVE_KIND
 #define PRESOLVE_KIND(name, ValType) \
-  void Presolve ## name (LinkIndexRange ir) override \
+  void Presolve ## name (LinkIndexRange ir, ValueResolution ) override \
   { CopySrcDest <ValType>(ir); } \
-  void Postsolve ## name(LinkIndexRange ir) override \
+  void Postsolve ## name(LinkIndexRange ir, ValueResolution ) override \
   { CopyDestSrc <ValType>(ir); }
 
   LIST_PRESOLVE_METHODS
@@ -228,8 +230,22 @@ public:
            && entries_.back().first.TryExtendBy(be.first))
           )) {
       entries_.push_back(be);             // Add new entry
+      if_consider_for_last_link_.push_back(false);
       RegisterLinkIndex(entries_.size()-1);
     }
+  }
+
+  /// Mark entry as contining the last link of a group.
+  /// needed for solution pre-postsolve where
+  /// we actually need the last link of a group,
+  /// corr. to the main constraint.
+  /// Example: a nonlinear con is redefined into a bunch
+  /// of smaller constraints, but only the main
+  /// resulting con receives/sends the dual value.
+  void MarkLastEntryAsLastInGroup() {
+    assert(if_consider_for_last_link_.size() == entries_.size());
+    assert(entries_.size());
+    if_consider_for_last_link_.back() = true;
   }
 
   /// Get source/target nodes for a given link entry.
@@ -245,17 +261,17 @@ public:
   /// All pre- / postsolves just take max from non-0
 #undef PRESOLVE_KIND
 #define PRESOLVE_KIND(name, ValType) \
-  void Presolve ## name (LinkIndexRange ir) override \
-  { DistributeFromSrc2Dest <ValType>(ir); } \
-  void Postsolve ## name(LinkIndexRange ir) override \
-  { CollectFromDest2Src <ValType>(ir); }
+  void Presolve ## name (LinkIndexRange ir, ValueResolution vr) override \
+  { DistributeFromSrc2Dest <ValType>(ir, vr); } \
+  void Postsolve ## name(LinkIndexRange ir, ValueResolution vr) override \
+  { CollectFromDest2Src <ValType>(ir, vr); }
 
   LIST_PRESOLVE_METHODS
 
 protected:
   /// Distribute values of type T from nr1 to nr2
   template <class T>
-  void Distr(NodeRange nr1, NodeRange nr2) {
+  void Distr(NodeRange nr1, NodeRange nr2, ValueResolution vr) {
     auto ir1 = nr1.GetIndexRange();
     auto ir2 = nr2.GetIndexRange();
     for (auto i0=ir1.beg_; i0!=ir1.end_; ++i0) {
@@ -263,44 +279,62 @@ protected:
       // in PresolveNames():
       const auto& val = nr1.GetValueNode()->
           GetVal<T>(i0);
-      for (auto i=ir2.beg_; i!=ir2.end_; ++i)
-        nr2.GetValueNode()->SetVal(i, val);
+      if (ValueResolution::ValResAll == vr) {
+        for (auto i=ir2.beg_; i!=ir2.end_; ++i)
+          nr2.GetValueNode()->SetVal(i, val);
+      } else {
+        assert(ValueResolution::ValResLast == vr);
+        nr2.GetValueNode()->SetVal(ir2.end_ - 1, val);
+      }
     }
   }
 
   /// Collect values of type T from nr2 to nr1
   template <class T>
-  void Collect(NodeRange nr1, NodeRange nr2) {
+  void Collect(NodeRange nr1, NodeRange nr2, ValueResolution vr) {
     auto ir1 = nr1.GetIndexRange();
     auto ir2 = nr2.GetIndexRange();
     auto& vec2 = nr2.GetValueNode()->GetValVec<T>();
     for (auto i0=ir1.beg_; i0!=ir1.end_; ++i0) {
-      for (auto i=ir2.beg_; i!=ir2.end_; ++i)
-        nr1.GetValueNode()->SetVal(i0, vec2.at(i));
+      if (ValueResolution::ValResAll == vr) {
+        for (auto i=ir2.beg_; i!=ir2.end_; ++i) {
+          nr1.GetValueNode()->SetVal(i0, vec2.at(i));
+        }
+      } else {
+        assert(ValueResolution::ValResLast == vr);
+        nr1.GetValueNode()->SetVal(i0, vec2.at(ir2.end_ - 1));
+      }
     }
   }
 
   /// Src -> dest for the entries index range ir
   template <class T>
-  void DistributeFromSrc2Dest(LinkIndexRange ir) {
+  void DistributeFromSrc2Dest(LinkIndexRange ir, ValueResolution vr) {
     for (int i=ir.beg_; i!=ir.end_; ++i) {
-      const auto& br = entries_[i];
-      Distr<T>(br.first, br.second);
+      if (ValueResolution::ValResAll == vr
+          || if_consider_for_last_link_[i]) {
+        const auto& br = entries_[i];
+        Distr<T>(br.first, br.second, vr);
+      }
     }
   }
 
   /// Collect src <- dest for index range ir. Loop backwards
   template <class T>
-  void CollectFromDest2Src(LinkIndexRange ir) {
+  void CollectFromDest2Src(LinkIndexRange ir, ValueResolution vr) {
     for (int i=ir.end_; (i--)!=ir.beg_; ) {
-      const auto& br = entries_[i];
-      Collect<T>(br.first, br.second);
+      if (ValueResolution::ValResAll == vr
+          || if_consider_for_last_link_[i]) {
+        const auto& br = entries_[i];
+        Collect<T>(br.first, br.second, vr);
+      }
     }
   }
 
 
 private:
   CollectionOfEntries entries_;
+  std::vector<bool> if_consider_for_last_link_;
 };
 
 
@@ -387,10 +421,10 @@ public:
   /// and calls the derived class' method for each.
 #undef PRESOLVE_KIND
 #define PRESOLVE_KIND(name, ValType) \
-  void Presolve ## name (LinkIndexRange ir) override { \
+  void Presolve ## name (LinkIndexRange ir, ValueResolution) override { \
     for (int i=ir.beg_; i!=ir.end_; ++i) \
       MPD( Presolve ## name ## Entry(entries_.at(i)) ); } \
-  void Postsolve ## name(LinkIndexRange ir) override { \
+  void Postsolve ## name(LinkIndexRange ir, ValueResolution) override { \
     for (int i=ir.end_; i--!=ir.beg_; ) \
       MPD( Postsolve ## name ## Entry(entries_.at(i)) ); }
 
@@ -514,6 +548,7 @@ public:
           cvt_.GetOne2ManyLink().AddEntry(   // use One2ManyLink
                 { cvt_.GetAutoLinkSource(), t } );
         }
+        cvt_.GetOne2ManyLink().MarkLastEntryAsLastInGroup();
       }
     }
     cvt_.TurnOffAutoLinking();

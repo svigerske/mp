@@ -156,7 +156,7 @@ public:
 
   /////////////////////// Access value vectors ///////////////////////
 
-  /// Assign from ArrayRef<int>. Always copy the values.
+  /// Assign from vector<int>.
   /// Some (target) node assignments can be longer vectors:
   /// e.g., Gurobi adds variables for FeasRelax.
   ValueNode& operator=(std::vector<int> ai)
@@ -382,7 +382,7 @@ ValueNode CreateArray(BasicValuePresolver& vp) { return ValueNode{vp}; }
 /// @return always true currently
 template <class Vec>
 inline
-bool CopyRange(Vec& src, Vec& dest, NodeIndexRange ir, int i1) {
+bool CopyRange(const Vec& src, Vec& dest, NodeIndexRange ir, int i1) {
   assert(ir.end_ <= (int)src.size());
   assert(i1 + ir.Size() <= (int)dest.size());
   std::copy(src.begin()+ir.beg_, src.begin()+ir.end_,

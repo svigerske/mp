@@ -104,13 +104,15 @@ public:
 #define PRESOLVE_KIND(name, ValType) \
   MVOverEl<ValType> \
     Presolve ## name ( \
-      const MVOverEl<ValType> & mv) override { \
-    return RunPresolve(&BasicLink::Presolve ## name, mv); \
+      const MVOverEl<ValType> & mv, \
+      ValueResolution vr = ValueResolution::ValResDefault) override { \
+    return RunPresolve(&BasicLink::Presolve ## name, mv, vr); \
   } \
   MVOverEl<ValType> \
     Postsolve ## name ( \
-      const MVOverEl<ValType> & mv) override { \
-    return RunPostsolve(&BasicLink::Postsolve ## name, mv); \
+      const MVOverEl<ValType> & mv, \
+      ValueResolution vr = ValueResolution::ValResDefault) override { \
+    return RunPostsolve(&BasicLink::Postsolve ## name, mv, vr); \
   }
 
   LIST_PRESOLVE_METHODS
@@ -131,25 +133,27 @@ public:
 
 protected:
   /// Helper type: virtual member function pointer
-  using LinkFn = void (BasicLink::*)(LinkIndexRange);
+  using LinkFn = void (BasicLink::*)(LinkIndexRange, ValueResolution);
 
   /// Generic value presolve loop: forward
   template <class ModelValues>
-  ModelValues RunPresolve(LinkFn fn, const ModelValues& mv) const {
+  ModelValues RunPresolve(LinkFn fn, const ModelValues& mv,
+                          ValueResolution vr) const {
     CleanUpValueNodes();
     src_ = mv;
     for (const auto& br: brl_)
-      (br.b_.*fn)(br.ir_);
+      (br.b_.*fn)(br.ir_, vr);
     return dest_;
   }
 
   /// Generic value postsolve loop: backward
   template <class ModelValues>
-  ModelValues RunPostsolve(LinkFn fn, const ModelValues& mv) const {
+  ModelValues RunPostsolve(LinkFn fn, const ModelValues& mv,
+                           ValueResolution vr) const {
     CleanUpValueNodes();
     dest_ = mv;
     for (auto rit=brl_.rbegin(); rit!=brl_.rend(); ++rit) {
-      (rit->b_.*fn)(rit->ir_);
+      (rit->b_.*fn)(rit->ir_, vr);
     }
     return src_;
   }
@@ -261,9 +265,12 @@ public:
 
   /// Override PresolveSolution().
   /// Update warm start values to fit into their bounds.
+  /// @param vr: ignored for simplicity
   MVOverEl<double> PresolveSolution (
-      const MVOverEl<double>& mv) override {
-    auto result = ValuePresolverImpl::PresolveSolution(mv);
+      const MVOverEl<double>& mv,
+      ValueResolution  = ValueResolution::ValResLast) override {
+    auto result = ValuePresolverImpl::PresolveSolution(
+        mv, ValueResolution::ValResLast);
     auto& x = result.GetVarValues()();
     const auto& lbs = model_.GetVarLBs();
     const auto& ubs = model_.GetVarUBs();
@@ -279,11 +286,14 @@ public:
     return result;
   }
 
-  /// Override PostsolveSolution().
-  /// Check solution if checker provided.
-  /// mv's ExtraData() is passed to the checker.
+  /// Override PostsolveSolution(). As follows:
+  /// 1. Call preposts_() if provided.
+  /// 2. Check solution if checker provided.
+  /// 3. mv's ExtraData() is passed to the checker.
+  /// @param vr: ignored
   MVOverEl<double> PostsolveSolution (
-      const MVOverEl<double>& mv) override {
+      const MVOverEl<double>& mv,
+      ValueResolution  = ValueResolution::ValResLast) override {
     auto mv_copy = mv;
     if (preposts_)
       preposts_(mv_copy);
@@ -298,7 +308,8 @@ public:
         solchk_(mx(), mv_copy.GetConValues(), objs, mv_copy.ExtraData());
       }
     }
-    return ValuePresolverImpl::PostsolveSolution(mv_copy);
+    return ValuePresolverImpl::PostsolveSolution(
+        mv_copy, ValueResolution::ValResLast);
   }
 
 

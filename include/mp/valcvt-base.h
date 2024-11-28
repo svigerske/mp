@@ -375,6 +375,17 @@ private:
 // etc...
 
 
+/// How to resolve the conflict
+/// when several values are gathered in one
+/// source or dest node
+enum class ValueResolution {
+  ValResAll,       // All values transferred
+                   // and SetVal() decides what to do
+                   // (can max out non-0 values.)
+  ValResDefault = ValResAll,
+  ValResLast       // just the last conection is transferred
+};
+
 /// ValuePresolver interface.
 /// Addresses value pre- / postsolve (solutions, basis, etc)
 class BasicValuePresolver : public EnvKeeper {
@@ -390,10 +401,12 @@ public:
 #define PRESOLVE_KIND(name, ValType) \
   virtual MVOverEl<ValType> \
     Presolve ## name ( \
-      const MVOverEl<ValType> & mv) = 0; \
+      const MVOverEl<ValType> & mv, \
+      ValueResolution = ValueResolution::ValResDefault) = 0; \
   virtual MVOverEl<ValType> \
     Postsolve ## name ( \
-      const MVOverEl<ValType> & mv) = 0;
+      const MVOverEl<ValType> & mv, \
+      ValueResolution = ValueResolution::ValResDefault) = 0;
 
   LIST_PRESOLVE_METHODS
 

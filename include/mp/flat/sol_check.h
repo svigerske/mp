@@ -16,12 +16,12 @@ namespace mp {
 template <class Impl>
 class SolutionChecker {
 public:
-  /// Check postsolved & unpostsolved solutions
+  /// Check postsolved & unpostsolved (with aux vars) solutions
   /// in various ways.
   /// @param p_extra: !=0 means known infeas solution
   bool CheckSolution(
         ArrayRef<double> x,
-        const pre::ValueMapDbl& duals,
+        const pre::ValueMapDbl& duals,   // unused
         ArrayRef<double> obj,
         void* p_extra) {
     bool fKnownInfeas = (bool)p_extra;
@@ -32,8 +32,6 @@ public:
     try {                            // protect
       std::vector<double> x_back = x;
       if (MPCD( sol_check_mode() ) & (1+2+4+8+16)) {
-        if (MPCD( IfWantNLOutput() ))
-          x = RecomputeAuxVars(x, true);   // Compute expressions
         msgreal = DoCheckSol(x, duals, obj, {}, x_back, false);
       }
       if (MPCD( sol_check_mode() ) & (32+64+128+256+512)) {
@@ -94,6 +92,7 @@ public:
     return msgreal.empty() && msgidea.empty();
   }
 
+private:
   /// Functor to recompute auxiliary var \a i
   VarsRecomputeFn recomp_fn
   = [this](int i, const VarInfoRecomp& x) {
@@ -110,33 +109,31 @@ public:
     return x.get_x().get_x()[i];  // no recomputation
   };
 
+public:
   /// Recompute auxiliary variables
-  /// @param fExprOnly: only NL expressions
+  /// @param is_final: if provided, which vars are final
   ArrayRef<double> RecomputeAuxVars(
-      ArrayRef<double> x, bool fExprOnly=false) {
+      ArrayRef<double> x, std::vector<bool> is_final={}) {
     VarInfoRecomp vir {
       MPCD( sol_feas_tol() ),
           true,        // currently not relevant for recomputation
-      {x, recomp_fn},
-      {},              // now raw values
+      {x, recomp_fn, is_final},
+      {},              // no raw values
       MPCD( GetModel() ).var_type_vec(),
           MPCD( GetModel() ).var_lb_vec(),
           MPCD( GetModel() ).var_ub_vec(),
           MPCD( sol_round() ), MPCD( sol_prec() )
     };
     vir.get_x().set_p_var_info(&vir);
-    if (fExprOnly) {
-      for (auto i=vir.size(); i--; )
-        if ( !MPCD( IsProperVar(i) ) )
-          vir[i];         // touch the variable to be recomputed
-    } else {
-      for (auto i=vir.size(); i--; )
-        vir[i];
-    }
+    for (auto i=vir.size(); i--; )
+      vir[i];         // touch the variable to be recomputed
     return std::move(vir.get_x().get_x());
   }
 
+protected:
   /// Check single unpostsolved solution.
+  /// @param x_raw: for idealistic check,
+  ///   should contain auxiliary values from the solver.
   /// @param x_back: solution vector from realistic mode.
   /// It can be changed by the :round and :prec options.
   /// Its auxiliary vars are compared
@@ -167,7 +164,7 @@ public:
     if (chk.check_mode() & 16)
       CheckObjs(chk);
     MPD( GenerateViolationsReport(chk, if_recomp_vals) );
-    x_back = chk.x_ext().get_x();   // to reuse 'realistic' vector
+    x_back = std::move(chk.x_ext().get_x()); // to reuse 'realistic' vector
     return chk.GetReport();
   }
 
