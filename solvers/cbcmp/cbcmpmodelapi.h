@@ -81,6 +81,8 @@ class CbcmpModelAPI :
     std::vector<int> varinteger;
     SOS soslist[2];
 
+    bool visited = false;
+
     void addSOS(std::size_t size, const int* indices,
       const double* weights, int type) {
       soslist[type-1].sos_rowstarts.push_back(soslist[type - 1].sos_colindices.size());
