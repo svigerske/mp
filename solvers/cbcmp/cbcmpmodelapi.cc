@@ -66,6 +66,7 @@ void CbcmpModelAPI::AddConstraint(const SOS2Constraint& sos) {
 }
 
 void CbcmpModelAPI::FinishProblemModificationPhase() {
+  
   // Push all model to CBC
   std::vector<double> values;
   std::vector<int> row_indices;
@@ -77,6 +78,7 @@ void CbcmpModelAPI::FinishProblemModificationPhase() {
     row_indices.data(), values.data(), m.lb.data(), m.ub.data(),
     m.obj.data(), m.lhs.data(), m.rhs.data());
   Cbc_setObjSense(lp(), m.objsense);
+ 
   for(auto i : m.varinteger) Cbc_setInteger(lp(), i);
   // If SOS constraints are present, push those also
   for(int i=0; i<2; i++) {
@@ -88,14 +90,17 @@ void CbcmpModelAPI::FinishProblemModificationPhase() {
 
     }
   }
-  for (auto i = 0; i < m.varnames.size(); i++) 
-    if(!m.varnames[i].empty())
-        Cbc_setColName(lp(), i, m.varnames[i].c_str());
-
-  for (auto i = 0; i < m.connames.size(); i++)
-    if (!m.connames[i].empty())
-      Cbc_setRowName(lp(), i, m.connames[i].c_str());
-  m.Clear(); // release memory before solving
+  // TODO: investigate segmentation fault happening when passing the names
+  if (false) {
+    for (auto i = 0; i < m.varnames.size(); i++)
+      if (!m.varnames[i].empty())
+        Cbc_setColName(lp(), i, strdup(m.varnames[i].c_str()));
+    for (auto i = 0; i < m.connames.size(); i++)
+      if (!m.connames[i].empty())
+        Cbc_setRowName(lp(), i, strdup(m.connames[i].c_str()));
+  }
+  //m.Clear(); // release memory before solving, deleted for multiobjective emulator
+  // TODO reimplement 
 
 }
 

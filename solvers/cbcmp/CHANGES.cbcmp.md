@@ -2,6 +2,10 @@ Summary of recent updates to CBCMP for AMPL
 ===========================================
 
 
+## 20241128
+- Fixed a bug that made CBC segfault for some models
+
+
 ## 20241124
 - Greatly improved model generation time by pushing all the model
   at once to CBC
