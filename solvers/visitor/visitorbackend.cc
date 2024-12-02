@@ -250,8 +250,9 @@ void VisitorBackend::printModelStats() {
   std::map<Solver::ConsType, std::string> names;
     names[Solver::CONS_LIN] = "Linear";
     names[Solver::CONS_QUAD]= "Quadratic";
-    names[Solver::CONS_QUAD_CONE]= "Quadratic cones";
-    names[Solver::CONS_QUAD_CONE_ROTATED]= "Quadratic cones rotated";
+    names[Solver::CONS_QUAD_CONE]= "Cone quadratic";
+    names[Solver::CONS_QUAD_CONE_ROTATED]= "Cone rotated";
+    names[Solver::CONS_QUAD_CONE_EXP] = "Cone exponential";
     names[Solver::CONS_INDIC]= "Indicator";
     names[Solver::CONS_SOS]= "SOS";
 

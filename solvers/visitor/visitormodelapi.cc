@@ -343,55 +343,69 @@ void VisitorModelAPI::AddConstraint( const QuadConGE& qc ) {
 }
 
 void VisitorModelAPI::AddConstraint( const QuadraticConeConstraint& qc ) {
-  fmt::print("Adding quadratic cone constraint \"{}\"\n", qc.GetName());
+  std::string name = lp()->AddConstraintFlat(Solver::CONS_QUAD_CONE);
   if (lp()->GetVerbosity() < 1)
     return;
-  //lp()->addEntity(Solver::CONS_QUAD_CONE);
+  fmt::print("{}: ", name);
+  PrintCoefficient(qc.GetParameters()[0], true);
+  fmt::print(GetVarName(qc.GetArguments()[0]).data());
+  fmt::print(">=sqrt(");
+
+  for (int i = 1; i < qc.GetArguments().size(); i++) {
+    PrintCoefficient(qc.GetParameters()[i], i == 0);
+    fmt::print("{}^2", GetVarName(qc.GetArguments()[i]).data());
+  }
+  fmt::print(")\n");
+  
 }
 
 void VisitorModelAPI::AddConstraint(
   const RotatedQuadraticConeConstraint& qc) {
-  fmt::print("Adding rotated quadratic cone constraint \"{}\"\n", qc.GetName());
+  std::string name = lp()->AddConstraintFlat(Solver::CONS_QUAD_CONE_ROTATED);
   if (lp()->GetVerbosity() < 1)
     return;
- // lp()->addEntity(Solver::CONS_QUAD_CONE_ROTATED);
+  fmt::print("{}: ", name);
+  PrintCoefficient(qc.GetParameters()[0]* qc.GetParameters()[1], true);
+  fmt::print("{}*{} >=", GetVarName(qc.GetArguments()[0]).data(), GetVarName(qc.GetArguments()[1]).data());
+  for (int i = 2; i < qc.GetArguments().size(); i++) {
+    PrintCoefficient(qc.GetParameters()[i], i == 0);
+    fmt::print("{}^2", GetVarName(qc.GetArguments()[i]).data());
+  }
+  fmt::print("\n");
 }
 
 void VisitorModelAPI::AddConstraint(
   const ExponentialConeConstraint& qc) {
-  fmt::print("Adding exponential cone constraint \"{}\"\n", qc.GetName());
+  std::string name = lp()->AddConstraintFlat(Solver::CONS_QUAD_CONE_EXP);
   if (lp()->GetVerbosity() < 1)
     return;
- // lp()->addEntity(Solver::CONS_QUAD_CONE_ROTATED);
+  fmt::print("{}: ", name);
+  PrintCoefficient(qc.GetParameters()[0] * qc.GetParameters()[1], true);
+  fmt::print("{} >=", GetVarName(qc.GetArguments()[0]).data());
+  PrintCoefficient(qc.GetParameters()[1], true);
+  fmt::print(GetVarName(qc.GetArguments()[1]).data());
+  fmt::print("*exp({}/{})\n", GetVarName(qc.GetArguments()[2]).data(), GetVarName(qc.GetArguments()[1]).data());
 }
 
 void VisitorModelAPI::AddConstraint(const SOS1Constraint& sos) {
-  fmt::print("Adding SOS1 constraint \"{}\"\n", sos.GetName());
+  std::string name = lp()->AddConstraintFlat(Solver::CONS_SOS);
   if (lp()->GetVerbosity() < 1)
     return;
- // lp()->addEntity(Solver::CONS_SOS);
-/*  int type = VISITOR_SOS_TYPE1;
-  int beg = 0;
-  const int size = sos.size();
-  VISITOR_CCALL(VISITOR_AddSOSs(lp(), 1, &type, &beg,
-    &size, (int*)sos.get_vars().data(),
-    (double*)sos.get_weights().data())); */
+  fmt::print("{} ", name);
+  fmt::print("({}):", "SOS1");
+  PrintLinearBody(GetVarName, sos.size(), sos.get_vars().data(), sos.get_weights().data());
+  fmt::print("\n");
 }
 
 void VisitorModelAPI::AddConstraint(const SOS2Constraint& sos) {
-  fmt::print("Adding SOS2 constraint \"{}\"\n", sos.GetName());
+  std::string name = lp()->AddConstraintFlat(Solver::CONS_SOS);
   if (lp()->GetVerbosity() < 1)
     return;
- // lp()->addEntity(Solver::CONS_SOS);
-  /*int type = VISITOR_SOS_TYPE2;
-  int beg = 0;
-  const int size = sos.size();
-  VISITOR_CCALL(VISITOR_AddSOSs(lp(), 1, &type, &beg,
-    &size, (int*)sos.get_vars().data(),
-    (double*)sos.get_weights().data()));*/
+  fmt::print("{} ", name);
+  fmt::print("({}):", "SOS2");
+  PrintLinearBody(GetVarName, sos.size(), sos.get_vars().data(), sos.get_weights().data());
+  fmt::print("\n");
 }
-
-
 
 void VisitorModelAPI::AddConstraint(const MaxConstraint& mc) {
   std::string name = lp()->AddConstraintFlat(Solver::ConsType::CONS_MAX, mc.name());
@@ -542,6 +556,232 @@ void VisitorModelAPI::AddConstraint(const PLConstraint& plc) {
     plp.x_.size(), plp.x_.data(), plp.y_.data()));*/
 }
 
+template <class MPExpr>
+void VisitorModelAPI::AppendLinAndConstTerms(
+  Expr& ff, const MPExpr& nla) {
+  if (double ct = GetConstTerm(nla))
+    ff.AddArgument(Expr::makeConstant(ct));
+
+  for (int i = 0; i < GetLinSize(nla); ++i) {
+    if (double coef = GetLinCoef(nla, i)) {
+      if (1.0 != coef) {
+        auto f1 = Expr(Expr::Opcode::MULTIPLY);
+        f1.AddArgument(Expr::makeConstant(coef));
+        f1.AddArgument(GetLinTerm(nla, i));
+        ff.AddArgument(f1);
+      }
+      else {
+        ff.AddArgument(GetLinTerm(nla, i));
+      }
+    }
+  }
+}
+template <class MPExpr>
+void VisitorModelAPI::AppendQuadTerms(
+  Expr& ff, const MPExpr& nlq) {
+  for (int i = 0; i < GetQuadSize(nlq); ++i) {
+    if (double coef = GetQuadCoef(nlq, i)) {
+      auto f1 = Expr(Expr::Opcode::MULTIPLY);
+      f1.AddArgument(GetQuadTerm1(nlq, i));
+      f1.AddArgument(GetQuadTerm2(nlq, i));
+      if (1.0 != coef) {
+        f1.AddArgument(Expr::makeConstant(coef));
+      }
+      ff.AddArgument(f1);
+    }
+  }
+}
+
+Solver::VExpr VisitorModelAPI::AddExpression(const NLAffineExpression& nae) {
+  Expr tree;
+  tree.opcode = Solver::VExpr::Opcode::ADD;
+  AppendLinAndConstTerms(tree, nae);
+  return tree;
+}
+
+Solver::VExpr VisitorModelAPI::AddExpression(const NLQuadExpression& nlq) {
+  Expr tree;
+  tree.opcode = Expr::Opcode::ADD;
+  AppendLinAndConstTerms(tree, nlq);
+  AppendQuadTerms(tree, nlq);
+  return tree;
+
+}
+
+void VisitorModelAPI::SetNLObjective(int i, const NLObjective& nlo) {
+  const auto& exp = GetExpression(nlo);
+  lp()->AddNLObjective(nlo.name(), exp, nlo.obj_sense() == mp::obj::MAX);
+}
+
+
+
+
+
+
+
+void VisitorModelAPI::AddConstraint(const NLConstraint& nlc) {
+  const auto& nlexp = GetExpression(nlc);
+  double lhs = GetLower(nlc), rhs = GetUpper(nlc);
+  // Extract the linear part (similar to AppendLinAndConstantTerms but 
+  // for NLConstraint
+  Expr linearexp = Expr(Expr::Opcode::ADD);
+  for (int i = 0; i < GetLinSize(nlc); ++i)
+  {
+    // coeff*var
+    Expr term = Expr(Expr::Opcode::MULTIPLY);
+    term.AddArgument(Expr::makeConstant(GetLinCoef(nlc, i)));
+    term.AddArgument(Expr::makeVariable(GetLinVar(nlc, i)));
+    linearexp.AddArgument(term);
+  }
+  // sum the nonlinear part
+  linearexp.AddArgument(nlexp);
+  lp()->AddConstraintNL(linearexp, lhs, rhs, nlc.GetName());
+}
+
+void  VisitorModelAPI::AddConstraint(const NLLogical& nll) {
+  std::string name = lp()->AddConstraintNLAssign(nll.GetResultVar(),
+    Solver::NLLogical, GetExpression(nll), nll.name());
+}
+
+
+void  VisitorModelAPI::AddConstraint(const NLReifEquiv& nle) {
+  std::string name = lp()->AddConstraintNLAssign(nle.GetResultVar(),
+    Solver::NLReifEquiv, GetExpression(nle), nle.name());
+
+}
+
+void  VisitorModelAPI::AddConstraint(const NLReifImpl& nle) {
+    std::string name = lp()->AddConstraintNLAssign(nle.GetResultVar(),
+    Solver::NLReifImpl, GetExpression(nle), nle.name());
+}
+
+void  VisitorModelAPI::AddConstraint(const NLReifRimpl& nle) {
+std::string name = lp()->AddConstraintNLAssign(nle.GetResultVar(),
+    Solver::NLReifRimpl, GetExpression(nle), nle.name());
+}
+
+
+void VisitorModelAPI::AddConstraint(const NLAssignEQ& nle) {
+  std::string name = lp()->AddConstraintNLAssign(nle.GetResultVar(), 
+    Solver::AssignEQ, GetExpression(nle), nle.name());
+}
+
+/// NLAssignLE: algebraic expression expicifier in positive context.
+/// Meaning: var <= expr.
+void VisitorModelAPI::AddConstraint(const NLAssignLE& nle) {
+  std::string name = lp()->AddConstraintNLAssign(nle.GetResultVar(),
+    Solver::AssignLE, GetExpression(nle), nle.name());
+}
+
+/// NLAssignGE: algebraic expression expicifier in negative context.
+/// Meaning: var >= expr.
+void VisitorModelAPI::AddConstraint(const NLAssignGE& nle) {
+
+  std::string name = lp()->AddConstraintNLAssign(nle.GetResultVar(), 
+    Solver::AssignGE, GetExpression(nle), nle.name());
+}
+
+/// res =log(exp)
+Solver::VExpr  VisitorModelAPI::AddExpression(const LogExpression& e) {
+   return Expr(Expr::Opcode::LOG, GetArgExpression(e, 0));
+}
+/// res = log_a(exp) where a is the parameter
+Solver::VExpr  VisitorModelAPI::AddExpression(const LogAExpression& e) {
+  Expr loga=Expr(Expr::Opcode::LOGA, GetArgExpression(e, 0));
+  loga.AddArgument(Expr::makeConstant(GetParameter(e, 0)));
+  return loga;
+}
+/// res = e^expr
+Solver::VExpr  VisitorModelAPI::AddExpression(const ExpExpression& expr) {
+  
+  return Expr(Expr::Opcode::EXP, GetArgExpression(expr, 0));
+}
+/// res = a^expr
+Solver::VExpr  VisitorModelAPI::AddExpression(const ExpAExpression& e) {
+  
+  Expr res = Expr(Expr::Opcode::POW);
+  res.AddArgument(Expr::makeConstant(GetParameter(e, 0)));
+  res.AddArgument(GetArgExpression(e, 0));
+  return res;
+}
+/// res = x^y
+Solver::VExpr  VisitorModelAPI::AddExpression(const PowExpression& e) {
+  
+  auto expr = Expr(Expr::Opcode::POW, GetArgExpression(e, 0));
+  expr.AddArgument(GetArgExpression(e, 1));
+  return expr;
+}
+/// res = x^const
+Solver::VExpr VisitorModelAPI::AddExpression(const PowConstExpExpression& e) {
+  auto expr = Expr(Expr::Opcode::POW, GetArgExpression(e, 0));
+  expr.AddArgument(Solver::VExpr::makeConstant(GetParameter(e, 0)));
+  return expr;
+}
+/// r = sin(e)
+Solver::VExpr VisitorModelAPI::AddExpression(const SinExpression& e) {
+  return Expr(Expr::Opcode::SIN, GetArgExpression(e, 0));
+}
+// r = cos(e)
+Solver::VExpr VisitorModelAPI::AddExpression(const CosExpression& e) {
+  return Expr(Expr::Opcode::COS, GetArgExpression(e, 0));
+}
+/// r=e1/e2
+Solver::VExpr VisitorModelAPI::AddExpression(const DivExpression& e) {
+  
+  auto res = Expr(Expr::Opcode::DIVIDE);
+  res.AddArgument(GetArgExpression(e, 0));
+  res.AddArgument(GetArgExpression(e, 1));
+  return res;
+}
+
+Solver::VExpr VisitorModelAPI::AddExpression(const TanExpression& e) {
+  return Expr(Expr::Opcode::TAN, GetArgExpression(e, 0));
+}
+
+/// r = asin(v)
+Solver::VExpr VisitorModelAPI::AddExpression(const AsinExpression& e) {
+  return Expr(Expr::Opcode::ASIN, GetArgExpression(e, 0));
+}
+
+/// r = acos(v)
+Solver::VExpr VisitorModelAPI::AddExpression(const AcosExpression& e) {
+  return Expr(Expr::Opcode::ACOS, GetArgExpression(e, 0));
+}
+
+/// r = atan(v)
+Solver::VExpr VisitorModelAPI::AddExpression(const AtanExpression& e) {
+  return Expr(Expr::Opcode::ATAN, GetArgExpression(e, 0));
+}
+
+/// r = sinh(v)
+Solver::VExpr VisitorModelAPI::AddExpression(const SinhExpression& e) {
+  return Expr(Expr::Opcode::SINH, GetArgExpression(e, 0));
+}
+
+/// r = cosh(v)
+Solver::VExpr VisitorModelAPI::AddExpression(const CoshExpression& e) {
+  return Expr(Expr::Opcode::COSH, GetArgExpression(e, 0));
+}
+
+/// r = tanh(v)
+Solver::VExpr VisitorModelAPI::AddExpression(const TanhExpression& e) {
+  return Expr(Expr::Opcode::TANH, GetArgExpression(e, 0));
+}
+
+/// r = asinh(v)
+Solver::VExpr VisitorModelAPI::AddExpression(const AsinhExpression& e) {
+  return Expr(Expr::Opcode::ASINH, GetArgExpression(e, 0));
+}
+
+/// r = acosh(v)
+Solver::VExpr VisitorModelAPI::AddExpression(const AcoshExpression& e) {
+  return Expr(Expr::Opcode::ACOSH, GetArgExpression(e, 0));
+}
+
+/// r = atanh(v)
+Solver::VExpr VisitorModelAPI::AddExpression(const AtanhExpression& e) {
+  return Expr(Expr::Opcode::ATANH, GetArgExpression(e, 0));
+}
 
 void VisitorModelAPI::FinishProblemModificationPhase() {
 }
