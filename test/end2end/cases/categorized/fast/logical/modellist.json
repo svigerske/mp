@@ -44,6 +44,7 @@
   {
     "name" : "ifthen_var cmp:eps=0 chk:fail",
     "tags" : ["logical"],
+    "comment_MP2NL": "fails for MP2NL because of a changed model",
     "options": {
       "ANYSOLVER_options": "cvt:cmp:eps=0 chk:fail",
       "mp2nl_options": "solver_options='cvt:cmp:eps=0 chk:fail'"
