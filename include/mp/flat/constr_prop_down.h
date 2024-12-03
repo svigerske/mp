@@ -50,7 +50,7 @@ public:
   /// Propagate a root algebraic range constraint
   template <class Body, class RangeOrRhs>
   void PropagateResult(const AlgebraicConstraint<Body, RangeOrRhs>& con) {
-    PropagateResult(con, Context::CTX_POS);
+    PropagateResult(con, Context::CTX_ROOT);
   }
 
   /// Conditional algebraic con
@@ -61,7 +61,13 @@ public:
     auto ctx_new = con.lb()<=MPCD( PracticallyMinusInf() )
                    ? -ctx : (con.ub()>=MPCD( PracticallyInf() )
                           ? +ctx : Context::CTX_MIX);
-    PropagateResult2Args(con.GetBody(), con.lb(), con.ub(), ctx_new);
+    auto LB = MPCD( MinusInfty() );
+    auto UB = MPCD( Infty() );
+    if (ctx.IsRoot()) {             // not for conditional comparisons
+      LB = con.lb();
+      UB = con.ub();
+    }
+    PropagateResult2Args(con.GetBody(), LB, UB, ctx_new);
   }
 
   template <class Body, int sens>
@@ -303,18 +309,36 @@ public:
   /// Propagate result into QuadAndLinTerms
   void PropagateResult2QuadAndLinTerms(
       const QuadAndLinTerms& qlt, double lb, double ub, Context ctx) {
+    auto LB_lt = MPD( MinusInfty() );
+    auto UB_lt = MPD( Infty() );
+    if (qlt.GetQPTerms().empty()) {
+      LB_lt = lb;
+      UB_lt = ub;
+    }
     PropagateResult2LinTerms(qlt.GetLinTerms(),
-                             MPD( MinusInfty() ), MPD( Infty() ), ctx);
+                             LB_lt, UB_lt, ctx);
     PropagateResult2QuadTerms(qlt.GetQPTerms(),
                               MPD( MinusInfty() ), MPD( Infty() ), ctx);
   }
 
   /// Propagate result into LinTerms
-  void PropagateResult2LinTerms(const LinTerms& lint, double , double , Context ctx) {
+  void PropagateResult2LinTerms(const LinTerms& lint,
+                                double lb, double ub, Context ctx) {
+    auto LB = MPD( MinusInfty() );
+    auto UB = MPD( Infty() );
+    if (1==lint.size()) {
+      auto coef = lint.coef(0);
+      if (coef > 0.0) {
+        LB = lb / coef;
+        UB = ub / coef;
+      } else if (coef < 0.0) {
+        LB = ub / coef;
+        UB = lb / coef;
+      }
+    }
     for (auto i=lint.size(); i--; ) {
       if (0.0!=std::fabs(lint.coef(i))) {
-        MPD( PropagateResultOfInitExpr(lint.var(i),
-                                MPD( MinusInfty() ), MPD( Infty() ),
+        MPD( PropagateResultOfInitExpr(lint.var(i), LB, UB,
                                 (lint.coef(i)>=0.0) ? +ctx : -ctx) );
       }
     }

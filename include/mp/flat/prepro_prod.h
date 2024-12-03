@@ -76,6 +76,7 @@ protected:
           GetFlt().GetFlatCvt().ComputeBoundsAndType(
           std::get<1>(tpl));
       bool is_int = var::INTEGER==bnds.type();
+      assert(bnds.lb() <= bnds.ub());
       bool is_const = bnds.ub()<=bnds.lb();
       n_terms_const_ += is_const;
       bool is_bin_or_neg_bin =
@@ -102,8 +103,11 @@ protected:
     double coef00 = 1.0;
 
     for ( ; i<n_terms_const_; ++i) {      // Collect constant factors
-      assert(std::get<1>(terms_flt_[i]).is_constant());
-      coef00 *= std::get<1>(terms_flt_[i]).constant_term();
+      // no: can have constant args
+      // assert(std::get<1>(terms_flt_[i]).is_constant());
+      auto bnds = std::get<2>(terms_flt_[i]);
+      assert(bnds.first == bnds.second);
+      coef00 *= bnds.first;
     }
 
     if ((n_terms_binary_==2 && GetFlt().prepro_products()&2) ||

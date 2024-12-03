@@ -1145,7 +1145,8 @@ protected:
   //////////////////////// ADD CUSTOM CONSTRAINT ///////////////////////
   //////////////////////// Takes ownership /////////////////////////////
 
-  /// Add constraint and propagate result into arguments.
+  /// Add a top-level algebraic constraint (lb <= expr <= ub)
+  /// and propagate result into arguments.
   /// Use this when any variables can be the result of an expression
   /// (flat constraint)
   template <class Constraint>
