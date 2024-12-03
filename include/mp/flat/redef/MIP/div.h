@@ -20,9 +20,18 @@ public:
   /// Converted item type
   using ItemType = DivConstraint;
 
+  /// Check whether the constraint
+  /// needs to be converted despite being accepted by ModelAPI.
+  bool IfNeedsConversion(const ItemType& dc, int ) {
+    return GetMC().is_fixed(dc.GetResultVar())
+        || GetMC().is_fixed(dc.GetArguments()[1]);
+  }
+
   /// Convert in both contexts (full reification)
   void Convert(const ItemType& dc, int ) {
-    if (GetMC().is_fixed(dc.GetArguments()[1]))
+    if (GetMC().is_fixed(dc.GetResultVar()))
+      ConvertWithConstResult(dc);
+    else if (GetMC().is_fixed(dc.GetArguments()[1]))
       ConvertWithConstDivisor(dc);
     else
       ConvertWithNonConstDivisor(dc);
@@ -30,6 +39,20 @@ public:
 
 
 protected:
+  /// Convert with constant result
+  void ConvertWithConstResult(const ItemType& dc) {
+    auto r = dc.GetResultVar();
+    const auto& args = dc.GetArguments();
+    /// r = arg0 / arg1,    arg0 = arg1 * r;
+    auto lt = LinTerms{
+        { GetMC().fixed_value(r), -1.0 },
+        { args[1], args[0] }
+    };
+    GetMC().AddConstraint (LinConEQ( std::move(lt), { 0.0 } ) );
+    EnsureDivisorNot0(r, args);
+  }
+
+
   /// Convert with constant divisor
   void ConvertWithConstDivisor(const ItemType& dc) {
     auto r = dc.GetResultVar();
@@ -51,7 +74,12 @@ protected:
     auto qt = QuadTerms{ { 1.0 }, {args[1]}, {r} };
     auto qlt = QuadAndLinTerms{ std::move(lt), std::move(qt) };
     GetMC().AddConstraint(QuadConRange( std::move(qlt), { 0.0, 0.0 } ));
-    /// arg1 != 0 if need
+    EnsureDivisorNot0(r, args);
+  }
+
+  /// See if need to constrain divisor!=0
+  /// @todo consider resc/ dividend bounds - in Prepro
+  void EnsureDivisorNot0(int res, VarArray2 args) {
     auto lb1 = GetMC().lb(args[1]);
     auto ub1 = GetMC().ub(args[1]);
     if (lb1 <= 0.0 && ub1 >= 0.0) {
