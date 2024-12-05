@@ -1,4 +1,5 @@
 # expcones_05__const.mod
+## Has constants instead of variables in some terms
 
 var x {i in 1..3} <= if i<3 then 0 else Infinity;
 

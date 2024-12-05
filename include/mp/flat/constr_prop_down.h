@@ -3,7 +3,12 @@
 
 /*
  * Propagate flat constraints from result (result bounds & context)
- * "down", i.e., to the arguments
+ * "down", i.e., to the arguments.
+ *
+ * In the below methods, for functional constraints,
+ * lb and ub are bounds on the result.
+ *
+ * For static constraints, they may be the constraint range.
  */
 
 #include "mp/common.h"
@@ -248,7 +253,7 @@ public:
   void PropagateResult(LogConstraint& con, double , double , Context ctx) {
     con.AddContext(ctx);           // merge context
     PropagateResult2Args(con.GetArguments(),     // monotone
-                         MPD( MinusInfty() ), MPD( Infty() ), ctx);
+                         MPD( MinusInfty() ), MPD( Infty() ), +ctx);
   }
 
   void PropagateResult(LogAConstraint& con, double , double , Context ctx) {
@@ -261,7 +266,7 @@ public:
   void PropagateResult(ExpConstraint& con, double , double , Context ctx) {
     con.AddContext(ctx);           // merge context
     PropagateResult2Args(con.GetArguments(),     // monotone
-                         MPD( MinusInfty() ), MPD( Infty() ), ctx);
+                         MPD( MinusInfty() ), MPD( Infty() ), +ctx);
   }
 
   void PropagateResult(ExpAConstraint& con, double , double , Context ctx) {
@@ -356,10 +361,11 @@ public:
   /// Propagate result into QuadTerms
   void PropagateResult2QuadTerms(const QuadTerms& quadt, double , double , Context ctx) {
     for (auto i=quadt.size(); i--; ) {
-      if (0.0!=std::fabs(quadt.coef(i))) {
+      double coef_i = quadt.coef(i);
+      if (0.0!=std::fabs(coef_i)) {
         // Propagate context in some cases.
         auto var1 = quadt.var1(i), var2 = quadt.var2(i);
-        auto ctx12 = ctx;
+        auto ctx12 = (coef_i>0.0) ? +ctx : -ctx;
         if (MPD( lb(var1) ) >= 0.0 && MPD( lb(var2) ) >= 0.0) {
           // leave as is
         } else if (MPD( ub(var1) ) <= 0.0 && MPD( ub(var2) ) <= 0.0) {

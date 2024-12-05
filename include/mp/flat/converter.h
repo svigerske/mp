@@ -544,10 +544,15 @@ public:
   /// ADD CUSTOM CONSTRAINT, does not propagate result
   /// (use AddConstraint_AS_ROOT() otherwise).
   ///
+  /// This method might be enough
+  /// (instead of the _AS_ROOT() version)
+  /// if the arguments already have contexts.
+  ///
   /// Use only for non-mapped constraints. For functional constraints
   /// stored __WITH_MAP, use AssignResult(Var)2Args().
   /// Non-functional constraints cannot be unified currently.
   /// Takes ownership.
+  ///
   /// @return Node reference for the stored constraint
   template <class Constraint>
   pre::NodeRange AddConstraint(Constraint con) {
