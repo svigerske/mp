@@ -2,6 +2,10 @@ Summary of recent updates to Xpress for AMPL
 ============================================
 
 
+## unreleased
+- Option *pre:solve_nlp*
+
+
 ## 20240823
 - Updated to Xpress 43.01.03
 - Added hybrid gradient algorithm (set *bar:alg* to 4)
