@@ -558,6 +558,129 @@ double CplexBackend::Kappa() {
     return kappa;
 }
 
+SensRanges CplexBackend::GetSensRanges() {
+  SensRanges sensr;
+
+  std::vector<double> objlow(NumVars()), objhigh(NumVars());
+  CPLEX_CALL(CPXobjsa(env(), lp(), 0, NumVars() - 1, objlow.data(), objhigh.data()));
+  std::vector<double> rhslow(NumLinCons()), rhshigh(NumLinCons());
+  CPLEX_CALL(CPXrhssa(env(), lp(), 0, NumLinCons() - 1, rhslow.data(), rhshigh.data()));
+  std::vector<double> ublow(NumVars()), ubhigh(NumVars()), lblow(NumVars()), lbhigh(NumVars());
+  CPLEX_CALL(CPXboundsa(env(), lp(), 0, NumVars() - 1, lblow.data(), lbhigh.data(), ublow.data(), ubhigh.data()));
+
+  /// Should postsolve to obtain CON suffixes .sens(lb/ub)(lo/hi)
+  /// containing sens ranges for range constraints.
+  auto mvlbhi = GetValuePresolver().
+    PostsolveGenericDbl({ {lbhigh } });
+  auto mvlblo = GetValuePresolver().
+    PostsolveGenericDbl({ {lblow} });
+  auto mvubhi = GetValuePresolver().
+    PostsolveGenericDbl({ {ubhigh} });
+  auto mvublo = GetValuePresolver().
+    PostsolveGenericDbl({ {ublow} });
+  auto mvobjhi = GetValuePresolver().
+    PostsolveGenericDbl({ {objhigh} });
+  auto mvobjlo = GetValuePresolver().
+    PostsolveGenericDbl({ {objlow} });
+  auto mvrhshi = GetValuePresolver().
+    PostsolveGenericDbl({ {},                   // no var values
+                           {{{ CG_Linear,rhshigh }}} });
+  auto mvrhslo = GetValuePresolver().
+    PostsolveGenericDbl({ {},
+                           {{{ CG_Linear, rhslow}}} });
+
+  sensr.varlbhi = mvlbhi.GetVarValues()();
+  sensr.varlblo = mvlblo.GetVarValues()();
+  sensr.varubhi = mvubhi.GetVarValues()();
+  sensr.varublo = mvublo.GetVarValues()();
+  sensr.varobjhi = mvobjhi.GetVarValues()();
+  sensr.varobjlo = mvobjlo.GetVarValues()();
+  sensr.conrhshi = mvrhshi.GetConValues()();
+  sensr.conrhslo = mvrhslo.GetConValues()();
+
+  /// We rely on the RangeCon2Slack Converter and its specific
+  /// way: adding +slack to the body of the equality constraint.
+  /// This reliance is a bit of a hack.
+  /// Properly, this should be done in RangeCon2SlkLink
+
+  /// For range constraints, their slacks' sensitivities were
+  /// propagated into the following ValueNodes:
+  const auto& conlbhi = mvlbhi.GetConValues()();
+  const auto& conlblo = mvlblo.GetConValues()();
+  const auto& conubhi = mvubhi.GetConValues()();
+  const auto& conublo = mvublo.GetConValues()();
+
+  /// We need to convert them for the original constraints' domains:
+  std::vector<double> rhs_raw(NumLinCons());
+  CPLEX_CALL(CPXgetrhs(env(), lp(), rhs_raw.data(), 0, NumLinCons()-1));
+  auto mv_rhs = GetValuePresolver().PostsolveGenericDbl({ {},
+                                                      {{{ CG_Linear, rhs_raw }}} });
+  const auto& rhs = mv_rhs.GetConValues()();
+
+  std::vector<char> sense_raw(rhs_raw.size());
+  auto status = CPXgetsense(env(), lp(), sense_raw.data(), 0, rhs.size()-1);
+  assert(!status);
+  std::vector<int> sense_raw_int(sense_raw.begin(), sense_raw.end());
+  auto mv_sense = GetValuePresolver().PostsolveGenericInt({ {},
+                                                            {{{ CG_Linear, sense_raw_int }}} });
+  const auto& sense = mv_sense.GetConValues()();
+  if (rhs.size() == sensr.conrhshi.size() &&            // check for Release
+    !status &&
+    rhs.size() == conlbhi.size() &&
+    rhs.size() == conlblo.size() &&
+    rhs.size() == conubhi.size() &&
+    rhs.size() == conublo.size()) {
+    sensr.conlbhi = sensr.conlblo = sensr.conubhi = sensr.conublo = rhs;
+    for (auto i = rhs.size(); i--; ) {
+      if (conubhi[i] != conlblo[i]) {                 // anythin' propagated?
+        sensr.conlblo[i] -= conubhi[i];               // then it's a range constraint
+        sensr.conlbhi[i] -= conublo[i];
+        sensr.conublo[i] -= conlbhi[i];
+        sensr.conubhi[i] -= conlblo[i];
+      }
+      else {                                        // non-range constraints
+        sensr.conlblo[i] = -1e100;
+        sensr.conlbhi[i] = 1e100;
+        sensr.conublo[i] = -1e100;
+        sensr.conubhi[i] = 1e100;
+        if (sense[i] != (int)'G') {
+          sensr.conublo[i] = sensr.conrhslo[i];
+          sensr.conubhi[i] = sensr.conrhshi[i];
+        }
+        if (sense[i] != (int)'L') {
+          sensr.conlblo[i] = sensr.conrhslo[i];
+          sensr.conlbhi[i] = sensr.conrhshi[i];
+        }
+      }
+    }
+  }
+
+  return sensr;
+}
+
+
+std::pair<ArrayRef<double>, ArrayRef<double>> CplexBackend::Sensobj() const
+{
+  std::vector<double> low(NumVars()), high(NumVars());
+  CPLEX_CALL(CPXobjsa(env(), lp(), 0, NumVars() - 1, low.data(), high.data()));
+  return { low, high };
+}
+std::pair<ArrayRef<double>, ArrayRef<double>> CplexBackend::Sensrhs() const {
+  std::vector<double> low(NumLinCons()), high(NumLinCons());
+  CPLEX_CALL(CPXrhssa(env(), lp(), 0, NumLinCons() - 1, low.data(), high.data()));
+  return { low, high };
+
+}
+std::pair<std::pair<ArrayRef<double>, ArrayRef<double>>, std::pair<ArrayRef<double>, ArrayRef<double>> > CplexBackend::Sensbounds() const {
+  std::vector<double> ublow(NumVars()), ubhigh(NumVars()), lblow(NumVars()), lbhigh(NumVars());
+  CPLEX_CALL(CPXboundsa(env(), lp(), 0, NumVars() - 1, lblow.data(), lbhigh.data(), ublow.data(), ubhigh.data()));
+  return { {lblow, lbhigh}, {ublow, ubhigh} };
+}
+
+
+
+
+
 
 ArrayRef<double> CplexBackend::Ray() {
   std::vector<double> ray(NumVars());
@@ -570,6 +693,8 @@ ArrayRef<double> CplexBackend::Ray() {
 
 ArrayRef<double> CplexBackend::DRay() {
   std::vector<double> dd(NumLinCons());
+  if (dd.size() == 0)
+    return dd;
   double proof_p;
   CPXdualfarkas(env(), lp(), dd.data(), &proof_p);
   auto vm = GetValuePresolver().PostsolveSolution({
@@ -1371,6 +1496,13 @@ static const mp::OptionValueInfo values_mipsearch[] = {
   { "2", "Dynamic search", 2}
 };
   
+static const mp::OptionValueInfo values_nodefile[] = {
+  { "0", "no", 0},
+  { "1", "compressed node file in memory (default)", 1},
+  { "2", "node file on disk", 2},
+  { "3", "compressed node file on disk", 3}
+};
+
   
 void CplexBackend::setSolutionMethod() {
   int nFlags = bool(storedOptions_.fBarrier_)
@@ -1482,6 +1614,9 @@ void CplexBackend::FinishOptionParsing() {
     CPLEX_CALL(CPXgetnumcores(env(), &storedOptions_.numcores_));
     AddToSolverMessage(fmt::format("{} logical cores are available.\n", storedOptions_.numcores_));
   }
+
+  if (!storedOptions_.workDir_.empty())
+    CPLEX_CALL(CPXsetstrparam(env(), CPX_PARAM_WORKDIR, storedOptions_.workDir_.c_str()));
 
 
 }
@@ -1790,13 +1925,19 @@ void CplexBackend::InitCustomOptions() {
     "must be in [0.0, 0.5])",
     CPXPARAM_MIP_Tolerances_Integrality, 0.0, 0.5);
 
+
+  AddSolverOption("mip:nodefile nodefile",
+    "Whether to save node information in a temporary file:\n"
+    "\n.. value-table::\n",
+    CPX_PARAM_NODEFILEIND, 0.0, 0.5);
+
+
+
   AddSolverOption("mip:search mipsearch",
     "Search strategy for mixed-integer problems:\n"
     "\n.. value-table::\n",
     CPXPARAM_MIP_Strategy_Search, values_mipsearch, 0);
-
-
-
+  
 
   AddSolverOption("mip:submipalg submipalg",
     "Choice of algorithm used to solve the subproblems of a subMIP: "
@@ -2036,6 +2177,18 @@ void CplexBackend::InitCustomOptions() {
       "How many threads to use when using the barrier algorithm\n"
       "or solving MIP problems; default 0 ==> automatic choice.",
       CPXPARAM_Threads, 0, CPXINT_MAX);
+
+  AddStoredOption("tech:workdir nodefiledir workfiledir workdir",
+    "Directory where CPLEX creates a temporary subdirectory "
+    "for temporary files, e.g., for node information and Cholesky factors.",
+    storedOptions_.workDir_
+  );
+
+  AddSolverOption("tech:workfilelim workfilelim",
+    "Maximum size in megabytes for in-core work \"files\". Default 2048.",
+    CPX_PARAM_WORKMEM, 2048, 2048);
+
+
 
   AddSolverOption("lim:iter iterlim iterlimit iterations",
     "LP iteration limit (default:  9223372036800000000).",

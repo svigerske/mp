@@ -1,6 +1,10 @@
 Summary of recent updates to CPLEX for AMPL
 ==============================================
 
+## 20241206
+- Added support for sensitivity analysis (keyword `sensitivity`)
+- Added keywords `mip:nodefile`, `tech:workdir`, `tech:workfilelim`
+
 
 ## 20240828
 - Options `primalopt`, `dualopt`, `baropt`, `siftopt`, `netopt`, `bendersopt` are now

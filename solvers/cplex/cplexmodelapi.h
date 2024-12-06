@@ -38,9 +38,6 @@ public:
   //////////////////////////// GENERAL CONSTRAINTS ////////////////////////////
   USE_BASE_CONSTRAINT_HANDLERS(BaseModelAPI)
 
-  /// LinConRange is optional
-  ACCEPT_CONSTRAINT(LinConRange, Recommended, CG_Linear)
-  void AddConstraint(const LinConRange& lc);
 
   /// Every Backend should accept LinCon(LE/EQ/GE),
   /// or add a conversion rule in a derived FlatConverter

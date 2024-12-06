@@ -104,6 +104,11 @@ public:
   ALLOW_STD_FEATURE(FIX_MODEL, true)
   void ConsiderCplexFixedModel();
   std::string DoCplexFixedModel();
+  /**
+  * Report sensitivity analysis suffixes (postsolved)
+  **/
+  ALLOW_STD_FEATURE(SENSITIVITY_ANALYSIS, true)
+  SensRanges GetSensRanges() override;
 
   ALLOW_STD_FEATURE(IIS, true)
   void ComputeIIS() override;
@@ -205,6 +210,16 @@ protected:
 
 private:
 
+  // returns {objlow, objhigh}
+  std::pair<ArrayRef<double>, ArrayRef<double>> Sensobj() const;
+
+  // returns { rhslow, rhshigh}
+  std::pair<ArrayRef<double>, ArrayRef<double>> Sensrhs() const;
+
+  // returns { {lb_low, lb_high}, {ub_low, ub_high} }
+  std::pair<std::pair<ArrayRef<double>, ArrayRef<double>>, std::pair<ArrayRef<double>, ArrayRef<double>> > Sensbounds() const;
+
+
   bool silenceOutput_ = false;
   void setSilenceOutput(bool doSilence) {
     silenceOutput_ = doSilence;
@@ -238,6 +253,8 @@ private:
     std::string cpuMask_;
     std::string endBasis_;
     std::string mipStart_;
+
+    std::string workDir_ = "";
     int outlev_ = 0;;
     int noSolve_ = 0;
     int nPoolMode_=2;

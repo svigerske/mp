@@ -99,34 +99,6 @@ void CplexModelAPI::SetQuadraticObjective(int iobj, const QuadraticObjective& qo
   }
 }
 
-void CplexModelAPI::AddConstraint(const LinConRange& lc) {
-  char sense = 'E';                     // good to initialize things
-  double rhs = lc.lb();
-  if (lc.lb()==lc.ub())
-    sense = 'E';
-  else {                                // Let solver deal with lb>~ub etc.
-    if (lc.lb()>MinusInfinity()) {
-      sense = 'G';
-    }
-    if (lc.ub()<Infinity()) {
-      if ('G'==sense)
-        sense = 'R';
-      else {
-        sense = 'L';
-        rhs = lc.ub();
-      }
-    }
-  }
-  int rmatbeg[] = { 0 };
-  CPLEX_CALL( CPXaddrows (env(), lp(), 0, 1, lc.size(), &rhs,
-                          &sense, rmatbeg, lc.pvars(), lc.pcoefs(),
-                          NULL, NULL) );
-  if ('R'==sense) {
-    int indices = NumLinCons()-1;
-    double range = lc.ub()-lc.lb();
-    CPLEX_CALL( CPXchgrngval (env(), lp(), 1, &indices, &range) );
-  }
-}
 void CplexModelAPI::AddConstraint(const LinConLE& lc) {
   char sense = 'L';                     // good to initialize things
   double rhs = lc.rhs();
