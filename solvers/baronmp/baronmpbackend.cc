@@ -236,9 +236,9 @@ std::pair<int, std::string> BaronmpBackend::GetSolveResult() {
   case 6:
     return { sol::LIMIT_NO_FEAS_INTERRUPT, "interrupted, no feasible solution" };
   case 7:
-    return { sol::FAILURE, "too little memory" };
+    return { sol::FAILURE+2, "too little memory" };
   case 9:
-    return { sol::FAILURE, "BARON syntax error (should not happen)" };
+    return { sol::FAILURE+1, "BARON syntax error (should not happen)" };
   case 10:
     return { sol::FAILURE, "licensing error" };
   case 11:
@@ -353,13 +353,17 @@ void BaronmpBackend::InitCustomOptions() {
     baronOptions().inlineparams);
 
   ////////////////// CUSTOM RESULT CODES ///////////////////
-  // todo
   AddSolveResults( {
-                     { sol::FAILURE+1, "fatal error 1" },
-                     { sol::FAILURE+2, "fatal error 2" },
-                     { sol::LIMIT_FEAS_NEW + 1, "AI iteration limit, feasible solution" },
-                     { sol::LIMIT_NO_FEAS_NEW + 1, "AI iteration limit, no feasible solution" }
-                   } );     // No replacement, make sure they are new
+                    { sol::LIMIT_NO_FEAS_ITER, "iteration limit, without a feasible soluton" },
+                    { sol::LIMIT_NO_FEAS_NODES, "node limit, without a feasible soluton" },
+                    { sol::LIMIT_NO_FEAS_TIME, "time limit, without a feasible solution" },
+                    { sol::LIMIT_NO_FEAS_INTERRUPT, "interrupted, no feasible solution" },
+                    { sol::FAILURE + 2, "too little memory" },
+                    { sol::FAILURE + 1, "BARON syntax error (should not happen)" },
+                    { sol::FAILURE, "licensing error" },
+                    { sol::UNCERTAIN, "numerical difficulties but possibly optimal" },
+                    { sol::UNKNOWN, "Unknown solution status returned from Baron"}
+                   } );     
 }
 
 void BaronmpBackend::AddPrimalDualStart(Solution sol0_unpres) {

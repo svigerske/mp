@@ -16,6 +16,24 @@ namespace mp {
     VExpr::varName = std::bind(&BaronmpModelAPI::varName, this, std::placeholders::_1);
   }
 
+
+  std::string sanitizeName(fmt::CStringRef name , char prefix) {
+    std::string n(name.c_str());
+    // Check if the first character is a letter; if not, prepend the prefix
+    if (!std::isalpha(n[0])) {
+      n = prefix + n;
+    }
+
+    // Replace non-alphanumeric characters or spaces with underscores
+    for (char& ch : n) {
+      if (!std::isalnum(ch)) {
+        ch = '_';
+      }
+    }
+    return n;
+  }
+
+
   void BaronmpModelAPI::AddBounds(const double* bounds, 
     const std::vector<VTYPE>& vtypes,bool lower) {
     bool headerWritten = false;
@@ -42,7 +60,7 @@ namespace mp {
       writeVars(vars_buffer, "}\n\n");
   }
   void BaronmpModelAPI::AddVariables(const std::vector<int>& indices, 
-    fmt::StringRef prefix, fmt::StringRef header, const char* names) {
+    fmt::StringRef prefix, fmt::StringRef header, const char* const* names) {
     
     if (indices.size() > 0) {
       std::string name;
@@ -52,7 +70,8 @@ namespace mp {
         if (i != 0)
           writeVars(vars_buffer, ", ");
         if (names)
-          name = names[indices[i]];
+
+          name = sanitizeName(names[indices[i]], 'v');
         else
           name = fmt::format("{}{}", prefix, indices[i]);
         lp()->varMap[name] = indices[i];
@@ -101,10 +120,10 @@ namespace mp {
     }
     int cv = 0;
     std::string name;
-    AddVariables(indicesBin, "b", "BINARY_VARIABLES");
-    AddVariables(indicesInt, "i", "INTEGER_VARIABLES");
-    AddVariables(indicesPos, "p", "POSITIVE_VARIABLES");
-    AddVariables(indicesFree, "x", "VARIABLES");
+    AddVariables(indicesBin, "b", "BINARY_VARIABLES", v.pnames());
+    AddVariables(indicesInt, "i", "INTEGER_VARIABLES", v.pnames());
+    AddVariables(indicesPos, "p", "POSITIVE_VARIABLES", v.pnames());
+    AddVariables(indicesFree, "x", "VARIABLES", v.pnames());
     AddBounds(v.plb(), vtype, true);
     AddBounds(v.pub(), vtype, false);
     nVarsBinary(indicesBin.size());
@@ -219,10 +238,11 @@ namespace mp {
     if (name.empty())
       n = fmt::format("c{}", ++n_unamed_constraint);
     else
-      n = name;
+      n = sanitizeName(name, 'c');
     lp()->conNames.push_back(n);
     return n;
   }
+
   void appendNameAndLhs(fmt::MemoryWriter &w, const std::string &name, double lhs, double rhs) {
     w << name << ": ";
     bool hasLhs = lhs != -std::numeric_limits<double>::infinity();

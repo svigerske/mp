@@ -218,7 +218,7 @@ public:
 
   void AddVariables(const std::vector<int>& indices,
     fmt::StringRef prefix, fmt::StringRef header,
-    const char* names=nullptr);
+    const char* const* names=nullptr);
   void AddBounds(const double* bounds,
     const std::vector<VTYPE>& vtypes, bool lower);
   void AddVariables(const VarArrayDef& );
