@@ -6,7 +6,8 @@
 #include "mp/backend-to-model-api.h"
 
 extern "C" {
-    #include "xprs.h"
+#include "xprs.h"
+#include "xslp.h"
 }
 
 #include "mp/format.h"

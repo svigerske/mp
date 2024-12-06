@@ -542,9 +542,25 @@ std::string XpressmpBackend::DoXpressFixedModel()
     { "2", "Honor presolveops bit 3 (2^3 = 8)", 2}
   };
   static const mp::OptionValueInfo presolve_values_[] = {
-    { "0", "No", 0},
-    { "1", "Yes, removing redundant bounds (default)", 1},
-    { "2", "Yes, retaining redundant bounds", 2}
+      { "-1", "Presolve applied, but a problem will not be "
+             "declared infeasible if primal infeasibilities "
+             "are detected. The problem will be solved by "
+             "the LP optimization algorithm, returning an "
+             "infeasible solution, which can sometimes be helpful",
+       XPRS_PRESOLVE_NOPRIMALINFEASIBILITY},
+      { "0", "No", 0},
+    { "1", "Yes (default)", 1},
+      { "2", "Yes, retaining redundant bounds. This can sometimes "
+            "increase the efficiency of the barrier algorithm",
+       XPRS_PRESOLVE_KEEPREDUNDANTBOUNDS}
+  };
+
+  static const mp::OptionValueInfo nlp_presolve_values_[] = {
+      { "0", "No", 0},
+      { "1", "Yes (default)", 1},
+      { "2", "Low memory presolve. Original problem is not restored "
+            "by postsolve and dual solution may not be completely "
+            "postsolved.", 2}
   };
 
   static const mp::OptionValueInfo presolveops_values_[] = {
@@ -562,7 +578,10 @@ std::string XpressmpBackend::DoXpressFixedModel()
     { "2048 = 2^11", "No advanced IP reductions", XPRS_PRESOLVEOPS_NOADVANCEDIPREDUCTIONS},
     { "4096 = 2^12", "No eliminations on integers", 12},
     { "16384 = 2^14", "Linearly dependant row removal", XPRS_PRESOLVEOPS_LINEARLYDEPENDANTROWREMOVAL},
-    { "32768 = 2^15", "No integer variable and SOS detection", XPRS_PRESOLVEOPS_NOINTEGERVARIABLEANDSOSDETECTION},
+      { "32768 = 2^15", "No integer variable and SOS detection", XPRS_PRESOLVEOPS_NOINTEGERVARIABLEANDSOSDETECTION},
+      { "65536 = 2^16", "No implied bounds", XPRS_PRESOLVEOPS_NOIMPLIEDBOUNDS},
+      { "131072 = 2^17", "No clique presolve", XPRS_PRESOLVEOPS_NOCLIQUEPRESOLVE},
+      { "262144 = 2^18", "No mod2 presolve", XPRS_PRESOLVEOPS_NOMOD2REDUCTIONS},
     { "536870912 = 2^29", "No dual reduction on globals", XPRS_PRESOLVEOPS_NODUALREDONGLOBALS},
   };
 
@@ -1401,134 +1420,141 @@ void XpressmpBackend::InitCustomOptions() {
                     "than or equal to this in absolute value, it is treated as zero, default=1e-9.",
                     XPRS_MATRIXTOL, 0.0, DBL_MAX);
 
-AddSolverOption("lp:pivtol pivtol markowitztol",
-                "Markowitz pivot tolerance (default = 0.01)",
-                XPRS_MARKOWITZTOL, 0.0, DBL_MAX);
+    AddSolverOption("lp:pivtol pivtol markowitztol",
+                    "Markowitz pivot tolerance (default = 0.01)",
+                    XPRS_MARKOWITZTOL, 0.0, DBL_MAX);
 
-AddSolverOption("alg:cutoff cutoff",
-  "If the optimal objective value is worse than cutoff, "
-  "report \"objective cutoff\" and do not return a solution. "
-  "Default: 1.0E+40 for minimizing, -1.0E+40 for maximizing.",
-  XPRS_MIPABSCUTOFF, MinusInfinity(), Infinity());
+    AddSolverOption("alg:cutoff cutoff",
+                    "If the optimal objective value is worse than cutoff, "
+                    "report \"objective cutoff\" and do not return a solution. "
+                    "Default: 1.0E+40 for minimizing, -1.0E+40 for maximizing.",
+                    XPRS_MIPABSCUTOFF, MinusInfinity(), Infinity());
 
-AddSolverOption("alg:addcutoff addcutoff mipaddcutoff",
-  "Amount to add to the objective function of the best integer\n\
-		solution found to give the new MIP cutoff; default -1e-5.",
-  XPRS_MIPADDCUTOFF, -1e-10, DBL_MAX);
+    AddSolverOption("alg:addcutoff addcutoff mipaddcutoff",
+                    "Amount to add to the objective function of the best integer\n\
+                    solution found to give the new MIP cutoff; default -1e-5.",
+                        XPRS_MIPADDCUTOFF, -1e-10, DBL_MAX);
 
-AddSolverOption("alg:relcutoff relcutoff miprelcutoff",
-  "If the optimal objective value is (relatively) worse than relcutoff, "
-  "report \"objective cutoff\" and do not return a solution. "
-  "Default: 1.0E-4.",
-  XPRS_MIPRELCUTOFF, 1e-4, Infinity());
+    AddSolverOption("alg:relcutoff relcutoff miprelcutoff",
+                    "If the optimal objective value is (relatively) worse than relcutoff, "
+                    "report \"objective cutoff\" and do not return a solution. "
+                    "Default: 1.0E-4.",
+                    XPRS_MIPRELCUTOFF, 1e-4, Infinity());
 
-AddSolverOption("alg:randomseed randomseed",
-  "Sets the initial seed to use for the pseudo-random number generator in the "
-  "Optimizer; default=1",
-  XPRS_RANDOMSEED, -INT_MAX,  INT_MAX);
+    AddSolverOption("alg:randomseed randomseed",
+                    "Sets the initial seed to use for the pseudo-random number generator in the "
+                    "Optimizer; default=1",
+                    XPRS_RANDOMSEED, -INT_MAX,  INT_MAX);
 
-AddSolverOption("alg:refactor refactor",
-  "Whether the optimization should restart using the current representation of the "
-  "factorization in memory:\n"
-  "\n.. value-table::\n",
-  XPRS_REFACTOR, values_autonoyes_, -1);
+    AddSolverOption("alg:refactor refactor",
+                    "Whether the optimization should restart using the current representation of the "
+                    "factorization in memory:\n"
+                    "\n.. value-table::\n",
+                    XPRS_REFACTOR, values_autonoyes_, -1);
 
-AddSolverOption("alg:refineops refineops",
-  "Bit vector: specifies wmhen the solution refiner should be executed to "
-  "reduce solution infeasibilities. "
-  "The refiner will attempt to satisfy the target tolerances for all original linear "
-  "constraints before presolve or scaling has been applied:\n"
-  "\n.. value-table::\n",
-  XPRS_REFINEOPS, values_refineops, 19);
+    AddSolverOption("alg:refineops refineops",
+                    "Bit vector: specifies wmhen the solution refiner should be executed to "
+                    "reduce solution infeasibilities. "
+                    "The refiner will attempt to satisfy the target tolerances for all original linear "
+                    "constraints before presolve or scaling has been applied:\n"
+                    "\n.. value-table::\n",
+                    XPRS_REFINEOPS, values_refineops, 19);
 
-AddSolverOption("alg:resourcestrategy resourcestrategy",
-  "Wether to allow nondeterministic decisions to cope with "
-		"low memory (affected by maxmemory and maxmemoryhard):\n"
-  "\n.. value-table::\n",
-  XPRS_RESOURCESTRATEGY, values_01_noyes_0default_, 0);
+    AddSolverOption("alg:resourcestrategy resourcestrategy",
+                    "Wether to allow nondeterministic decisions to cope with "
+                    "low memory (affected by maxmemory and maxmemoryhard):\n"
+                    "\n.. value-table::\n",
+                    XPRS_RESOURCESTRATEGY, values_01_noyes_0default_, 0);
 
-//endalg
+    //endalg
     // ****************************
-  // PRESOLVER
-  // ****************************
-  AddSolverOption("pre:solve presolve",
-    "Whether to use Xpress' presolve:\n"
-    "\n.. value-table::\n",
-    XPRS_PRESOLVE, presolve_values_, 1);
+    // PRESOLVER
+    // ****************************
+    AddSolverOption("pre:solve presolve",
+                    "Whether to use Xpress' presolve:\n"
+                    "\n.. value-table::\n"
+                    "\n"
+                    "For nonlinear presolve, see option pre:solve_nlp.",
+                    XPRS_PRESOLVE, presolve_values_, 1);
 
-  AddSolverOption("pre:ops presolveops",
-    "Reductions to use in XPRESS's presolve, sum of:\n"
-    "\n.. value-table::\n(default 511 = bits 0-8 set)",
-    XPRS_PRESOLVEOPS, presolveops_values_, 511);
+    AddSolverOption("pre:solve_nlp presolve_nlp presolve_slp",
+                    "Whether to use Xpress' nonlinear presolve:\n"
+                    "\n.. value-table::\n",
+                    XSLP_PRESOLVE, nlp_presolve_values_, 1);
 
-  AddSolverOption("pre:maxscalefactor maxscalefactor",
-  "Maximum log2 factor that can be applied during scaling, must be >=0 and <=64; default=64.",
-  XPRS_MAXSCALEFACTOR, 0, 64);
+    AddSolverOption("pre:ops presolveops",
+                    "Reductions to use in XPRESS's presolve, sum of:\n"
+                    "\n.. value-table::\n(default 511 = bits 0-8 set)",
+                    XPRS_PRESOLVEOPS, presolveops_values_, 511);
 
-  AddSolverOption("pre:configuration preconfiguration",
-    "Whether to reformulate binary rows with very few coefficients:\n"
-    "\n.. value-table::\n",
-    XPRS_PRESOLVE, values_01_noyes_1default_, 1);
+    AddSolverOption("pre:maxscalefactor maxscalefactor",
+                    "Maximum log2 factor that can be applied during scaling, must be >=0 and <=64; default=64.",
+                    XPRS_MAXSCALEFACTOR, 0, 64);
 
-  AddSolverOption("pre:elimfillin elimfillin",
-    "Maximum fillins allowed for a presolve elimination; default = 10",
-    XPRS_ELIMFILLIN, 0, INT_MAX);
+    AddSolverOption("pre:configuration preconfiguration",
+                    "Whether to reformulate binary rows with very few coefficients:\n"
+                    "\n.. value-table::\n",
+                    XPRS_PRECONFIGURATION, values_01_noyes_1default_, 1);
 
-  AddSolverOption("pre:elimtol elimtol",
-    "The Markowitz tolerance for the elimination phase of the presolve; default=0.001",
-    XPRS_ELIMTOL, 0.0, DBL_MAX);
+    AddSolverOption("pre:elimfillin elimfillin",
+                    "Maximum fillins allowed for a presolve elimination; default = 10",
+                    XPRS_ELIMFILLIN, 0, INT_MAX);
 
-  AddSolverOption("pre:genconsdualreductions genconsdualreductions",
-    "Whether dual reductions should be applied to reduce the number "
-    "of columns and rows added when transforming general constraints to MIP structs:\n"
-    "\n.. value-table::\n",
-    XPRS_GENCONSDUALREDUCTIONS, values_01_noyes_1default_, 1);
+    AddSolverOption("pre:elimtol elimtol",
+                    "The Markowitz tolerance for the elimination phase of the presolve; default=0.001",
+                    XPRS_ELIMTOL, 0.0, DBL_MAX);
+
+    AddSolverOption("pre:genconsdualreductions genconsdualreductions",
+                    "Whether dual reductions should be applied to reduce the number "
+                    "of columns and rows added when transforming general constraints to MIP structs:\n"
+                    "\n.. value-table::\n",
+                    XPRS_GENCONSDUALREDUCTIONS, values_01_noyes_1default_, 1);
 
     AddSolverOption("pre:indlinbigm indprelinbigm",
-            "Largest \"big M\" value to use in converting indicator "
-            "constraints to regular constraints during XPRESS "
-            "presolve; default = 100.0",
-            XPRS_INDPRELINBIGM, 0.0, DBL_MAX);
+                    "Largest \"big M\" value to use in converting indicator "
+                    "constraints to regular constraints during XPRESS "
+                    "presolve; default = 100.0",
+                    XPRS_INDPRELINBIGM, 0.0, DBL_MAX);
 
     AddSolverOption("pre:maximpliedbound maximpliedbound",
-                "When preprocessing MIP problems, only use computed bounds "
-                "at most maximpliedbound (default 1e8) in absolute value",
-                XPRS_MAXIMPLIEDBOUND, 0.0, DBL_MAX);
+                    "When preprocessing MIP problems, only use computed bounds "
+                    "at most maximpliedbound (default 1e8) in absolute value",
+                    XPRS_MAXIMPLIEDBOUND, 0.0, DBL_MAX);
 
 
     AddSolverOption("pre:objscalefactor objscalefactor",
-      "Power of 2 (default 0) by which the objective is scaled. "
-      "Nonzero objscalfactor values override automatic global "
-      "objective scaling",
-      XPRS_OBJSCALEFACTOR, 0, INT_MAX);
+                    "Power of 2 (default 0) by which the objective is scaled. "
+                    "Nonzero objscalfactor values override automatic global "
+                    "objective scaling",
+                    XPRS_OBJSCALEFACTOR, 0, INT_MAX);
 
     AddSolverOption("pre:basisred prebasisred",
-      "Determines if a lattice basis reduction algorithm should be "
-      "attempted as part of presolve:\n"
-      "\n.. value-table::\n",
-      XPRS_PREBASISRED, values_autonoyes_, -1);
+                    "Determines if a lattice basis reduction algorithm should be "
+                    "attempted as part of presolve:\n"
+                    "\n.. value-table::\n",
+                    XPRS_PREBASISRED, values_autonoyes_, -1);
 
     AddSolverOption("pre:bndredcone prebndredcone",
-      "Determines if second order cone constraints should be used for "
-      "inferring bound reductions on variables when solving a MIP:\n"
-      "\n.. value-table::\n", 
-      XPRS_PREBNDREDCONE, values_autonoyes_, -1);
+                    "Determines if second order cone constraints should be used for "
+                    "inferring bound reductions on variables when solving a MIP:\n"
+                    "\n.. value-table::\n",
+                    XPRS_PREBNDREDCONE, values_autonoyes_, -1);
 
     AddSolverOption("pre:bndredquad prebndredquad",
-      "Determines if convex quadratic contraints should be used for "
-      "inferring bound reductions on variables when solving a MIP",
-      XPRS_PREBNDREDQUAD, values_autonoyes_, -1);
+                    "Determines if convex quadratic contraints should be used for "
+                    "inferring bound reductions on variables when solving a MIP",
+                    XPRS_PREBNDREDQUAD, values_autonoyes_, -1);
 
     AddSolverOption("pre:cliquestrategy precliquestrategy",
-      "Determines how much effort to spend on clique covers "
-      "in presolve; default=-1.",
-      XPRS_PRECLIQUESTRATEGY, -1, INT_MAX);
+                    "Determines how much effort to spend on clique covers "
+                    "in presolve; default=-1.",
+                    XPRS_PRECLIQUESTRATEGY, -1, INT_MAX);
 
     AddSolverOption("pre:coefelim precoefelim",
-      "Specifies whether the optimizer should attempt to "
-      "recombine constraints:\n"
-      "\n.. value-table::\n",
-      XPRS_PRECOEFELIM, values_precoefelim, 2);
+                    "Specifies whether the optimizer should attempt to "
+                    "recombine constraints:\n"
+                    "\n.. value-table::\n",
+                    XPRS_PRECOEFELIM, values_precoefelim, 2);
     
     AddSolverOption("pre:components precomponents",
       "Determines whether small independent components should "
