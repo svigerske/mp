@@ -1928,8 +1928,8 @@ void CplexBackend::InitCustomOptions() {
 
   AddSolverOption("mip:nodefile nodefile",
     "Whether to save node information in a temporary file:\n"
-    "\n.. value-table::\n",
-    CPX_PARAM_NODEFILEIND, 0.0, 0.5);
+    "\n.. value-table::\n", CPXPARAM_MIP_Strategy_File, 
+    values_nodefile, 0);
 
 
 
