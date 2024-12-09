@@ -1541,7 +1541,8 @@ protected:
   const char* GetVarName(int v) const {
     assert(v>=0 && v<(int)var_lbs_.size());
     return
-        (int)var_names_.size() > v ? var_names_[v] : nullptr;
+        (int)var_names_.size() > v && var_names_[v]
+               ? var_names_[v] : "";
   }
 
   /// Feed extended linear part
