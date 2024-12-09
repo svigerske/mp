@@ -407,6 +407,7 @@ public:
       if (MPCD( lb(x) ) >= 1.0)
         ++ result.second;
     }
+    assert(result.first + result.second <= (int)vec.size());
     return result;
   }
 
@@ -470,9 +471,16 @@ public:
 
   template <class PreprocessInfo>
   void PreprocessConstraint(
-      NotConstraint& , PreprocessInfo& prepro) {
-    prepro.narrow_result_bounds(0.0, 1.0);
-    prepro.set_result_type( var::INTEGER );
+      NotConstraint& nc, PreprocessInfo& prepro) {
+    auto nfixed = count_fixed_01(nc.GetArguments());
+    if (nfixed.first) {
+      prepro.narrow_result_bounds(1.0, 1.0);
+    } else if (nfixed.second) {
+      prepro.narrow_result_bounds(0.0, 0.0);
+    } else {
+      prepro.narrow_result_bounds(0.0, 1.0);
+      prepro.set_result_type( var::INTEGER );
+    }
   }
 
   /// Preprocess Div
