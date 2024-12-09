@@ -3,6 +3,7 @@ Summary of recent updates to the AMPL MP Library
 
 
 ## unreleased
+- Fix lower bound calculation of the division result.
 - [BREAKING] Option acc:pow now affects only expressions x^y
   with both x, y variable; previous meaning of acc:pow
   is now with acc:powconstexp.

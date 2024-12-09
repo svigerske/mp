@@ -488,7 +488,7 @@ public:
 				u2 < MPD( PracticallyInf() ) &&
         l2 * u2 > 0.0) {
       auto l0 = std::numeric_limits<double>::max();
-      auto u0 = std::numeric_limits<double>::min();
+      auto u0 = std::numeric_limits<double>::lowest();
       {
         l0 = std::min(l0, l1 / l2);
         l0 = std::min(l0, l1 / u2);
