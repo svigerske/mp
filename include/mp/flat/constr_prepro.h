@@ -548,15 +548,14 @@ public:
   void PreprocessConstraint(
       LogConstraint& c, PreprocessInfo& ) {
     auto x = c.GetArguments()[0];  // if no positive lb,
-    if (MPD(lb(x))<0.0)            // set (fixed) lb=0
-      MPD( NarrowVarBounds(x, 0.0, MPD( Infty() )) );
+    MPD( NarrowVarBounds(x, 0.0, MPD( Infty() )) );
   }
 
   template <class PreprocessInfo>
   void PreprocessConstraint(
       LogAConstraint& c, PreprocessInfo& ) {
     MPD( NarrowVarBounds(
-           c.GetArguments()[0], 0.0, MPD( Infty() )) );
+        c.GetArguments()[0], 0.0, MPD( Infty() )) );
   }
 
   template <class PreprocessInfo>
@@ -580,7 +579,7 @@ public:
   template <class PreprocessInfo>
   void PreprocessConstraint(
       AsinConstraint& , PreprocessInfo& prepro) {
-    prepro.narrow_result_bounds(-MPD(Pi())/2, MPD(Pi()));
+    prepro.narrow_result_bounds(-MPD(Pi())/2, MPD(Pi())/2);
   }
 
   template <class PreprocessInfo>
