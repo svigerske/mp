@@ -149,7 +149,7 @@ void BaronmpBackend::SetInterrupter(mp::Interrupter *inter) {
 }
 
 void BaronmpBackend::Solve() {
-  deinitBaronFile();
+  deinitBaronFile(false);
   
 
   BaronGlobals g;
@@ -164,8 +164,8 @@ void BaronmpBackend::Solve() {
   g.nvars = nVarsInteger() + nVarsContinuous()+ nVarsBinary();
   g.verbuf = version();
   g.v_keepsol = baronOptions().keepsol;
-  g.serialize(FILENAME_AMPL);
-  int status =  BaronmpCommon::runBaron(filePathBar());
+  g.serialize(filePathAMPL());
+  int status =  BaronmpCommon::runBaron(filePathBar(), baronOptions().maxtime);
   if (status)
     errorLevel = -1; // Problems running process
 

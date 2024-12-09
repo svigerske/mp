@@ -44,9 +44,9 @@ namespace mp {
   volatile pid_t BaronmpCommon::pid=-5;
 #endif
 
-int BaronmpCommon::runBaron(const std::string& arg) {
+int BaronmpCommon::runBaron(const std::string& arg, double timelimit) {
   std::vector<std::string> args = { EXENAME, arg };
-  return run(args);
+  return run(args, timelimit);
 }
 
 
@@ -83,7 +83,7 @@ std::string BaronmpCommon::make_cmdline(const std::vector<std::string>& args) {
 }
 
 
-int BaronmpCommon::run(const std::vector<std::string>& args) {
+int BaronmpCommon::run(const std::vector<std::string>& args, double timelimit) {
   if (args.empty()) {
     fmt::print(stderr, "No command specified.\n");
     return -1;
@@ -94,34 +94,40 @@ int BaronmpCommon::run(const std::vector<std::string>& args) {
     fmt::print(stderr, "Command not found: {}\n", args[0]);
     return -1;
   }
-
+  typedef void (*Sig_func_type)(int);
 #ifdef _WIN32
   // Windows-specific implementation using CreateProcess
   std::string cmdline = make_cmdline(args);
   STARTUPINFO si;
   PROCESS_INFORMATION pi;
+  DWORD waittime = INFINITE;
   ZeroMemory(&si, sizeof(si));
   si.cb = sizeof(si);
   ZeroMemory(&pi, sizeof(pi));
 
+  si.wShowWindow = SW_SHOW;
+  Sig_func_type oldsig = signal(SIGINT, SIG_IGN);
   // Create the process
-  if (!CreateProcess(NULL, cmdline.data(), NULL, 
-  NULL, TRUE, CREATE_NEW_PROCESS_GROUP, NULL, NULL, &si, &pi)) {
+  if (!CreateProcess(cmd_path.data(), cmdline.data(), NULL,
+  NULL, TRUE, NULL, NULL, baronDir.data(), &si, &pi)) {
     fmt::print(stderr, "CreateProcess failed ({})\n", GetLastError());
     return -1;
   }
   pid = pi.dwProcessId;
-  // Wait until the process exits
-  WaitForSingleObject(pi.hProcess, INFINITE);
-
+  CloseHandle(pi.hThread);
+  // Wait until the process exits or until the timelimit has passed
+  // Note that we give one additional second to Baron to exit
+  if (timelimit > 0)
+    waittime = 1000 * (timelimit+1);
+  auto res = WaitForSingleObject(pi.hProcess, waittime);
+  if (res == WAIT_TIMEOUT)
+    TerminateProcess(pi.hProcess, 999);
   // Get the exit code
   DWORD exit_code = 0;
   GetExitCodeProcess(pi.hProcess, &exit_code);
-
-  // Close process and thread handles
+  // Close process handle
   CloseHandle(pi.hProcess);
-  CloseHandle(pi.hThread);
-
+  signal(SIGINT, oldsig);
   return static_cast<int>(exit_code);
 
 #else
@@ -198,7 +204,7 @@ void BaronmpCommon::initBaronFile() {
   copy_common_info_to_other();
   writeBaron("// BARON {}.{}.{} ({}.{}.{})\n", v_year, v_month, v_day, v_year, v_month, v_day);
 }
-void BaronmpCommon::deinitBaronFile() {
+void BaronmpCommon::deinitBaronFile(bool changedir) {
   if (FILE_BAR) {
     FILE_BAR->close();
     FILE_BAR = 0;
@@ -211,7 +217,8 @@ void BaronmpCommon::deinitBaronFile() {
     FILE_DIC->close();
     FILE_DIC = 0;
   }
-  changeDirectory(initialDir);
+  if(changedir)
+    changeDirectory(initialDir);
 }
 
 

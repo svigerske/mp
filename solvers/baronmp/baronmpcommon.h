@@ -244,6 +244,7 @@ namespace mp {
           ADDTECHSER(cplexlibname);
       // ADDTECHSER(xpresslibname); NOT supported anymore?
       appendInlineParams(m);
+      m << fmt::format("PrLevel: {};\n", outlev);
       return m.str();
     }
     void appendInlineParams(fmt::MemoryWriter& m) const;
@@ -352,13 +353,13 @@ public:
   /// Variadic overload of Print()
   FMT_VARIADIC(void, writeBaron, fmt::CStringRef)
 
-  int runBaron( const std::string& arg);
+  int runBaron( const std::string& arg, double timelimit);
   std::string make_cmdline(const std::vector<std::string>& args);
-  int run(const std::vector<std::string>& args);
+  int run(const std::vector<std::string>& args, double timelimit);
   void initDirectories(const std::string& stub, const std::string& scratch, bool overwrite);
 
   void initBaronFile();
-  void deinitBaronFile();
+  void deinitBaronFile(bool changedir=true);
   int recrmdir(const std::string& dname);
   void changeDirectory(const std::string& path);
   
