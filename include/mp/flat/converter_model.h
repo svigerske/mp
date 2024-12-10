@@ -381,7 +381,7 @@ protected:
 
   template <class Backend>
   void PushVariablesTo(Backend& backend) const {
-    /// Fix 'eliminated' variables - no proper deletion
+    // Fix 'eliminated' variables - no proper deletion
     var_lb_subm_ = var_lb_;
     var_ub_subm_ = var_ub_;
     for (auto i=std::min(var_elim_.size(), var_lb_subm_.size()); i--; ) {
@@ -394,7 +394,11 @@ protected:
           var_lb_subm_[i] = var_ub_subm_[i] = 0.0;
       }
     }
-    /// Push variables
+    // Make fixed vars continuous
+    for (auto i=var_lb_subm_.size(); i--; )
+      if (var_lb_subm_[i] == var_ub_subm_[i])
+        var_type_[i] = var::CONTINUOUS;        // avoid MIP classification
+    // Push variables
     if (var_names_storage_.size() > 0) {
       // Convert names to c-str if needed
       var_names_.reserve(var_names_storage_.size());
@@ -453,14 +457,14 @@ private:
   /// Variables' submitted bounds - what goes to the solver
   mutable VarBndVec var_lb_subm_, var_ub_subm_;
   /// Variables' types
-  VarTypeVec var_type_;
+  mutable VarTypeVec var_type_;
   /// Whether the variable, being the result variable of a functional constraint,
   /// needs to stay a variable (vs being eliminated because the constraint
   /// is becoming an expression.)
   /// Normal variables are marked too.
   std::vector<bool> var_result_;
   /// Eliminated variables.
-  /// Currenlty they are just fixed.
+  /// Currently they are just fixed.
   std::vector<bool> var_elim_;
   ///  Variables' names
   mutable VarNameVec var_names_;
