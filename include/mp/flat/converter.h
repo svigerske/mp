@@ -92,6 +92,8 @@ public:
   void PropagateResultOfInitExpr(int var, double lb, double ub, Context ctx) {
     assert(!ctx.IsNone());
     bool tighterBounds = (lb > MPCD(lb(var)) || ub < MPCD(ub(var)));
+    lb = std::max(lb, MPCD(lb(var)));
+    ub = std::min(ub, MPCD(ub(var)));
     if (tighterBounds)
       NarrowVarBounds(var, lb, ub);
     if (HasInitExpression(var)) {

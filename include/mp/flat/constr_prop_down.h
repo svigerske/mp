@@ -114,23 +114,38 @@ public:
   void PropagateResult(NotConstraint& con, double lb, double ub, Context ctx) {
     MPD( NarrowVarBounds(con.GetResultVar(), lb, ub) );
     con.AddContext(ctx);
-    MPD( PropagateResultOfInitExpr(con.GetArguments()[0], 1.0-ub, 1.0-lb, -ctx) );
+    if (lb==ub) {                         // result fixed
+      if (!lb && ctx.HasNegative()) {       // result==0 && ctx-
+        MPD( PropagateResultOfInitExpr(con.GetArguments()[0], 1.0, 1.0, -ctx) );
+        MPD( DecrementVarUsage(con.GetResultVar()) );
+        return;
+      } else if (lb && ctx.HasPositive()) { // result==1 && ctx+
+        MPD( PropagateResultOfInitExpr(con.GetArguments()[0], 0.0, 0.0, -ctx) );
+        MPD( DecrementVarUsage(con.GetResultVar()) );
+        return;
+      }
+    }
+    MPD( PropagateResultOfInitExpr(con.GetArguments()[0], 0.0, 1.0, -ctx) );
   }
 
   void PropagateResult(AndConstraint& con, double lb, double ub, Context ctx) {
     MPD( NarrowVarBounds(con.GetResultVar(), lb, ub) );
     con.AddContext(ctx);
-    MPD( PropagateResult2Vars(con.GetArguments(), lb, 1.0, +ctx) );  // in any ctx??
-    if (lb>0.5)                                 // Remove, arguments are fixed
+    if (lb>0.5 && ctx.HasPositive()) {                  // Remove, arguments are fixed
+      MPD( PropagateResult2Vars(con.GetArguments(), lb, 1.0, +ctx) );
       MPD( DecrementVarUsage(con.GetResultVar()) );    // Or, remove completely?
+    } else
+      MPD( PropagateResult2Vars(con.GetArguments(), 0.0, 1.0, +ctx) );  // in any ctx??
   }
 
   void PropagateResult(OrConstraint& con, double lb, double ub, Context ctx) {
     MPD( NarrowVarBounds(con.GetResultVar(), lb, ub) );
     con.AddContext(ctx);
-    MPD( PropagateResult2Vars(con.GetArguments(), 0.0, ub, +ctx) );
-    if (ub<=0.5)                                 // Remove, arguments are fixed
+    if (ub<=0.5 && ctx.HasNegative()) {                 // Remove, arguments are fixed
+      MPD( PropagateResult2Vars(con.GetArguments(), 0.0, ub, +ctx) );
       MPD( DecrementVarUsage(con.GetResultVar()) );
+    } else
+      MPD( PropagateResult2Vars(con.GetArguments(), 0.0, 1.0, +ctx) );
   }
 
   void PropagateResult(IfThenConstraint& con, double lb, double ub, Context ctx) {
