@@ -52,8 +52,8 @@ public:
     const auto& con = eq0c.GetConstraint();
     const auto res = eq0c.GetResultVar();
     if (con.empty()) {
-      if (std::fabs(con.rhs()) != 0.0)
-        GetMC().NarrowVarBounds(res, 0.0, 0.0);
+      bool valid = !con.rhs();
+      GetMC().NarrowVarBounds(res, valid, valid);
     } else {
       if (GetMC().is_fixed(res)) {
         if (GetMC().fixed_value(res)) {  // fixed to 1
@@ -71,8 +71,8 @@ public:
     const auto& con = eq0c.GetConstraint();
     const auto res = eq0c.GetResultVar();
     if (con.empty()) {
-      if (std::fabs(con.rhs()) == 0.0)
-        GetMC().NarrowVarBounds(res, 1.0, 1.0);
+      bool valid = !con.rhs();
+      GetMC().NarrowVarBounds(res, valid, valid);
     } else if ( !GetMC().is_fixed(res) ||   // not fixed, or
                 !GetMC().fixed_value(res) ) // fixed to 0
     {

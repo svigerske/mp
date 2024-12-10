@@ -887,6 +887,10 @@ public:
   }
 
   /// Narrow variable domain range
+  /// @todo we could automatically decrement var usage
+  ///   in appropriate context when the variable is fixed
+  ///   at one of the original/upwards-implied bounds.
+  /// Then remove manual DecrementVarUsage()'s
   void NarrowVarBounds(int var, double lb, double ub) {
     auto& m = GetModel();
     m.set_lb(var, std::max(m.lb(var), lb));
@@ -1150,6 +1154,8 @@ private:
     int preprocessAnything_ = 1;
     int preprocessEqualityResultBounds_ = 1;
     int preprocessEqualityBvar_ = 1;
+    int preprocessInequalityRhs_ = 1;
+    int preprocessInequalityResultBounds_ = 1;
     int preproNestedAndOrs_ = 1;
 
     int passQuadObj_ = ModelAPIAcceptsQuadObj();
@@ -1263,11 +1269,17 @@ private:
         "0/1*: Set to 0 to disable most presolve in the flat converter.",
         options_.preprocessAnything_, 0, 1);
     GetEnv().AddOption("cvt:pre:eqresult",
-        "0/1*: Preprocess reified equality comparison's boolean result bounds.",
+        "0/1*: Preprocess reified equality comparison's decidable cases.",
         options_.preprocessEqualityResultBounds_, 0, 1);
     GetEnv().AddOption("cvt:pre:eqbinary",
         "0/1*: Preprocess reified equality comparison with a binary variable.",
         options_.preprocessEqualityBvar_, 0, 1);
+    GetEnv().AddOption("cvt:pre:ineqresult",
+                       "0/1*: Preprocess reified inequality comparison's decidable cases.",
+                       options_.preprocessInequalityResultBounds_, 0, 1);
+    GetEnv().AddOption("cvt:pre:ineqrhs",
+                       "0/1*: Preprocess reified inequality comparison's right-hand sides.",
+                       options_.preprocessInequalityRhs_, 0, 1);
     GetEnv().AddOption("cvt:pre:unnest",
         "0/1*: Inline nested expressions, currently Ands/Ors.",
         options_.preproNestedAndOrs_, 0, 1);
@@ -1421,6 +1433,14 @@ public:
   /// Whether preprocess conditional equality of a binary variable
   bool IfPreproEqBinVar() const
   { return MPCD( CanPreprocess(options_.preprocessEqualityBvar_) ); }
+
+  /// Whether preprocess inequality result bounds
+  bool IfPreproIneqResBounds() const
+  { return MPCD( CanPreprocess(options_.preprocessInequalityResultBounds_) ); }
+
+  /// Whether preprocess inequality rhs
+  bool IfPreproIneqRHS() const
+  { return MPCD( CanPreprocess(options_.preprocessInequalityRhs_) ); }
 
   /// Whether inline nested forall, exists
   bool IfPreproNestedAndsOrs() const

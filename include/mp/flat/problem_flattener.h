@@ -617,9 +617,11 @@ public:
               ConditionalConstraint< QuadConRhs<0> >
               { { std::move(lhs.GetAlgConBody()),
                   -lhs.constant_term() } } );
-    assert(eq.is_variable());
-    return AssignResult2Args(
+    if (eq.is_variable())
+      return AssignResult2Args(
           NotConstraint({eq.get_representing_variable()}));
+    assert( eq.is_constant() );
+    return EExpr::Constant{ 1.0 - eq.constant_term() };
   }
 
   /// Convert array of Expr's to array of EExpr's

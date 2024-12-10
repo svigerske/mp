@@ -290,7 +290,7 @@ public:
     assert(kind);
     auto& algc = cc.GetArguments();
     if (!IsNormalized(cc)) {
-      auto arg1 = algc;
+      auto arg1 = algc; // Add the normalized one instead
       arg1.negate();    // Negate the terms and sense
       prepro.set_result_var(
             MPD( AssignResultVar2Args(
@@ -303,9 +303,10 @@ public:
     }
     // See if we need to round the constant term
     auto rhs = algc.rhs();
-    auto bnt_body = MPD(
+    auto bnt = MPD(
           ComputeBoundsAndType(algc.GetBody()) );
-    if (var::INTEGER == bnt_body.get_result_type()
+    if (MPCD( IfPreproIneqRHS() )
+        && var::INTEGER == bnt.get_result_type()
         && std::floor(rhs) != std::ceil(rhs)) {  // rhs not int
       if (1==kind)  // algc is >=
         algc.set_rhs( std::ceil(rhs) );
@@ -316,6 +317,22 @@ public:
       else {
         assert(-2==kind);
         algc.set_rhs( std::ceil(rhs) );
+      }
+    }
+    // Decidable cases
+    if (MPCD( IfPreproIneqResBounds() )) {
+      if ((1==kind && bnt.lb()>=rhs)
+          || (-1==kind && bnt.ub()<=rhs)
+          || (2==kind && bnt.lb()>rhs)
+          || (-2==kind && bnt.ub()<rhs)) {
+        prepro.narrow_result_bounds(1.0, 1.0);   // TRUE
+      } else {
+        if ((1==kind && bnt.ub()<rhs)
+            || (-1==kind && bnt.lb()>rhs)
+            || (2==kind && bnt.ub()<=rhs)
+            || (-2==kind && bnt.lb()>=rhs)) {
+          prepro.narrow_result_bounds(0.0, 0.0);   // FALSE
+        }
       }
     }
   }
@@ -366,6 +383,10 @@ public:
     }
     if (MPCD( IfPreproNestedAndsOrs() ))
       IntegrateNested(con);            // flatten nested
+    if (con.GetArguments().empty())
+      prepro.narrow_result_bounds(1.0, 1.0);  // empty conjunction
+    if (1 == con.GetArguments().size())
+      prepro.set_result_var(con.GetArguments()[0]);
   }
 
   template <class PreprocessInfo>
@@ -394,6 +415,10 @@ public:
     }
     if (MPCD( IfPreproNestedAndsOrs() ))
       IntegrateNested(con);            // flatten nested
+    if (con.GetArguments().empty())
+      prepro.narrow_result_bounds(0.0, 0.0);  // empty disjunction
+    if (1 == con.GetArguments().size())
+      prepro.set_result_var(con.GetArguments()[0]);
   }
 
   /// Count N fixed binary vars

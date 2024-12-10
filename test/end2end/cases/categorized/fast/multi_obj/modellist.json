@@ -132,7 +132,10 @@
     "Comment": "Modify obj priority via an option",
     "tags" : ["linear", "continuous", "multiobj", "obj_priority"],
     "files" : ["dietobj.mod", "dietobj.dat"],
-    "options": { "ANYSOLVER_options": "multiobj=1 obj:2:priority=10" },
+    "options": {
+      "ANYSOLVER_options": "multiobj=1 obj:2:priority=10"
+    },
+    "comment": "MP2NL should ideally support the options TODO",
     "values": {
       "total_cost[\"A&P\"]": 75.84538461538462,
       "total_cost[\"JEWEL\"]": 74.3532967032967,
@@ -266,6 +269,7 @@
     "tags" : ["linear", "integer", "multiobj"],
     "options": {
       "ANYSOLVER_options": "multiobj=2 writeprob=obj_abs_01.lp writeprobindex=2",
+      "mp2nl_options": "multiobj=2",
       "scip_options": "multiobj=2 writeprob=obj_abs_01.cip writeprobindex=2",
       "gcg_options": "multiobj=2 writeprob=obj_abs_01.lp writeprobindex=2",
       "mosek_options": "multiobj=2 writeprob=obj_abs_01.jtask writeprobindex=2"

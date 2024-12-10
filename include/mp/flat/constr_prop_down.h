@@ -286,7 +286,14 @@ public:
       double lb, double ub, Context ctx) {
     MPD( NarrowVarBounds(con.GetResultVar(), lb, ub) );
     con.AddContext(ctx);
-    MPD( PropagateResult(con.GetConstraint(), ctx) );
+    if (lb>0 && ctx.HasPositive()) {              // Is true
+      if constexpr (kind*kind<=1) {               // == or <= or >=
+        MPD(AddConstraint_AS_ROOT(con.GetConstraint()));
+        MPD( DecrementVarUsage(con.GetResultVar()) );
+      }
+    } else {
+      MPD( PropagateResult(con.GetConstraint(), ctx) );
+    }
   }
 
 

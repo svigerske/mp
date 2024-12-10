@@ -20,7 +20,7 @@
       "ANYSOLVER_options": "cvt:cmp:eps=1e-4",
       "mp2nl_options": "solver_options='cvt:cmp:eps=1e-4'"
     },
-    "valies": {
+    "values": {
       "2*x+3*y": 0
     },
     "comment": [
@@ -31,14 +31,14 @@
   },
   {
     "name" : "ifthen_var cmp:eps=0",
-    "objective" : 2,
+    "objective" : -3,
     "tags" : ["logical"],
     "options": {
       "ANYSOLVER_options": "cvt:cmp:eps=0",
       "mp2nl_options": "solver_options='cvt:cmp:eps=0'"
     },
-    "valies": {
-      "2*x+3*y": 5
+    "values": {
+      "2*x+3*y": 0
     }
   },
   {
@@ -51,7 +51,51 @@
 
     },
     "values": {
-      "solve_result_num": 150
+      "solve_result_num": 0,
+      "2*x+3*y": 0
+    }
+  },
+  {
+    "name" : "ifthen_var_01 cmp:eps=1e-4",
+    "objective" : -20,
+    "tags" : ["logical"],
+    "options": {
+      "ANYSOLVER_options": "cvt:cmp:eps=1e-4",
+      "mp2nl_options": "solver_options='cvt:cmp:eps=1e-4'"
+    },
+    "values": {
+      "2*x+3*y": 5.0001
+    },
+    "comment": [
+      "For AMPL to correctly compute obj value, ",
+      "need strict inequality",
+      "obeyed in the reformulation with a significant tolerance"
+    ]
+  },
+  {
+    "name" : "ifthen_var_01 cmp:eps=0",
+    "objective" : 2,
+    "tags" : ["logical"],
+    "options": {
+      "ANYSOLVER_options": "cvt:cmp:eps=0",
+      "mp2nl_options": "solver_options='cvt:cmp:eps=0'"
+    },
+    "values": {
+      "2*x+3*y": 5
+    }
+  },
+  {
+    "name" : "ifthen_var_01 cmp:eps=0 chk:fail",
+    "tags" : ["logical"],
+    "comment_MP2NL": "fails for MP2NL because of a changed model",
+    "options": {
+      "ANYSOLVER_options": "cvt:cmp:eps=0 chk:fail",
+      "mp2nl_options": "solver_options='cvt:cmp:eps=0 chk:fail'"
+
+    },
+    "values": {
+      "solve_result_num": 150,
+      "2*x+3*y": 0
     }
   },
   {
