@@ -3,6 +3,8 @@ Summary of recent updates to Xpress for AMPL
 
 
 ## unreleased
+- Fix acceptance options for nonlinear formulas
+  (still disabled by default.)
 - Option *pre:solve_nlp*
 
 

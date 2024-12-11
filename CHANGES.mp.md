@@ -3,6 +3,9 @@ Summary of recent updates to the AMPL MP Library
 
 
 ## unreleased
+- More presolve for logical expressions
+  (Not, And, Or, Indicator), and new options to control
+  some of them: cvt:pre:ineqresult, cvt:pre:ineqrhs.
 - Fix lower bound calculation of the division result.
 - [BREAKING] Option acc:pow now affects only expressions x^y
   with both x, y variable; previous meaning of acc:pow

@@ -22,6 +22,9 @@
  *    Example:
  *
  *      max(x, y) <= 5;
+ *
+ * After functional constraints, this file currently contains
+ * preprocessing for static constraints.
  */
 
 #include <cmath>
@@ -658,6 +661,31 @@ public:
       PLConstraint& , PreprocessInfo& ) {
   }
 
+
+  /// Static constraints.
+  /// @return true iff the constraints has been presolved
+  ///   into something different, no need to keep it.
+  /// @note could modify the argument.
+  template <class Con>
+  bool PreprocessStaticConstraint(Con& )
+  { return false; }
+
+  /// Preprocess Indicator
+  /// @note Necessary for XPRESS 9.4.2
+  template <class SubCon>
+  bool PreprocessStaticConstraint(
+      IndicatorConstraint<SubCon>& indc) {
+    if (MPCD( is_fixed(indc.get_binary_var()) )) {
+      int fixed_var_val = MPCD( fixed_value(indc.get_binary_var()) );
+      if (fixed_var_val == indc.get_binary_value()) {
+        MPD( AddConstraint(indc.get_constraint()) );
+      } else {
+        // forget
+      }
+      return true;
+    }
+    return false;
+  }
 
 };
 

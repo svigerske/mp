@@ -195,6 +195,7 @@ public:
 		// TODO make sure any new context is re-converted
 		// if necessary.
 		auto i = MPD( MapFind(fc) );
+    // TODO preprocess, try map again, and use the result.
 		if (i<0)
       i = int( MPD( AddConstraint(std::move(fc)) ) );
 		auto& ck = GET_CONSTRAINT_KEEPER( FuncConstraint );
@@ -558,6 +559,8 @@ public:
   /// @return Node reference for the stored constraint
   template <class Constraint>
   pre::NodeRange AddConstraint(Constraint con) {
+    if (MPD( PreprocessStaticConstraint(con) ))
+      return {};  // we should not need the presolver nodes
     auto node_range =
         AddConstraintAndTryNoteResultVariable( std::move(con) );
     return AutoLink( node_range );
