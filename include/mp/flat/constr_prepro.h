@@ -665,16 +665,16 @@ public:
   /// Static constraints.
   /// @return true iff the constraints has been presolved
   ///   into something different, no need to keep it.
-  /// @note could modify the argument.
+  /// @note could accept non-const ref and modify the argument.
   template <class Con>
-  bool PreprocessStaticConstraint(Con& )
+  bool PreprocessStaticConstraint(const Con& )
   { return false; }
 
   /// Preprocess Indicator
   /// @note Necessary for XPRESS 9.4.2
   template <class SubCon>
   bool PreprocessStaticConstraint(
-      IndicatorConstraint<SubCon>& indc) {
+      const IndicatorConstraint<SubCon>& indc) {
     if (MPCD( is_fixed(indc.get_binary_var()) )) {
       int fixed_var_val = MPCD( fixed_value(indc.get_binary_var()) );
       if (fixed_var_val == indc.get_binary_value()) {
