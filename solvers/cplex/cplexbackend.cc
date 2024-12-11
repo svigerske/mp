@@ -2216,7 +2216,8 @@ void CplexBackend::InitCustomOptions() {
       CPXPARAM_TimeLimit, 0.0, DBL_MAX);
 
   AddSolverOption("qp:target optimalitytarget",
-    "Type of solution to compute for a QP problem",
+    "Type of solution to compute for a (MI)QP (not QCP) problem:"
+                  "\n\n.. value-table::\n",
     CPXPARAM_OptimalityTarget, optimalitytarget_values_, 0);
 
   
