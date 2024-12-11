@@ -1126,8 +1126,8 @@ bool BasicSolver::ParseOptions(char **argv, unsigned flags, const ASLProblem *, 
   bool_options_ &= ~SHOW_VERSION;
   option_flag_save_ = flags;
   // 0. If additional options are specified, parse only those
-  if (additional_options) {
-    AddWarning("DefaultOptions",
+  if (additional_options) {  // The warning is necessary, otherwise we don't know
+    AddWarning("DefaultOptions", // why. But it is ugly and appears always. So don't use this
                fmt::format("Applied the following options apriori: {}",
                            additional_options));
     ParseOptionString(additional_options, NO_OPTION_ECHO);
