@@ -1127,8 +1127,11 @@ bool BasicSolver::ParseOptions(char **argv, unsigned flags, const ASLProblem *, 
   option_flag_save_ = flags;
   // 0. If additional options are specified, parse only those
   if (additional_options) {
+    AddWarning("DefaultOptions",
+               fmt::format("Applied the following options apriori: {}",
+                           additional_options));
     ParseOptionString(additional_options, NO_OPTION_ECHO);
-    return false;
+    return true;
   }
   
   // 1. Try & parse 'mp_options'
