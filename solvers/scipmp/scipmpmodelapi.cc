@@ -565,7 +565,6 @@ void ScipModelAPI::AddConstraint(const LogAConstraint& cc) {
 
   SCIP_CCALL(SCIPcreateExprVar(getSCIP(), &xexpr, x, NULL, NULL));
   SCIP_CCALL(SCIPcreateExprVar(getSCIP(), &terms[0], res, NULL, NULL));
-  /
   SCIP_CCALL(SCIPcreateExprLog(getSCIP(), &logexpr, xexpr, NULL, NULL));
   SCIP_CCALL(SCIPcreateExprProduct(getSCIP(), &terms[1], 1, &logexpr, std::log(cc.GetParameters()[0]), NULL, NULL));
   SCIP_CCALL(SCIPcreateExprSum(getSCIP(), &sumexpr, 2, terms, coefs, 0.0, NULL, NULL));

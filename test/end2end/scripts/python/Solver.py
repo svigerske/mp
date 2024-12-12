@@ -751,8 +751,13 @@ class XpressSolver(AMPLSolver):
         return "xpress"
 
     def __init__(self, exeName, timeout=None, nthreads=None, otherOptions=None):
-        stags = {ModelTags.continuous, ModelTags.integer, ModelTags.binary,
-                 ModelTags.quadratic}
+        stags = {ModelTags.continuous, ModelTags.linear,
+                 ModelTags.integer, ModelTags.binary,
+                 ModelTags.quadratic,
+                 ModelTags.quadraticnonconvex,
+                 ModelTags.quadratic_obj_nonconvex,
+                 ModelTags.socp,  # ModelTags.socp_hard_to_recognize,
+                 ModelTags.plinear}
         super().__init__(exeName, timeout, nthreads, otherOptions, stags)
 
     def _doParseSolution(self, st, stdout=None):
