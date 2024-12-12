@@ -1120,20 +1120,14 @@ void WarnOnDifferentCapitalizations(const std::string& target_name) {
     fmt::print("\n");
 }
 
-
 bool BasicSolver::ParseOptions(char **argv, unsigned flags, const ASLProblem *, char* additional_options) {
   has_errors_ = false;
   bool_options_ &= ~SHOW_VERSION;
   option_flag_save_ = flags;
   // 0. If additional options are specified, parse only those
-  if (additional_options) {  // The warning is necessary, otherwise we don't know
-    // @todo debug_mode() is not know here - delay this warning until we parse normal options
-    if (debug_mode())           // Better not use this for common options - very obscure
-      AddWarning("DefaultOptions", // why. But it is ugly and appears always. So don't use this
-                 fmt::format("Applied the following options apriori: {}",
-                             additional_options));
+  if (additional_options) {
     ParseOptionString(additional_options, NO_OPTION_ECHO);
-    return true;
+    return false;
   }
   
   // 1. Try & parse 'mp_options'

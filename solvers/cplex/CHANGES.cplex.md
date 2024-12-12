@@ -1,6 +1,11 @@
 Summary of recent updates to CPLEX for AMPL
 ==============================================
 
+
+## 20241212
+- Releasing with CPLEX version 22.1.2
+
+
 ## 20241206
 - Added support for sensitivity analysis (keyword `sensitivity`)
 - Added keywords `mip:nodefile`, `tech:workdir`, `tech:workfilelim`
