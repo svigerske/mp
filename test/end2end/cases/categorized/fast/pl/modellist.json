@@ -133,5 +133,37 @@
     "options": {
         "pl_linearize": 1
     }
+  },
+  {
+    "name" : "pl_defvars_01 pl_linearize=1",
+    "objective" :  -46.98,
+    "tags" : ["linear", "continuous"],
+    "options": {
+        "pl_linearize": 1
+    }
+  },
+  {
+    "name" : "pl_defvars_01 pl_linearize=0",
+    "objective" :  -46.98,
+    "tags" : ["linear", "continuous", "plinear"],
+    "options": {
+        "pl_linearize": 0
+    }
+  },
+  {
+    "name" : "pl_defvars_02 pl_linearize=1",
+    "objective" :  -28.48810811,
+    "tags" : ["linear", "continuous"],
+    "options": {
+        "pl_linearize": 1
+    }
+  },
+  {
+    "name" : "pl_defvars_02 pl_linearize=0",
+    "objective" :  -28.48810811,
+    "tags" : ["linear", "continuous", "plinear"],
+    "options": {
+        "pl_linearize": 0
+    }
   }
 ]

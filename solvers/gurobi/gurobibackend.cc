@@ -1567,7 +1567,7 @@ void GurobiBackend::InitCustomOptions() {
 
   set_option_header(
       fmt::format("{0} Optimizer Options for AMPL\n"
-                  "-----------------------------------\n"
+                  "---------------------------------\n"
       "\n"
       "To set these options, assign a string specifying their values to the "
       "AMPL option ``{1}_options``. For example::\n"
