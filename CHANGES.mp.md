@@ -3,6 +3,8 @@ Summary of recent updates to the AMPL MP Library
 
 
 ## unreleased
+- cvt:prod=7 default for LP and convex solvers,
+  logicalizing also products of just 2 binary variables.
 - More presolve for logical expressions
   (Not, And, Or, Indicator), and new options to control
   some of them: cvt:pre:ineqresult, cvt:pre:ineqrhs.

@@ -1196,15 +1196,17 @@ private:
   struct Options {
     int sos_ = 1;
     int sos2_ = 1;
-    int prepro_products_ = 1+4;
   };
   Options options_;
+
+  int prepro_products_ = 1+4      // also 2 binaries for convex solvers
+                         + (GetFlatCvt().GetModelAPI().AcceptsNonconvexQC() ? 0 : 2);
 
 
 public:
   int sos() const { return options_.sos_; }
   int sos2_ampl_pl() const { return options_.sos2_; }
-  int prepro_products() const { return options_.prepro_products_; }
+  int prepro_products() const { return prepro_products_; }
 
   /// Distinguish between constraints and objectives.
   /// What about common expressions?
@@ -1243,7 +1245,7 @@ private:
         "provided by AMPL.",
         options_.sos2_, 0, 1);
     GetEnv().AddOption("cvt:prod cvt:pre:prod",
-                       "Product preprocessing flags. "
+                       fmt::format("Product preprocessing flags. "
                        "Sum of a subset of the following bits:\n"
                        "\n"
                        "| 1 - Quadratize higher-order products in the "
@@ -1256,12 +1258,10 @@ private:
                        "      the conjunction is linearized.\n"
                        "| 4 - Logicalize products of >=3 binary terms.\n"
                        "\n"
-                       "Default: 1+4. That is, 2-term binary products which are not "
-                       "part of a higher-order binary product, are not logicalized "
-                       "by default.\n"
+                       "Default: {}.\n"
                        "\n"
-                       "Bits 2 or 4 imply bit 1.",
-                       options_.prepro_products_, 0, 1023);
+                                   "Bits 2 or 4 imply bit 1.", prepro_products_).c_str(),
+                       prepro_products_, 0, 1023);
   }
 
 

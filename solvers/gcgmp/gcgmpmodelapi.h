@@ -75,7 +75,7 @@ public:
   void AddConstraint(const LinConGE& lc);
 
   /// Ask if the solver accepts non-convex quadratic constraints
-  static constexpr bool AcceptsNonconvexQC() { return false; }
+  static constexpr bool AcceptsNonconvexQC() { return true; }
 };
 
 } // namespace mp
