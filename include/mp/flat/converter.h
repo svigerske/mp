@@ -1114,6 +1114,12 @@ public:
     return ModelAPI::AcceptsNonconvexQC();
   }
 
+  /// Whether the ModelAPI recommends
+  /// logicalizing products of 2 binaries
+  static bool ModelAPIWantsLogicalProd2Bins() {
+    return ModelAPI::WantLogicalizedProd2Bin();
+  }
+
   /// Ask if the solver can recognize SOCP corner cases
   /// (non-std representations such as xy>=1, see tests)
   /// from quadratic representations

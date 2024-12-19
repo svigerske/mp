@@ -224,6 +224,11 @@ public:
   /// Specifically, ask if the solver accepts non-convex quadratic constraints
   static constexpr bool AcceptsNonconvexQC() { return false; }
 
+  /// If cvt:prod=7 (and not 5) default.
+  /// Recommendation to return the opposite value as
+  /// AcceptsNonconvexQC().
+  static constexpr bool WantLogicalizedProd2Bin() { return true; }
+
   /// Specifically, ask if the solver can mix conic quadratic
   /// (entered via dedicated API) and direct quadratic constraints
   static constexpr bool CanMixConicQCAndQC() { return false; }

@@ -1200,7 +1200,8 @@ private:
   Options options_;
 
   int prepro_products_ = 1+4      // also 2 binaries for convex solvers
-                         + (GetFlatCvt().GetModelAPI().AcceptsNonconvexQC() ? 0 : 2);
+                         + (GetFlatCvt().
+                                ModelAPIWantsLogicalProd2Bins() ? 2 : 0);
 
 
 public:

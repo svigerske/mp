@@ -87,6 +87,12 @@ public:
   /// Ask if the solver accepts non-convex quadratic constraints
   static constexpr bool AcceptsNonconvexQC() { return false; }
 
+  /// If cvt:prod=7 (and not 5) default.
+  /// Recommendation to return the opposite value as
+  /// AcceptsNonconvexQC().
+  static constexpr bool WantLogicalizedProd2Bin()
+  { return !AcceptsNonconvexQC(); }
+
   /// QuadConRange is optional.
   ACCEPT_CONSTRAINT(QuadConRange, Recommended, CG_Quadratic)
   void AddConstraint(const QuadConRange& qc);

@@ -53,6 +53,12 @@ public:
   /// Ask if the solver accepts non-convex quadratic constraints
   static constexpr bool AcceptsNonconvexQC() { return true; }
 
+  /// If cvt:prod=7 (and not 5) default.
+  /// Recommendation to return the opposite value as
+  /// AcceptsNonconvexQC().
+  static constexpr bool WantLogicalizedProd2Bin()
+  { return !AcceptsNonconvexQC(); }
+
   /// Ask if the solver can recognize SOCP corner cases
   /// (non-std representations such as xy>=1, see tests)
   /// from quadratic representations
