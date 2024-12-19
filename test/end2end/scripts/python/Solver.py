@@ -1088,7 +1088,7 @@ class BaronMPSolver(MPDirectSolver):
                  ModelTags.log,
                  #ModelTags.trigonometric,
                  ModelTags.return_mipgap,
-
+                 ModelTags.warmstart,  ModelTags.mipstart,
                  ModelTags.writelp, ModelTags.writesol,
 
                  }
