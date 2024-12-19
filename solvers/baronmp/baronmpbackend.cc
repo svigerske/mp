@@ -389,11 +389,9 @@ void BaronmpBackend::AddMIPStart(
     auto x0 = mv.GetVarValues()();
     auto s0 = ms.GetVarValues()();
     bool headerWritten=false;
-      fmt::print("Size={}\n",x0.size() );
     for (int i=0; i<(int)x0.size(); ++i) {
     
       if (s0[i]) {
-        fmt::print("s0[{}]={}\n", i, s0[i]);
         if(!headerWritten) {
           headerWritten=true;
           writeBaron("\nSTARTING_POINT {\n");

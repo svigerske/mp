@@ -396,7 +396,7 @@ template <int SENSE> void BaronmpModelAPI::addTopLevel(const NLBaseAssign<SENSE>
   const auto var = GetVariable(c);
   fmt::MemoryWriter w;
   w << createConName(c.GetName()) << ": ";
-  const std::string sense[] = { "<=", "=", ">="};
+  const std::string sense[] = { "<=", "==", ">="};
   // Baron does not accept x >= f(x)
   //w << fmt::format("{} {} ", varName(var), sense[SENSE+1]);
   w << fmt::format("{} - ", varName(var));
