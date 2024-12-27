@@ -2,6 +2,11 @@ Summary of recent updates to COPT for AMPL
 ==========================================
 
 
+## 20241228
+- Updated to COPT 7.2.4, which includes performance improvements to 
+  the MIP, SOCP and QCQP solvers
+
+
 ## 20240724
 - Option *acc:_all*
 	- Useful to disable all reformulations (acc:_all=2),
