@@ -653,14 +653,23 @@ public:          // need to be public due to CRTP
       common_exprs_.resize(
                   GetModel().num_common_exprs(),
                   -1);          // init by -1, "no variable"
+      if (defvarelim())
+        common_ee_.resize(common_exprs_.size());
     }
     if (common_exprs_[index]<0) {                 // not yet converted
       auto ce = MP_DISPATCH( GetModel() ).common_expr(index);
       EExpr eexpr( ToLinTerms(ce.linear_expr()) );
       if (ce.nonlinear_expr())
         eexpr.add( Convert2EExpr(ce.nonlinear_expr()) );
-      common_exprs_[index] = Convert2Var(std::move(eexpr));
+      if (defvarelim()) {               // provide the eexpr itself
+        common_exprs_[index] = 0;
+        assert(common_ee_.size() > index);
+        common_ee_[index] = std::move(eexpr);
+      } else                            // convert 2 var
+        common_exprs_[index] = Convert2Var(std::move(eexpr));
     }
+    if (defvarelim())
+      return common_ee_[index];
     return EExpr::Variable{ common_exprs_[index] };
   }
 
@@ -1171,7 +1180,9 @@ protected:
 
 
 private:
-  std::vector<int> common_exprs_;               // should be in FlatModel
+  // @todo pass sdvar names
+  std::vector<int> common_exprs_;    // @todo should be in FlatModel?
+  std::vector<EExpr> common_ee_;     // flattened sdvars, not turned into vars
 
   int ifFltCon_ = -1;   // -1: undefined, 0: walking an expr tree in an objective,
                         // 1: in a constraint
@@ -1202,12 +1213,14 @@ private:
   int prepro_products_ = 1+4      // also 2 binaries for convex solvers
                          + (GetFlatCvt().
                                 ModelAPIWantsLogicalProd2Bins() ? 2 : 0);
+  int dvelim_ = 1;
 
 
 public:
   int sos() const { return options_.sos_; }
   int sos2_ampl_pl() const { return options_.sos2_; }
   int prepro_products() const { return prepro_products_; }
+  int defvarelim() const { return dvelim_; }
 
   /// Distinguish between constraints and objectives.
   /// What about common expressions?
@@ -1263,6 +1276,11 @@ private:
                        "\n"
                                    "Bits 2 or 4 imply bit 1.", prepro_products_).c_str(),
                        prepro_products_, 0, 1023);
+    GetEnv().AddOption("cvt:dvelim dvelim",
+                       "0/1*: Whether to eliminate AMPL defined variables "
+                       "by substitution into linear, quadratic, and polynomial "
+                       "expressions.",
+                       dvelim_, 0, 1);
   }
 
 
