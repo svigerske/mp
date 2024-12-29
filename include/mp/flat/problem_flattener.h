@@ -1292,7 +1292,8 @@ private:
                        "Eliminate AMPL defined variables "
                        "by substitution into linear, quadratic, and polynomial "
                        "expressions:\n"
-                       "\n.. value-table::\n",
+                       "\n.. value-table::\n"
+                             "\nSee also AMPL options linelim and substout.",
                        dvelim_, values_dvelim);
   }
 
