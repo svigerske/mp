@@ -94,7 +94,7 @@ public:
 
   /// Get linear part var \a i.
   int GetLinVar(const NLConstraint& nlc, int i) const {
-    assert(IsVarProper(i));
+    assert(IsVarProper(nlc.GetMainCon().var(i)));
     return nlc.GetMainCon().var(i);
   }
 
