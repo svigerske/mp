@@ -195,9 +195,12 @@ class BasicProblem : public ExprFactory, public SuffixManager {
 
   /// Linear parts of common expressions.
   std::vector<LinearExpr> linear_exprs_;
-
   /// Nonlinear parts of common expressions.
   std::vector<NumericExpr> nonlinear_exprs_;
+  /// Usage position k: <0 for objective -k-1,
+  /// >0 for constraint k-1, 0 if in several places.
+  /// What if only used in other common expressions?
+  std::vector<int> common_expr_positions_;
 
   /// Initial values for variables.
   std::vector<double> initial_values_;
@@ -1057,6 +1060,12 @@ public:
             this->problem_->nonlinear_exprs_[index] : NumericExpr();
     }
 
+    /// Usage position k: 0 if used in several places
+    /// (even when nested.)
+    int position() const {
+      return this->problem_->common_expr_positions_[this->index_];
+    }
+
     template <typename OtherItem>
     bool operator==(BasicCommonExpr<OtherItem> other) const {
       MP_ASSERT(this->problem_ == other.problem_,
@@ -1092,7 +1101,9 @@ public:
 
     /// Not useful yet:
     /// AMPL seems to report this considering top-level usage
-    void set_position(int) const {}
+    void set_position(int k) const {
+      this->problem_->common_expr_positions_[this->index_] = k;
+    }
   };
 
   /// Returns the common expression at the specified index.
@@ -1111,6 +1122,7 @@ public:
     MP_ASSERT(num_exprs < MP_MAX_PROBLEM_ITEMS, "too many expressions");
     linear_exprs_.push_back(LinearExpr());
     nonlinear_exprs_.push_back(expr);
+    common_expr_positions_.push_back(0);
     return MutCommonExpr(this, static_cast<int>(num_exprs));
   }
 
@@ -1119,6 +1131,7 @@ public:
     std::size_t new_size = val(SafeInt<int>(linear_exprs_.size()) + num_exprs);
     linear_exprs_.resize(new_size, LinearExpr());
     nonlinear_exprs_.resize(new_size, NumericExpr());
+    common_expr_positions_.resize(new_size);
   }
 
   /// Sets a complementarity condition.

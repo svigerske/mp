@@ -110,6 +110,7 @@ void BasicProblem<Alloc>::SetInfo(const NLProblemInfo &info) {
   int num_common_exprs = info.num_common_exprs();
   linear_exprs_.reserve(num_common_exprs);
   nonlinear_exprs_.reserve(num_common_exprs);
+  common_expr_positions_.reserve(num_common_exprs);
 }
 
 template <typename Params>
