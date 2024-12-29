@@ -2,6 +2,10 @@ Summary of recent updates to HiGHS for AMPL
 ===========================================
 
 
+## 20241229
+- Updated to HiGHS 1.9.0
+
+
 ## 20241119
 - Updated to HiGHS 1.8.1
 
