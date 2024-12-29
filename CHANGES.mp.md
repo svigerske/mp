@@ -3,13 +3,13 @@ Summary of recent updates to the AMPL MP Library
 
 
 ## 20241228
-- Eliminate AMPL defined variables by default,
-  whenever possible (option cvt:dvelim).
+- Eliminate AMPL defined variables which are used once
+  (option cvt:dvelim).
   This happens only if they can be substituted
   into linear, quadratic, or polynomial expressions.
   Usually this largely simplifies quadratic models
   (linear substitutions are already performed by AMPL,
-  see AMPl option linelim.)
+  see AMPL option linelim.)
 - cvt:prod=7 default for LP and convex solvers,
   logicalizing also products of just 2 binary variables.
 - More presolve for logical expressions

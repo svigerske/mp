@@ -1,0 +1,15 @@
+[
+  {
+    "name" : "defvar_01",
+    "objective" : 2.864,
+    "tags" : ["quadratic"]
+  },
+  {
+    "name" : "defvar_02",
+    "objective" : 2.864,
+    "tags" : ["quadratic"],
+    "options": {
+      "ANYSOLVER_options": "cvt:dvelim=2"
+    }
+  }
+]
