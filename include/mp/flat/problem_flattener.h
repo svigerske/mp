@@ -648,6 +648,11 @@ public:          // need to be public due to CRTP
 
   EExpr VisitCommonExpr(Reference r) {
     const auto index = r.index();
+    auto ce = MP_DISPATCH( GetModel() ).common_expr(index);
+    bool dvelim
+        = 2==defvarelim()         // always inline
+          || (1==defvarelim()
+              && ce.position());  // used only 1x. @todo own ref count #153
     if (index >= (int)common_exprs_.size()) {
       assert(index < GetModel().num_common_exprs());
       common_exprs_.resize(
@@ -657,18 +662,17 @@ public:          // need to be public due to CRTP
         common_ee_.resize(common_exprs_.size());
     }
     if (common_exprs_[index]<0) {                 // not yet converted
-      auto ce = MP_DISPATCH( GetModel() ).common_expr(index);
       EExpr eexpr( ToLinTerms(ce.linear_expr()) );
       if (ce.nonlinear_expr())
         eexpr.add( Convert2EExpr(ce.nonlinear_expr()) );
-      if (defvarelim()) {               // provide the eexpr itself
+      if (dvelim) {             // provide the eexpr itself
         common_exprs_[index] = 0;
-        assert(common_ee_.size() > index);
+        assert((int)common_ee_.size() > index);
         common_ee_[index] = std::move(eexpr);
       } else                            // convert 2 var
         common_exprs_[index] = Convert2Var(std::move(eexpr));
     }
-    if (defvarelim())
+    if (dvelim)
       return common_ee_[index];
     return EExpr::Variable{ common_exprs_[index] };
   }
@@ -1244,6 +1248,14 @@ public:
 
 
 private:
+  static constexpr mp::OptionValueInfo values_dvelim[] = {
+      { "0", "Do not eliminate, always instantiate the variables.", 0},
+      { "1", "Eliminate only those used 1x (default.) "
+            "This can increase model density but greatly simplifies some models.", 1},
+      { "2", "Always substitute where possible, even if the variable needs "
+            "to be instantiated. Can introduce redundancy, but still simplifies.", 2}
+  };
+
   void InitOwnOptions() {
     GetEnv().AddOption("cvt:sos sos",
         "0/1*: Whether to honor declared suffixes .sosno and .ref describing "
@@ -1276,11 +1288,12 @@ private:
                        "\n"
                                    "Bits 2 or 4 imply bit 1.", prepro_products_).c_str(),
                        prepro_products_, 0, 1023);
-    GetEnv().AddOption("cvt:dvelim dvelim",
-                       "0/1*: Whether to eliminate AMPL defined variables "
+    GetEnv().AddStoredOption("cvt:dvelim dvelim",
+                       "Eliminate AMPL defined variables "
                        "by substitution into linear, quadratic, and polynomial "
-                       "expressions.",
-                       dvelim_, 0, 1);
+                       "expressions:\n"
+                       "\n.. value-table::\n",
+                       dvelim_, values_dvelim);
   }
 
 

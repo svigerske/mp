@@ -199,7 +199,11 @@ class BasicProblem : public ExprFactory, public SuffixManager {
   std::vector<NumericExpr> nonlinear_exprs_;
   /// Usage position k: <0 for objective -k-1,
   /// >0 for constraint k-1, 0 if in several places.
-  /// What if only used in other common expressions?
+  /// @warning This seems to be different between AMPL
+  /// versions: sometimes objectives follow above cons.
+  /// @note What if only used in other common expressions?
+  /// Then AMPL still seems to report the top-level item
+  /// where this DV is used.
   std::vector<int> common_expr_positions_;
 
   /// Initial values for variables.
