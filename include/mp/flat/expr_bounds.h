@@ -86,13 +86,22 @@ public:
     return AddBoundsAndType(bntLT, bntQT);
   }
 
+  /// Multiply two bounds for product bound computation:
+  /// 0*inf=0
+  static constexpr double Mul2Bounds(double b1, double b2) {
+    return (!b1 || !b2) ? 0.0 : b1*b2;
+  }
+
   /// Product bounds
   template <class Var>
   std::pair<double, double> ProductBounds(Var x, Var y) const {
     const auto& m = MPCD(GetModel());
     auto lx=m.lb(x), ly=m.lb(y), ux=m.ub(x), uy=m.ub(y);
     if (x!=y) {                        // different vars
-      std::array<double, 4> pb{lx*ly, lx*uy, ux*ly, ux*uy};
+      std::array<double, 4> pb{Mul2Bounds(lx, ly),
+                               Mul2Bounds(lx, uy),
+                               Mul2Bounds(ux, ly),
+                               Mul2Bounds(ux, uy)};
       return { *std::min_element(pb.begin(), pb.end()),
             *std::max_element(pb.begin(), pb.end()) };
     }

@@ -1090,6 +1090,8 @@ public:
       this->problem_->nonlinear_exprs_[this->index_] = expr;
     }
 
+    /// Not useful yet:
+    /// AMPL seems to report this considering top-level usage
     void set_position(int) const {}
   };
 
